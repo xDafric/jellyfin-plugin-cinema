@@ -24,7 +24,7 @@ html.cx-ready .MuiBreadcrumbs-root a { color: #9a9aa4 !important; }
 html.cx-ready .MuiCard-root, html.cx-ready .MuiPaper-outlined { background: var(--dx-card) !important; border: 1px solid var(--dx-line) !important; border-radius: 20px !important; box-shadow: none !important; overflow: hidden; transition: transform .2s, border-color .2s, background .2s; }
 html.cx-ready .MuiCard-root:hover { border-color: rgba(255, 255, 255, .14) !important; }
 html.cx-ready .MuiCardActionArea-root:hover .MuiCardActionArea-focusHighlight { opacity: .04; }
-html.cx-ready .MuiCardMedia-root { background: linear-gradient(135deg, #2b2b33, #1b1b20 70%) !important; color: rgba(255, 255, 255, .85) !important; }
+html.cx-ready .MuiCardMedia-root:not([style*="url("]):not([image]) { background: linear-gradient(135deg, #2b2b33, #1b1b20 70%) !important; color: rgba(255, 255, 255, .85) !important; }
 html.cx-ready .MuiCardMedia-root .MuiSvgIcon-root { filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4)); }
 html.cx-ready .MuiCardContent-root { padding: 14px 16px !important; }
 html.cx-ready .MuiAvatar-colorDefault, html.cx-ready .MuiAvatar-root:not(:has(img)) { background: linear-gradient(135deg, #3a3a43, #25252b) !important; color: #fff !important; }
@@ -118,7 +118,7 @@ html.cx-ready input[type=range] { accent-color: var(--dx-a); }
 html.cx-ready .dashboardColumn .cardBox, html.cx-ready .dashboardSection .card { background: var(--dx-card) !important; }
 
 /* classic cards with colourful default backgrounds (users, libraries, devices) */
-html.cx-ready [class*="defaultCardBackground"] { background: linear-gradient(135deg, #34343d, #1f1f25 80%) !important; color: rgba(255, 255, 255, .9) !important; }
+html.cx-ready [class*="defaultCardBackground"]:not([style*="url("]) { background: linear-gradient(135deg, #34343d, #1f1f25 80%) !important; color: rgba(255, 255, 255, .9) !important; }
 html.cx-ready [class*="defaultCardBackground"] .cardImageIcon, html.cx-ready [class*="defaultCardBackground"] .material-icons { color: rgba(255, 255, 255, .85) !important; text-shadow: 0 8px 20px rgba(0, 0, 0, .4); }
 html.cx-ready .card .cardContent, html.cx-ready .cardBox { border-radius: 18px; }
 html.cx-ready .cardBox { background: var(--dx-card) !important; border: 1px solid var(--dx-line); overflow: hidden; transition: border-color .2s, transform .2s; }

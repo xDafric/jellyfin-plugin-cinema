@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.10.0",
+                             "changelog":  "Dashboard: images (library, plugin and device cards) are visible again.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.10.0.zip",
+                             "checksum":  "3ca8aa761a188ff38b0eda05619e9141",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.9.0",
                              "changelog":  "Seerr watchlist in Watchlist, Discover filter bar and genre tiles, new home rows (Top 10, spotlight, genre tiles, new episodes, collections, decades), grouped search with top result, synced lyrics, richer 3-dot menu (download, subtitles, hidden status), code dialog, expanded config page.",
                              "targetAbi":  "12.4.0.0",
