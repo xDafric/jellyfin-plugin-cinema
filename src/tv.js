@@ -50,10 +50,10 @@ function tvInit() {
   /* own scroll animation: short, cancelable, always ends where it should (CSS smooth scrolling lags on TV hardware) */
   const ANIM = new WeakMap();
   function glide(host, prop, target, ms) {
-    ms = ms || 230; const max = prop === 'top' ? host.scrollHeight - host.clientHeight : host.scrollWidth - host.clientWidth; target = Math.max(0, Math.min(max, target));
+    ms = ms == null ? 230 : ms; const max = prop === 'top' ? host.scrollHeight - host.clientHeight : host.scrollWidth - host.clientWidth; target = Math.max(0, Math.min(max, target));
     const key = prop === 'top' ? 'scrollTop' : 'scrollLeft'; let st = ANIM.get(host); if (!st) { st = {}; ANIM.set(host, st); }
     const o = st[prop]; if (o) cancelAnimationFrame(o.id); const from = host[key]; const t0 = performance.now(); const rec = { target, id: 0 }; st[prop] = rec;
-    if (Math.abs(target - from) < 2) { host[key] = target; return; }
+    if (ms === 0 || Math.abs(target - from) < 2) { host[key] = target; return; }
     const step = now => { const k = Math.min(1, (now - t0) / ms); const ease = 1 - Math.pow(1 - k, 3); host[key] = from + (target - from) * ease; if (k < 1) rec.id = requestAnimationFrame(step); else st[prop] = null; };
     rec.id = requestAnimationFrame(step);
   }
@@ -63,12 +63,12 @@ function tvInit() {
     e.focus({ preventScroll: true }); mark(e); remember(e);
     const r = e.getBoundingClientRect(); const horiz = dir === 'left' || dir === 'right';
     const sc = e.closest('.nf-scroller, .sp-shelf, .nf-cast, .nf-row-scroll');
-    if (horiz && sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); const pad = parseFloat(getComputedStyle(sc).paddingLeft) || 56; glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - pad, 130); }
+    if (horiz && sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); const pad = parseFloat(getComputedStyle(sc).paddingLeft) || 56; glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - pad, 0); }
     else if (!horiz) {
       const host = scrollHost(); const cur = host.scrollTop, pend = pendingTop(host); const top = r.top - (pend - cur); const bottom = r.bottom - (pend - cur);
       const inBand = top > 100 && bottom < innerHeight - 50;
       if (e.closest('#cx-top')) glide(host, 'top', 0); else if (!inBand) glide(host, 'top', pend + (top + r.height / 2 - innerHeight * .55), 170);
-      if (sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); const pad = parseFloat(getComputedStyle(sc).paddingLeft) || 56; glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - pad, 130); }
+      if (sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); const pad = parseFloat(getComputedStyle(sc).paddingLeft) || 56; glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - pad, 0); }
     } else e.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   function scrollHost_() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }

@@ -5,7 +5,7 @@ html.cx-tv *, html.cx-tv *::before, html.cx-tv *::after { backdrop-filter: none 
 html.cx-tv .nf-peek, html.cx-tv .nf-scrollbtn, html.cx-tv .nf-arrow { display: none !important; }
 html.cx-tv ::-webkit-scrollbar { display: none; }
 html.cx-tv .cx-tabs { display: none !important; }
-html.cx-tv #cx-nf, html.cx-tv .sp-scroll { scroll-behavior: auto !important; }
+html.cx-tv #cx-nf, html.cx-tv .sp-scroll, html.cx-tv .nf-scroller, html.cx-tv .nf-cast, html.cx-tv .sp-shelf { scroll-behavior: auto !important; }
 html.cx-tv { --pad: 56px; }
 
 /* ambient colour wash behind the page */
