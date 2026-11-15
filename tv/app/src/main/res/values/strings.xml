@@ -18,4 +18,5 @@
     <string name="skip_intro">Skip intro</string>
     <string name="play_failed">Playback failed</string>
     <string name="none_available">Nothing to choose</string>
+    <string name="ends_at">Ends at</string>
 </resources>

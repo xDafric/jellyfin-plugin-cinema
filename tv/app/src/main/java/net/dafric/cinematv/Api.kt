@@ -32,6 +32,14 @@ class HttpResult(val code: Int, val body: String) {
 }
 
 object Http {
+    fun bytes(url: String, auth: String?, timeoutMs: Int = 15000): ByteArray? {
+        val c = URL(url).openConnection() as HttpURLConnection
+        return try {
+            c.connectTimeout = timeoutMs; c.readTimeout = timeoutMs; if (auth != null) c.setRequestProperty("Authorization", auth)
+            if (c.responseCode in 200..299) c.inputStream.use { it.readBytes() } else null
+        } catch (e: Exception) { null } finally { c.disconnect() }
+    }
+
     /** Blocking request; call from a background thread. */
     fun request(method: String, url: String, auth: String?, body: String? = null, timeoutMs: Int = 12000): HttpResult {
         val c = URL(url).openConnection() as HttpURLConnection

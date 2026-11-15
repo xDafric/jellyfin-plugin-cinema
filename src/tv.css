@@ -42,3 +42,15 @@ html.cx-tv .nf-card .im { transform: none !important; will-change: auto; }
 html.cx-tv #cx-top a.tvf-on, html.cx-tv #cx-top button.tvf-on { outline: 3px solid #fff; outline-offset: 3px; background: rgba(255,255,255,.2); color: #fff; }
 html.cx-tv #cx-top a.tvf-on.on { background: #fff; color: #000; }
 html.cx-tv .nf-hero .btn.tvf-on, html.cx-tv .nf-btns .btn.tvf-on { outline: 4px solid #fff; outline-offset: 4px; }
+
+/* detail buttons + cast: room for the focus ring */
+html.cx-tv .nf-btns, html.cx-tv .nf-hero-btns { gap: 26px; padding: 8px 6px; margin-left: -6px; }
+html.cx-tv .nf-btns .btn, html.cx-tv .nf-hero-btns .btn { flex: none; min-width: 0; }
+html.cx-tv .nf-btns .btn.round { width: 54px; height: 54px; padding: 0; flex: none; aspect-ratio: 1; }
+html.cx-tv .nf-btns .btn.tvf-on, html.cx-tv .nf-hero-btns .btn.tvf-on { outline: 4px solid #fff; outline-offset: 3px; transform: none; }
+html.cx-tv .nf-cast { gap: 30px; padding: 22px var(--pad) 26px; margin: -14px calc(-1 * var(--pad)) 0; }
+html.cx-tv .nf-person { width: 112px; }
+html.cx-tv .nf-person .pi { width: 112px; height: 112px; margin-bottom: 14px; }
+html.cx-tv .nf-person.tvf-on .pi { outline: 4px solid #fff; outline-offset: 4px; transform: none; }
+html.cx-tv .nf-person b { display: block; margin-top: 2px; }
+html.cx-tv .nf-sect h2, html.cx-tv .nf-dbody h2 { margin-bottom: 8px; }

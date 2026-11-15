@@ -42,7 +42,7 @@ function tvInit() {
   let lastOn = null; const mark = e => { if (lastOn && lastOn !== e) lastOn.classList.remove('tvf-on'); lastOn = e; e.classList.add('tvf-on'); };
   document.addEventListener('focusin', e => mark(e.target), true); document.addEventListener('focusout', e => { e.target.classList && e.target.classList.remove('tvf-on'); }, true);
   function focusEl(e, dir) {
-    e.focus({ preventScroll: true }); mark(e);
+    e.focus({ preventScroll: true }); mark(e); remember(e);
     const r = e.getBoundingClientRect(); const horiz = dir === 'left' || dir === 'right';
     const sc = e.closest('.nf-scroller, .sp-shelf, .nf-cast, .nf-row-scroll');
     if (horiz && sc) { sc.scrollTo({ left: sc.scrollLeft + r.left - (sc.getBoundingClientRect().left + 80), behavior: 'smooth' }); }
@@ -66,16 +66,20 @@ function tvInit() {
 
   const preferredSel = ['.cxd-bg.show .cxd-chip, .cxd-bg.show button', '.nf-hero .btn.white', '#cx .nf-dinfo .btn.white', '#cx .sp-card .sp-navlink.on', '#cx .nf-card', '#cx .sp-row', '#cx-top a'];
   function tvPreferred(list) { for (const s of preferredSel) { const f = list.find(e => e.matches(s)); if (f) return f; } return list[0]; }
-  let autoT = 0;
+  let autoT = 0; const MEM = {};
+  const remember = e => { try { const L = layer(); if (L || e.closest('#cx-top')) return; const i = cands().indexOf(e); if (i >= 0) MEM[location.hash] = { i, st: scrollHost().scrollTop }; } catch (x) { } };
   function tvAuto() {
     clearTimeout(autoT); autoT = setTimeout(() => {
-      const ae = document.activeElement; if (ae && ae !== document.body && ae.isConnected && visible(ae) && !ae.closest('#cx-top')) return;
-      if (ae && ae.closest && ae.closest('#cx-top') && TVSTATE.lastHash === location.hash) return;
-      TVSTATE.lastHash = location.hash; const f = tvPreferred(cands()); if (f) { f.focus({ preventScroll: true }); mark(f); }
+      const ae = document.activeElement; const ok = ae && ae !== document.body && ae.isConnected && visible(ae);
+      if (ok && ae.closest('#cx-top')) return;
+      const list = cands(); const m = TVSTATE.restore;
+      if (m && Date.now() < m.until && list.length > m.i) { const e = list[m.i]; if (e && e !== ae) { e.focus({ preventScroll: true }); mark(e); try { scrollHost().scrollTo({ top: m.st }); } catch (x) { } } if (list.length > m.i + 4) TVSTATE.restore = null; return; }
+      if (ok) return;
+      const f = tvPreferred(list); if (f) { f.focus({ preventScroll: true }); mark(f); if (f.closest('.nf-hero, .nf-dinfo, #cx-top')) { try { scrollHost().scrollTo({ top: 0 }); } catch (x) { } } }
     }, 450);
   }
-  const TVSTATE = { lastHash: '' };
-  window.addEventListener('hashchange', () => { TVSTATE.lastHash = ''; });
+  const TVSTATE = { restore: null };
+  window.addEventListener('hashchange', () => { const m = MEM[location.hash]; TVSTATE.restore = m ? { i: m.i, st: m.st, until: Date.now() + 4000 } : null; });
 
   /* Back button from the app */
   window.cxTvBack = () => {

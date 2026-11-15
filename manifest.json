@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.2.0",
+                             "changelog":  "TV: focus memory, no focus stealing, roomier focus rings; scrub previews support for the TV app.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.2.0.zip",
+                             "checksum":  "c36d4f8b0c0344873d7a1ac27c401ab0",
+                             "timestamp":  "2026-11-25T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.1.0",
                              "changelog":  "TV mode setting, Quick Connect approval dialog in the account menu, cleaner TV focus and a Show all card at the end of rows.",
                              "targetAbi":  "12.4.0.0",
