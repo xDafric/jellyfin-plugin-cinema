@@ -45,7 +45,7 @@ function tvInit() {
     }
     return best;
   }
-  let lastOn = null; const mark = e => { if (lastOn && lastOn !== e) lastOn.classList.remove('tvf-on'); lastOn = e; e.classList.add('tvf-on'); if (window.tvGlow) setTimeout(() => window.tvGlow(e), 60); };
+  let lastOn = null; const mark = e => { if (lastOn && lastOn !== e) lastOn.classList.remove('tvf-on'); lastOn = e; const rowSc = e.closest('.nf-scroller, .nf-cast'); if (rowSc) rowSc._tvLast = e; e.classList.add('tvf-on'); if (window.tvGlow) setTimeout(() => window.tvGlow(e), 60); };
   document.addEventListener('focusin', e => mark(e.target), true); document.addEventListener('focusout', e => { e.target.classList && e.target.classList.remove('tvf-on'); }, true);
   /* own scroll animation: short, cancelable, always ends where it should (CSS smooth scrolling lags on TV hardware) */
   const ANIM = new WeakMap();
@@ -63,12 +63,12 @@ function tvInit() {
     e.focus({ preventScroll: true }); mark(e); remember(e);
     const r = e.getBoundingClientRect(); const horiz = dir === 'left' || dir === 'right';
     const sc = e.closest('.nf-scroller, .sp-shelf, .nf-cast, .nf-row-scroll');
-    if (horiz && sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - 80); }
+    if (horiz && sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); const pad = parseFloat(getComputedStyle(sc).paddingLeft) || 56; glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - pad, 130); }
     else if (!horiz) {
       const host = scrollHost(); const cur = host.scrollTop, pend = pendingTop(host); const top = r.top - (pend - cur); const bottom = r.bottom - (pend - cur);
       const inBand = top > 100 && bottom < innerHeight - 50;
-      if (e.closest('#cx-top')) glide(host, 'top', 0); else if (!inBand) glide(host, 'top', pend + (top + r.height / 2 - innerHeight * .55));
-      if (sc) glide(sc, 'left', 0);
+      if (e.closest('#cx-top')) glide(host, 'top', 0); else if (!inBand) glide(host, 'top', pend + (top + r.height / 2 - innerHeight * .55), 170);
+      if (sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); const pad = parseFloat(getComputedStyle(sc).paddingLeft) || 56; glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - pad, 130); }
     } else e.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   function scrollHost_() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }
@@ -83,7 +83,10 @@ function tvInit() {
     e.preventDefault(); e.stopPropagation();
     const list = cands(); let cur = ae && ae !== document.body && list.includes(ae) ? ae : (ae && ae !== document.body && ae.isConnected && visible(ae) ? ae : null);
     if (!cur) { const first = tvPreferred(list); if (first) focusEl(first, dir); return; }
-    const nx = pick(dir, cur, list); if (nx) focusEl(nx, dir);
+    let nx = pick(dir, cur, list);
+    /* Netflix style: entering another row lands on the card you last had there, or the first one */
+    if (nx && (dir === 'up' || dir === 'down')) { const sc = nx.closest('.nf-scroller, .nf-cast'); if (sc && sc !== cur.closest('.nf-scroller, .nf-cast')) { const last = sc._tvLast; if (last && last.isConnected && visible(last) !== false) nx = last; else { const inRow = list.filter(x => sc.contains(x)).sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left + sc.scrollLeft * 0); nx = inRow.find(x => x.getBoundingClientRect().left >= sc.getBoundingClientRect().left - 4) || inRow[0] || nx; } } }
+    if (nx) focusEl(nx, dir);
   }, true);
 
   const preferredSel = ['.cxd-bg.show .cxd-chip, .cxd-bg.show button', '.nf-hero .btn.white', '#cx .nf-dinfo .btn.white', '#cx .sp-card .sp-navlink.on', '#cx .nf-card', '#cx .sp-row', '#cx-top a'];

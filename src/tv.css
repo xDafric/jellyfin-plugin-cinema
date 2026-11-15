@@ -13,13 +13,13 @@ html.cx-tv #cx-glow { position: fixed; inset: 0; z-index: 0; pointer-events: non
 html.cx-tv #cx-nf { background: transparent; }
 
 /* ---- focus: a white ring (box-shadow, takes no space) + a soft glow in the poster colour ---- */
-html.cx-tv .nf-card .im, html.cx-tv .nf-person .pi { transition: transform .16s ease, box-shadow .25s ease; transform: none !important; will-change: auto; }
+html.cx-tv .nf-card .im, html.cx-tv .nf-person .pi { transition: transform .1s ease, box-shadow .15s ease; transform: none !important; will-change: auto; }
 html.cx-tv .nf-card.tvf-on { z-index: 6; }
-html.cx-tv .nf-card.tvf-on .im { transform: scale(1.05) !important; box-shadow: 0 0 0 4px #fff, 0 0 44px 8px var(--glow, rgba(255,255,255,.22)); }
-html.cx-tv .nf-person.tvf-on .pi { transform: scale(1.06) !important; box-shadow: 0 0 0 4px #fff, 0 0 36px 6px var(--glow, rgba(255,255,255,.2)); }
+html.cx-tv .nf-card.tvf-on .im { transform: scale(1.03) !important; outline: 4px solid #fff; outline-offset: 4px; box-shadow: 0 0 40px 6px var(--glow, rgba(255,255,255,.22)); }
+html.cx-tv .nf-person.tvf-on .pi { transform: none !important; outline: 4px solid #fff; outline-offset: 4px; box-shadow: 0 0 34px 5px var(--glow, rgba(255,255,255,.2)); }
 html.cx-tv .btn { transition: transform .15s ease, box-shadow .2s ease; }
-html.cx-tv .btn.tvf-on { transform: scale(1.07); box-shadow: 0 0 0 3px #fff, 0 10px 28px rgba(0,0,0,.5); position: relative; z-index: 4; }
-html.cx-tv #cx-top a.tvf-on, html.cx-tv #cx-top button.tvf-on { box-shadow: 0 0 0 3px #fff; background: rgba(255,255,255,.18); color: #fff; border-radius: 999px; }
+html.cx-tv .btn.tvf-on { transform: none; outline: 4px solid #fff; outline-offset: 3px; box-shadow: none; position: relative; z-index: 4; }
+html.cx-tv #cx-top a.tvf-on, html.cx-tv #cx-top button.tvf-on { outline: 3px solid #fff; outline-offset: 3px; background: rgba(255,255,255,.18); color: #fff; border-radius: 999px; }
 html.cx-tv #cx-top a.tvf-on.on { background: #fff; color: #000; }
 html.cx-tv .sp-row.tvf-on { background: rgba(255,255,255,.17) !important; box-shadow: inset 0 0 0 3px #fff; border-radius: 12px; }
 html.cx-tv .sp-li.tvf-on, html.cx-tv .sp-navlink.tvf-on, html.cx-tv .sp-chip.tvf-on { background: rgba(255,255,255,.17) !important; box-shadow: inset 0 0 0 3px #fff; border-radius: 12px; color: #fff; }
@@ -37,11 +37,11 @@ html.cx-tv .nf-hero { height: 70vh; margin-top: 96px; }
 html.cx-tv .nf-row { margin-bottom: 30px; }
 html.cx-tv .nf-row h2 { font-size: 22px; margin-bottom: 4px; }
 /* generous scroller padding so rings and glows are never clipped */
-html.cx-tv .nf-scroller { gap: 14px; padding: 34px var(--pad) 40px; margin: -22px 0 -28px; }
+html.cx-tv .nf-scroller { gap: 16px; padding: 64px var(--pad) 68px; margin: -52px 0 -56px; }
 html.cx-tv .nf-btns, html.cx-tv .nf-hero-btns { gap: 14px; padding: 10px 8px; margin-left: -8px; }
 html.cx-tv .nf-btns .btn, html.cx-tv .nf-hero-btns .btn { height: 54px; font-size: 18px; flex: none; min-width: 0; }
 html.cx-tv .nf-btns .btn.round { width: 54px; padding: 0; aspect-ratio: 1; }
-html.cx-tv .nf-cast { gap: 20px; padding: 30px var(--pad) 34px; margin: -18px calc(-1 * var(--pad)) -10px; }
+html.cx-tv .nf-cast { gap: 22px; padding: 56px var(--pad) 60px; margin: -44px calc(-1 * var(--pad)) -48px; }
 html.cx-tv .nf-person { width: 112px; }
 html.cx-tv .nf-person .pi { width: 112px; height: 112px; margin-bottom: 12px; }
 html.cx-tv .nf-person b { display: block; margin-top: 2px; }
