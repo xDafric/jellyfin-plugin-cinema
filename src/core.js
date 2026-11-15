@@ -161,9 +161,11 @@ function row(title, list, kind, opts) {
 /* numbered "Top 10" poster and wide spotlight card with synopsis */
 function top10Card(it, idx) { const c = card(it, 'poster'); c.classList.add('t10c'); c.prepend(h('span', { class: 'n' }, String(idx + 1))); return c; }
 function spotCard(it) {
-  const c = card(it, 'thumb'); c.classList.add('spot'); const im = c.querySelector('.im'); const ov = (it.Overview || '').replace(/<[^>]+>/g, '');
-  const meta = [it.ProductionYear, it.CommunityRating ? '★ ' + it.CommunityRating.toFixed(1) : '', it.OfficialRating].filter(Boolean).join(' · ');
-  im.append(h('div', { class: 'spot-info' }, h('b', {}, it.Name), meta ? h('small', {}, meta) : null, ov ? h('p', {}, ov) : null)); return c;
+  const bd = imgUrl(it, 'Backdrop', 900) || imgUrl(it, 'Primary', 600); const logo = imgUrl(it, 'Logo', 420);
+  const meta = [it.ProductionYear, it.OfficialRating, it.CommunityRating ? '★ ' + it.CommunityRating.toFixed(1) : ''].filter(Boolean).join('  ·  ');
+  const im = h('div', { class: 'im' }, h('div', Object.assign({ class: 'bgi' }, bg(bd))), h('div', { class: 'spot-info' }, logo ? h('img', { class: 'spot-logo', src: logo, alt: it.Name, loading: 'lazy' }) : h('b', {}, it.Name), meta ? h('small', {}, meta) : null));
+  const el = h('div', { class: 'nf-card thumb spot', onclick: () => go(itemHash(it) || ('#/details?id=' + it.Id)), oncontextmenu: e => itemMenu(e, it) }, im);
+  attachPeek(el, im, () => libDesc(it, false)); return el;
 }
 /* async row: placeholder is inserted immediately to keep order, filled when data arrives */
 function lazyRow(container, title, fn, kind, opts) {
@@ -263,7 +265,7 @@ async function listView(page) {
 Object.assign(TX.en, { srTop: 'Top result', srPeople: 'People', srMusic: 'Music', srEps: 'Episodes', srAll: 'All' });
 Object.assign(TX.de, { srTop: 'Bestes Ergebnis', srPeople: 'Personen', srMusic: 'Musik', srEps: 'Folgen', srAll: 'Alle' });
 async function searchView(page, q) {
-  const wrap = h('div', { class: 'nf-page-pad sr-page' }, h('h1', {}, t('results') + ' “' + q + '”')); page.append(wrap);
+  const wrap = h('div', { class: 'nf-page-pad srx-page' }, h('h1', {}, t('results') + ' “' + q + '”')); page.append(wrap);
   if (C.nf.sInput.value !== q) { C.nf.sInput.value = q; C.nf.sInput.parentElement.classList.add('open'); }
   wrap.append(h('div', { class: 'spinner', style: 'margin:60px auto' }));
   const get = types => items({ searchTerm: q, IncludeItemTypes: types, Limit: 40 }).then(r => r.Items).catch(() => []);
@@ -278,8 +280,8 @@ async function searchView(page, q) {
   const personCard = p => h('a', { class: 'nf-card person', href: '#/c/person/' + p.Id }, h('div', Object.assign({ class: 'pi' }, bg(imgUrl(p, 'Primary', 300)))), h('div', { class: 'title ell' }, p.Name));
   function topCard(it) {
     const bd = imgUrl(it, 'Backdrop', 1280) || imgUrl(it, 'Primary', 600); const ov = (it.Overview || '').replace(/<[^>]+>/g, '');
-    return h('div', { class: 'sr-top', onclick: () => go(itemHash(it)) }, h('div', Object.assign({ class: 'sr-top-bg' }, bg(bd))),
-      h('div', { class: 'sr-top-in' }, h('small', {}, t('srTop')), h('h2', {}, it.Name), h('div', { class: 'nf-meta' }, [it.ProductionYear, it.OfficialRating, it.CommunityRating ? '★ ' + it.CommunityRating.toFixed(1) : '', it.Type === 'Series' ? t('shows') : t('movies')].filter(Boolean).map(x => h('span', {}, x))), ov ? h('p', {}, ov) : null,
+    return h('div', { class: 'srx-top', onclick: () => go(itemHash(it)) }, h('div', Object.assign({ class: 'srx-top-bg' }, bg(bd))),
+      h('div', { class: 'srx-top-in' }, h('small', {}, t('srTop')), h('h2', {}, it.Name), h('div', { class: 'nf-meta' }, [it.ProductionYear, it.OfficialRating, it.CommunityRating ? '★ ' + it.CommunityRating.toFixed(1) : '', it.Type === 'Series' ? t('shows') : t('movies')].filter(Boolean).map(x => h('span', {}, x))), ov ? h('p', {}, ov) : null,
         h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: e => { e.stopPropagation(); playVideo(it); } }, ic('play'), t('play')), h('button', { class: 'btn grey', onclick: e => { e.stopPropagation(); go(itemHash(it)); } }, ic('info'), t('info')))));
   }
   function draw() {
@@ -288,7 +290,7 @@ async function searchView(page, q) {
     groups.filter(g => active === 'all' || g[0] === active).forEach(([k, title, list, kind]) => {
       const mk = kind === 'person' ? personCard : null;
       if (active === 'all') body.append(row(title + ' · ' + list.length, list.slice(0, 20), kind, mk ? { make: mk } : {}));
-      else body.append(h('h2', { class: 'sr-h' }, title), h('div', { class: 'nf-grid' + (kind === 'person' ? ' sr-people' : '') }, list.map(i => mk ? mk(i) : card(i, kind))));
+      else body.append(h('h2', { class: 'srx-h' }, title), h('div', { class: 'nf-grid' + (kind === 'person' ? ' srx-people' : '') }, list.map(i => mk ? mk(i) : card(i, kind))));
     });
   }
   wrap.append(tabs, body); draw(); seerrSearchRow(wrap, q);

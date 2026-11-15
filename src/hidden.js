@@ -42,9 +42,12 @@ function hxFilter(d) {
   if (d && Array.isArray(d.SearchHints)) { const n = d.SearchHints.length; d.SearchHints = d.SearchHints.filter(hxKeep); if (typeof d.TotalRecordCount === 'number') d.TotalRecordCount = Math.max(d.SearchHints.length, d.TotalRecordCount - (n - d.SearchHints.length)); }
   return d;
 }
+const STOCK_HOME = /\/UserItems\/Resume\?|\/Items\/Latest\?userId=|\/Shows\/NextUp\?userId=[^&]+&limit=/;
 window.fetch = function (input, init) {
   let url = typeof input === 'string' ? input : (input && input.url) || '';
   const method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+  /* Jellyfin's own home page loads its rows behind the Cinema overlay: skip those requests, they only slow the server down */
+  if (method === 'GET' && STOCK_HOME.test(url) && /^#\/home/.test(location.hash) && document.documentElement.classList.contains('cx-on')) return Promise.resolve(new Response(/\/Latest\?/.test(url) ? '[]' : '{"Items":[],"TotalRecordCount":0,"StartIndex":0}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
   if (HID.on || method !== 'GET' || !HX_LIST.test(url) || !window.ApiClient || !ApiClient.getCurrentUserId || !ApiClient.getCurrentUserId()) return _rawFetch(input, init);
   let want = 0;
   if (typeof input === 'string' && HID.ids.size && /[?&]Limit=(\d+)/i.test(url) && !/[?&]StartIndex=[1-9]/i.test(url)) { want = +RegExp.$1; input = url.replace(/([?&]Limit=)\d+/i, '$1' + (want + Math.min(HID.ids.size, 80))); }

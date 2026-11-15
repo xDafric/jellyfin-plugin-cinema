@@ -45,13 +45,8 @@ async function homeView2(page) {
     lazyRow(rows, title, () => d.run(s), d.kind || 'poster', { min: d.min, href: d.href || (d.custom ? '#/c/browse/' + s.id + '/' + encodeURIComponent(s.param) : undefined), min: d.min || (d.custom ? 4 : 1) });
   };
   first.forEach(render);
-  if (!rest.length && cfg('infinite') !== false) endlessRows(rows, page);
-  if (rest.length) {
-    const sentinel = h('div', { style: 'height:2px' }); page.append(sentinel); let idx = 0;
-    const next = () => { const s = rest[idx++]; if (s) render(s); if (idx >= rest.length) { io.disconnect(); sentinel.remove(); if (cfg('infinite') !== false) endlessRows(rows, page); } };
-    const io = new IntersectionObserver(es => { if (es[0].isIntersecting) next(); }, { root: C.nf.el, rootMargin: '600px' });
-    if (cfg('infinite') === false) rest.forEach(render); else io.observe(sentinel);
-  }
+  if (rest.length) rest.forEach((s_, i) => setTimeout(() => { if (rows.isConnected) render(s_); }, 350 + i * 220));
+  if (cfg('infinite') !== false) setTimeout(() => { if (rows.isConnected) endlessRows(rows, page); }, 350 + rest.length * 220);
 }
 function seerrRow(container, title, path) {
   const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
