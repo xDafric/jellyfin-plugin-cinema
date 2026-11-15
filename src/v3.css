@@ -1,0 +1,26 @@
+/* ===== v3: peek popover replaces card hover ===== */
+.nf-card .info, .nf-card .im::before, .nf-card .im::after { display: none !important; }
+.nf-card .im { transform: none !important; transition: box-shadow .3s, filter .3s; will-change: auto; }
+.nf-card .im .bgi { transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+@media (hover: hover) and (pointer: fine) { .nf-card:hover .im { box-shadow: 0 0 0 2px rgba(255,255,255,.55); } .nf-card:hover .im .bgi { transform: scale(1.04); } }
+.nf-peek { position: fixed; z-index: 9060; border-radius: 20px; overflow: hidden; background: #1c1c20; box-shadow: 0 30px 80px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.09); opacity: 0; transform: scale(.94) translateY(8px); transition: opacity .2s, transform .28s cubic-bezier(.2,.8,.2,1); pointer-events: none; font-family: "Inter", system-ui, sans-serif; color: #fff; }
+.nf-peek.show { opacity: 1; transform: none; pointer-events: auto; }
+.nf-peek .pi { position: relative; aspect-ratio: 16/9; background: #2a2a2f; cursor: pointer; overflow: hidden; }
+.nf-peek .pi .bgi { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.nf-peek .pi::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, #1c1c20 4%, rgba(28,28,32,0) 60%); }
+.nf-peek .pt { position: absolute; z-index: 2; left: 16px; right: 16px; bottom: 10px; font-weight: 800; font-size: 19px; letter-spacing: -.01em; text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+.nf-peek .pb { padding: 6px 16px 16px; }
+.nf-peek .pa { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.nf-peek .pa button { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.12); display: grid; place-items: center; transition: background .2s, transform .15s; }
+.nf-peek .pa button:hover { background: rgba(255,255,255,.24); transform: scale(1.08); }
+.nf-peek .pa button.pl { background: #fff; color: #000; }
+.nf-peek .pa .sp { flex: 1; }
+.nf-peek .pa svg { width: 20px; height: 20px; }
+.nf-peek .pm { font-size: 12.5px; color: #cfcfd5; display: flex; gap: 6px 10px; flex-wrap: wrap; align-items: center; }
+.nf-peek .pm .g { color: #5ee08a; font-weight: 700; }
+.nf-peek .pm .badge { border: 1px solid rgba(255,255,255,.35); padding: 0 6px; border-radius: 5px; line-height: 18px; }
+.nf-peek .pm span + span::before { content: "•"; margin-right: 10px; opacity: .45; }
+.nf-peek .po { font-size: 13px; color: #b6b6bd; margin-top: 10px; line-height: 1.45; }
+#cx-cover { position: fixed; inset: 0; z-index: 9700; background: #0d0d0f; display: none; place-items: center; }
+#cx-cover.show { display: grid; }
+html.cx-on:not(.transparentDocument) #reactRoot { visibility: hidden; }

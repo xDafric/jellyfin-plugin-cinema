@@ -1,0 +1,74 @@
+/* =====================================================================
+   PLUGIN PAGE SKIN (Jellyfin Enhanced, Seerr, Kefin) - scoped to html.cx-pskin
+   Toggle: avatar menu > Plugin page styling, or cinemaUI.skin(false) in the console.
+   ===================================================================== */
+html.cx-pskin { --pk-surface: #17171a; --pk-surface-2: #1f1f24; --pk-line: rgba(255,255,255,.07); --pk-accent: #fff; --pk-accent-text: #000; }
+
+/* ---------- calendar ---------- */
+html.cx-pskin .je-calendar-page { padding-top: 4px; }
+html.cx-pskin .je-calendar-day { background: var(--pk-surface) !important; border: 1px solid var(--pk-line) !important; border-radius: 16px !important; box-shadow: none; transition: background .2s; }
+html.cx-pskin .je-calendar-day:hover { background: var(--pk-surface-2) !important; }
+html.cx-pskin .je-calendar-day.je-calendar-today { border-color: rgba(255,255,255,.4) !important; background: #1d1d22 !important; }
+html.cx-pskin .je-calendar-day-number, html.cx-pskin .je-calendar-day-name, html.cx-pskin .je-calendar-weekday, html.cx-pskin .je-calendar-month-day-name { font-weight: 600; color: #d8d8dc !important; }
+html.cx-pskin .je-calendar-day.je-calendar-today .je-calendar-day-number, html.cx-pskin .je-calendar-day.je-calendar-today .je-calendar-day-name { color: #fff !important; }
+html.cx-pskin .je-calendar-card, html.cx-pskin .je-calendar-event { border-radius: 12px !important; overflow: hidden; border: 1px solid var(--pk-line) !important; }
+html.cx-pskin .je-calendar-card-image, html.cx-pskin .je-calendar-card-image-wrap { border-radius: 12px !important; }
+html.cx-pskin .je-calendar-play-btn, html.cx-pskin .je-calendar-play-btn-card { border-radius: 50% !important; background: #fff !important; color: #000 !important; }
+html.cx-pskin .je-calendar-view-btn, html.cx-pskin .je-calendar-mode-btn, html.cx-pskin .je-calendar-nav-btn, html.cx-pskin .je-calendar-nav-today, html.cx-pskin .je-calendar-filter-btn, html.cx-pskin .je-calendar-filter-toggle, html.cx-pskin .je-calendar-group-toggle {
+  border-radius: 999px !important; background: rgba(255,255,255,.07) !important; border: 1px solid transparent !important; color: #e6e6ea !important; font-weight: 600; transition: background .2s; }
+html.cx-pskin .je-calendar-view-btn:hover, html.cx-pskin .je-calendar-mode-btn:hover, html.cx-pskin .je-calendar-nav-btn:hover, html.cx-pskin .je-calendar-nav-today:hover { background: rgba(255,255,255,.14) !important; }
+html.cx-pskin .je-calendar-view-btn.active, html.cx-pskin .je-calendar-mode-btn.active { background: #fff !important; color: #000 !important; border-color: #fff !important; }
+html.cx-pskin .je-calendar-nav-btn { width: 38px; height: 38px; padding: 0 !important; }
+html.cx-pskin .je-calendar-legend-item { border-radius: 999px !important; background: rgba(255,255,255,.06) !important; border: 1px solid transparent !important; padding: 7px 14px !important; }
+html.cx-pskin .je-calendar-legend-item.active { border-color: rgba(255,255,255,.5) !important; background: rgba(255,255,255,.12) !important; }
+html.cx-pskin .je-calendar-sidebar, html.cx-pskin .je-calendar-sidebar-content { background: var(--pk-surface) !important; border-radius: 20px !important; border: 1px solid var(--pk-line) !important; }
+html.cx-pskin .je-calendar-title { font-weight: 800; letter-spacing: -.02em; }
+html.cx-pskin .je-calendar-agenda-row, html.cx-pskin .je-calendar-agenda-event { border-radius: 14px !important; }
+html.cx-pskin .je-calendar-agenda-event { background: var(--pk-surface) !important; border: 1px solid var(--pk-line) !important; }
+
+/* ---------- requests / downloads / issues ---------- */
+html.cx-pskin .je-request-card, html.cx-pskin .je-download-card, html.cx-pskin .je-issue-card { background: var(--pk-surface) !important; border: 1px solid var(--pk-line) !important; border-radius: 22px !important; box-shadow: none !important; transition: transform .25s, background .25s; }
+html.cx-pskin .je-request-card:hover, html.cx-pskin .je-download-card:hover { background: var(--pk-surface-2) !important; transform: translateY(-2px); }
+html.cx-pskin .je-request-poster, html.cx-pskin .je-download-poster { border-radius: 14px !important; overflow: hidden; }
+html.cx-pskin .je-request-title, html.cx-pskin .je-download-title { font-weight: 700; letter-spacing: -.01em; }
+html.cx-pskin .je-requests-tab, html.cx-pskin .je-issues-tab, html.cx-pskin .je-downloads-tab { border-radius: 999px !important; background: rgba(255,255,255,.07) !important; border: 1px solid transparent !important; color: #e6e6ea !important; font-weight: 600 !important; padding: 8px 18px !important; transition: background .2s; }
+html.cx-pskin .je-requests-tab:hover, html.cx-pskin .je-issues-tab:hover, html.cx-pskin .je-downloads-tab:hover { background: rgba(255,255,255,.14) !important; }
+html.cx-pskin .je-requests-tab.active, html.cx-pskin .je-issues-tab.active, html.cx-pskin .je-downloads-tab.active { background: #fff !important; color: #000 !important; border-color: #fff !important; }
+html.cx-pskin .je-request-watch-btn, html.cx-pskin .je-refresh-btn { background: #fff !important; color: #000 !important; border-radius: 50% !important; box-shadow: none !important; }
+html.cx-pskin .je-request-approve-btn { border-radius: 999px !important; }
+html.cx-pskin .je-request-decline-btn { border-radius: 999px !important; }
+html.cx-pskin .je-request-external-link, html.cx-pskin .je-issue-view-btn { border-radius: 50% !important; }
+html.cx-pskin .je-requests-status-chip, html.cx-pskin .je-status-chip, html.cx-pskin .je-issue-status-chip, html.cx-pskin .je-issue-type-chip, html.cx-pskin .je-download-badge, html.cx-pskin .je-arr-badge, html.cx-pskin .je-release-date-chip { border-radius: 999px !important; font-weight: 600; letter-spacing: .02em; }
+html.cx-pskin .je-download-progress-container, html.cx-pskin .je-download-progress { border-radius: 999px !important; overflow: hidden; }
+html.cx-pskin .je-download-progress-bar { border-radius: 999px !important; background: #fff !important; }
+html.cx-pskin .je-downloads-search-input { border-radius: 999px !important; background: var(--pk-surface-2) !important; border: 1px solid var(--pk-line) !important; }
+html.cx-pskin .je-pagination button, html.cx-pskin .je-pagination a { border-radius: 999px !important; }
+html.cx-pskin .je-empty-state { color: #8c8c94; }
+html.cx-pskin .je-downloads-section .je-section-icon { color: #fff; }
+
+/* ---------- discover (Seerr) ---------- */
+html.cx-pskin .je-recommendations-title { font-weight: 800; letter-spacing: -.02em; }
+html.cx-pskin .jellyseerr-card { border-radius: 20px !important; overflow: hidden; background: var(--pk-surface) !important; border: 1px solid var(--pk-line); transition: transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s; }
+html.cx-pskin .jellyseerr-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,.5); }
+html.cx-pskin .jellyseerr-poster-image, html.cx-pskin .je-tile-image, html.cx-pskin .je-genre-tile-image, html.cx-pskin .je-genre-tile-backdrop { border-radius: 18px !important; }
+html.cx-pskin .jellyseerr-media-badge, html.cx-pskin .jellyseerr-status-badge, html.cx-pskin .jellyseerr-collection-badge { border-radius: 999px !important; backdrop-filter: blur(8px); font-weight: 700; }
+html.cx-pskin .jellyseerr-request-button, html.cx-pskin .jellyseerr-split-main { border-radius: 999px !important; font-weight: 600; }
+html.cx-pskin .jellyseerr-split-arrow { border-radius: 0 999px 999px 0 !important; }
+html.cx-pskin .jellyseerr-hover-popover, html.cx-pskin .jellyseerr-4k-popup, html.cx-pskin .je-4k-popup { border-radius: 16px !important; background: rgba(28,28,32,.97) !important; backdrop-filter: blur(16px); }
+html.cx-pskin .je-scroll-btn { border-radius: 50% !important; background: rgba(30,30,34,.85) !important; backdrop-filter: blur(8px); border: 1px solid var(--pk-line) !important; }
+html.cx-pskin .je-genre-tile-title { font-weight: 800; }
+
+/* ---------- modals ---------- */
+html.cx-pskin .je-more-info-modal { border-radius: 26px !important; background: #17171a !important; border: 1px solid var(--pk-line); box-shadow: 0 30px 80px rgba(0,0,0,.7) !important; overflow: hidden; }
+html.cx-pskin .je-collection-card { border-radius: 18px !important; overflow: hidden; }
+html.cx-pskin .je-more-info-stats-panel, html.cx-pskin .je-more-info-right-panel { border-radius: 18px !important; background: var(--pk-surface-2) !important; }
+html.cx-pskin .je-modal-play-button, html.cx-pskin .je-more-info-button-group button { border-radius: 999px !important; }
+html.cx-pskin .je-launcher-panel, html.cx-pskin #je-header-launcher-panel { border-radius: 22px !important; background: rgba(28,28,32,.97) !important; border: 1px solid var(--pk-line) !important; }
+
+/* ---------- Kefin watchlist / custom pages ---------- */
+html.cx-pskin .kefin-custom-page-active .sectionTitle, html.cx-pskin [class*="watchlist"] h1, html.cx-pskin [class*="watchlist"] h2 { font-weight: 800; letter-spacing: -.02em; }
+html.cx-pskin [class*="watchlist"] button, html.cx-pskin [class*="kefin"] button.emby-button { border-radius: 999px; }
+html.cx-pskin [class*="watchlist"] .card, html.cx-pskin [class*="watchlist"] .cardBox { border-radius: 16px !important; }
+html.cx-pskin [class*="kefin"] input, html.cx-pskin [class*="kefin"] select { border-radius: 12px !important; background: var(--pk-surface-2) !important; border: 1px solid var(--pk-line) !important; }
+html.cx-pskin [class*="kefin"] .card:hover .cardBox, html.cx-pskin [class*="watchlist"] .card:hover .cardBox { transform: translateY(-4px); transition: transform .25s; }
+html.cx-frame { --je-sticky-top: 72px; }

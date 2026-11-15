@@ -1,0 +1,8 @@
+dist/
+release/
+plugin/**/bin/
+plugin/**/obj/
+backup-original-custom-css.css
+INSTALL.md
+*.user
+.vs/

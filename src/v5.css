@@ -1,0 +1,31 @@
+/* Seerr modal, downloads, calendar, Aurral tiles */
+.sr-modal { width: min(720px, 100%); max-height: 92vh; overflow-y: auto; background: #17171a; border-radius: 26px; box-shadow: 0 30px 90px rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.08); color: #fff; font-family: "Inter", system-ui, sans-serif; }
+.sr-hero { position: relative; height: 240px; background: #222 center/cover; } .sr-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, #17171a, rgba(23,23,26,0) 70%); }
+.sr-close { position: absolute; z-index: 2; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(0,0,0,.55); display: grid; place-items: center; }
+.sr-body { padding: 0 28px 28px; margin-top: -48px; position: relative; z-index: 1; }
+.sr-body h2 { font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 10px; }
+.sr-ov { color: #cfcfd5; line-height: 1.6; font-size: 15px; margin: 14px 0; }
+.sr-status { margin: 6px 0; }
+.sr-seasons { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.sr-seasons .nf-chip.dis { opacity: .45; cursor: default; }
+.sr-cast { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .sr-cast span { font-size: 12.5px; padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.07); color: #cfcfd5; }
+.btn:disabled { opacity: .6; cursor: default; }
+.dl-box { background: #17171a; border: 1px solid rgba(255,255,255,.06); border-radius: 22px; padding: 20px 22px; margin: 0 0 26px; }
+.dl-box h2 { margin: 0 0 12px; font-size: 18px; }
+.dl-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 320px); gap: 20px; align-items: center; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.05); }
+.dl-t { display: flex; flex-direction: column; min-width: 0; } .dl-t span { font-size: 12.5px; color: #8d8d95; margin-top: 2px; }
+.dl-p { display: flex; align-items: center; gap: 12px; } .dl-p .prog { position: static; flex: 1; height: 6px; border-radius: 6px; background: rgba(255,255,255,.14); overflow: hidden; } .dl-p .prog i { display: block; height: 100%; background: #fff; border-radius: 6px; } .dl-p b { font-size: 13px; width: 40px; text-align: right; }
+.cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; } .cal-head b { font-size: 20px; min-width: 190px; text-align: center; text-transform: capitalize; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.cal-dow { text-align: center; color: #8d8d95; font-size: 13px; font-weight: 600; padding: 4px 0; }
+.cal-day { min-height: 130px; background: #17171a; border: 1px solid rgba(255,255,255,.05); border-radius: 16px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.cal-day.other { opacity: .4; } .cal-day.today { border-color: rgba(255,255,255,.45); background: #1d1d22; }
+.cal-day .n { font-size: 13px; font-weight: 700; color: #cfcfd5; }
+.cal-ev { display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 10px; background: rgba(255,255,255,.06); cursor: pointer; min-width: 0; font-size: 12px; position: relative; }
+.cal-ev:hover { background: rgba(255,255,255,.14); }
+.cal-ev .p { width: 26px; height: 38px; border-radius: 5px; background: #333 center/cover; flex: none; }
+.cal-ev > span { font-weight: 600; flex: 1; min-width: 0; } .cal-ev small { position: absolute; left: 36px; bottom: 3px; color: #8d8d95; font-size: 10.5px; max-width: calc(100% - 40px); }
+.cal-ev.have { box-shadow: inset 3px 0 0 #34c759; } .cal-ev.digital { box-shadow: inset 3px 0 0 #bf5af2; } .cal-ev.physical { box-shadow: inset 3px 0 0 #ff9f0a; } .cal-ev.cinema { box-shadow: inset 3px 0 0 #0a84ff; } .cal-ev.episode { box-shadow: inset 3px 0 0 #64d2ff; }
+.cal-ev > span { padding-bottom: 12px; }
+@media (max-width: 800px) { .cal-grid { grid-template-columns: 1fr; } .cal-dow { display: none; } .cal-day.other { display: none; } .cal-day { min-height: 0; } .dl-row { grid-template-columns: 1fr; gap: 6px; } }
+.sp-tile .pbtn.busy { opacity: .5; pointer-events: none; }

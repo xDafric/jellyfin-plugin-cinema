@@ -1,0 +1,116 @@
+/* =====================================================================
+   INTEGRATION: persistent top bar, hover, rounder icons
+   ===================================================================== */
+:is(#cx, #cx-ui) svg path { stroke: currentColor; stroke-width: .4; stroke-linejoin: round; stroke-linecap: round; }
+#cx-ui .nf-nav { position: fixed; z-index: 9100; display: none; }
+#cx-ui .nf-nav.solid { background: rgba(17,17,19,.9); }
+.nf-pillbtn { display: inline-flex; align-items: center; gap: 4px; padding: 9px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; color: #d6d6d9; }
+.nf-pillbtn:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nf-more .nf-pop { left: 0; right: auto; }
+.nf-pop a { display: flex !important; align-items: center; gap: 12px; }
+.nf-pop a.on { background: rgba(255,255,255,.1); }
+.m-opt { display: none !important; }
+.nf-pop.up { position: fixed; right: 12px; left: auto; top: auto; bottom: 88px; z-index: 9200; }
+@media (max-width: 1280px) { .nf-links a.opt { display: none; } .m-opt { display: flex !important; } }
+@media (max-width: 1000px) { .nf-links a[data-k="watchlist"] { display: none; } }
+.cx-tabs.hide { display: none !important; }
+#cx-ui .cx-tabs { z-index: 9100; }
+@media (min-width: 801px) { #cx-ui .cx-tabs, #cx-ui .nf-pop.up { display: none !important; } }
+#cx-ui .nf-pop.hide { display: none !important; }
+
+/* richer card hover: tilt, spotlight, zooming image, info overlay */
+.nf-card .im { transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: preserve-3d; will-change: transform; }
+.nf-card .im .bgi { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform .7s cubic-bezier(.2,.7,.2,1); }
+.nf-card .im::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.22), rgba(255,255,255,0) 65%); }
+.nf-card .im::after { z-index: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .nf-card .im { transition: transform .12s ease-out, box-shadow .35s; }
+  .nf-card:hover .im { transform: perspective(800px) translateY(-6px) scale(1.04) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); box-shadow: 0 22px 44px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.18); }
+  .nf-card:hover .im::before { opacity: 1; }
+  .nf-card:hover .im .bgi { transform: scale(1.1); }
+}
+.nf-card .info { z-index: 3; flex-wrap: wrap; align-items: flex-end; gap: 6px 8px; left: 14px; right: 14px; bottom: 14px; }
+.nf-card .info .t { flex: 1 0 100%; font-size: 15px; font-weight: 700; }
+.nf-card .info .m { display: flex !important; flex: 1 0 100%; gap: 8px; font-size: 12px; color: #d4d4d8; margin-bottom: 4px; }
+.nf-card .info .m span + span::before { content: "•"; margin-right: 8px; opacity: .5; }
+.nf-card .acts { display: flex !important; gap: 8px; width: 100%; order: 3; }
+.nf-card .acts button { display: grid !important; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.18); backdrop-filter: blur(8px); border: 0 !important; place-items: center; transition: transform .2s, background .2s; }
+.nf-card .acts button svg { width: 18px; height: 18px; }
+.nf-card .acts button:hover { background: rgba(255,255,255,.3); transform: scale(1.1); }
+.nf-card .acts button.pl { background: #fff; color: #000; order: 0; }
+.nf-card.poster .info { left: 10px; right: 10px; bottom: 10px; }
+.nf-card.poster .info .t { display: block; font-size: 13px; }
+.nf-card.poster .info .m { font-size: 11px; }
+.nf-card.poster .acts button { width: 34px; height: 34px; }
+.nf-card.poster .acts button:nth-child(3) { display: none !important; }
+
+/* =====================================================================
+   NATIVE JELLYFIN PAGES (settings, dashboard, plugin pages) - skinned to match
+   ===================================================================== */
+html.cx-ready:not(.transparentDocument) body, html.cx-ready:not(.transparentDocument) .backgroundContainer, html.cx-ready:not(.transparentDocument) .skinBody { background: #111113 !important; }
+html.cx-ready.transparentDocument body, html.cx-ready.transparentDocument .backgroundContainer, html.cx-ready.transparentDocument .skinBody { background: transparent !important; }
+html.cx-ready :where(body, button, input, select, textarea, h1, h2, h3, h4, .MuiTypography-root, .MuiButtonBase-root, .listItemBodyText, .sectionTitle, .emby-input, .emby-select) { font-family: "Inter", "Segoe UI", system-ui, sans-serif; }
+html.cx-ready body { color: #e8e8ec; }
+html.cx-frame .skinHeader, html.cx-frame .MuiAppBar-root, html.cx-frame .headerTabs, html.cx-frame .mainDrawerHandle { display: none !important; }
+html.cx-frame .page, html.cx-frame .mainAnimatedPage { padding-top: 92px !important; }
+html.cx-frame .padded-top-focusscale, html.cx-frame .padded-top { padding-top: 0 !important; }
+html.cx-ready .skinHeader, html.cx-ready .MuiAppBar-root { background: rgba(17,17,19,.9) !important; backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,.06) !important; box-shadow: none !important; }
+html.cx-ready .MuiDrawer-paper, html.cx-ready .mainDrawer { background: #0d0d0f !important; border-right: 1px solid rgba(255,255,255,.06) !important; }
+html.cx-ready .MuiListItemButton-root, html.cx-ready .navMenuOption { border-radius: 12px !important; margin: 2px 10px !important; width: auto !important; transition: background .2s; }
+html.cx-ready .MuiListItemButton-root.Mui-selected, html.cx-ready .navMenuOption-selected { background: rgba(255,255,255,.1) !important; }
+html.cx-ready .MuiListItemButton-root:hover, html.cx-ready .navMenuOption:hover { background: rgba(255,255,255,.07) !important; }
+html.cx-ready .MuiPaper-root, html.cx-ready .paperList, html.cx-ready .dialog, html.cx-ready .actionSheet, html.cx-ready .formDialog { background: #1a1a1e !important; border-radius: 18px !important; color: #e8e8ec; box-shadow: 0 8px 30px rgba(0,0,0,.35) !important; border: 1px solid rgba(255,255,255,.05); }
+html.cx-ready .MuiMenu-paper, html.cx-ready .MuiPopover-paper { background: rgba(28,28,32,.97) !important; backdrop-filter: blur(20px); border-radius: 16px !important; }
+html.cx-ready .MuiMenuItem-root { border-radius: 10px !important; margin: 2px 6px !important; }
+html.cx-ready .MuiButton-root, html.cx-ready .emby-button.raised, html.cx-ready .button-submit, html.cx-ready .raised { border-radius: 999px !important; text-transform: none !important; font-weight: 600; }
+html.cx-ready .raised, html.cx-ready .button-submit, html.cx-ready .MuiButton-contained { background: #fff !important; color: #000 !important; box-shadow: none !important; }
+html.cx-ready .raised:hover, html.cx-ready .button-submit:hover, html.cx-ready .MuiButton-contained:hover { background: #e4e4e8 !important; }
+html.cx-ready .emby-input, html.cx-ready .emby-select, html.cx-ready .emby-textarea, html.cx-ready .MuiInputBase-root, html.cx-ready .MuiOutlinedInput-root { background: #1f1f24 !important; border-radius: 12px !important; border: 1px solid rgba(255,255,255,.08) !important; color: #fff; }
+html.cx-ready .emby-input:focus, html.cx-ready .emby-select:focus, html.cx-ready .emby-textarea:focus { border-color: rgba(255,255,255,.5) !important; outline: 0; }
+html.cx-ready .MuiOutlinedInput-notchedOutline { border: 0 !important; }
+html.cx-ready .listItem, html.cx-ready .listItem-border { border-radius: 14px !important; border-color: rgba(255,255,255,.06) !important; transition: background .2s; }
+html.cx-ready .listItem:hover { background: rgba(255,255,255,.05) !important; }
+html.cx-ready .cardScalable, html.cx-ready .cardImageContainer, html.cx-ready .cardImage, html.cx-ready .cardBox { border-radius: 14px !important; }
+html.cx-ready .cardText { color: #d4d4d8; }
+html.cx-ready .sectionTitle, html.cx-ready .sectionTitle-cards { font-weight: 700; letter-spacing: -.01em; }
+html.cx-ready .emby-tab-button { border-radius: 999px !important; }
+html.cx-ready .emby-tab-button-active { background: #fff !important; color: #000 !important; }
+html.cx-ready .checkboxIcon, html.cx-ready .emby-checkbox:checked + span + .checkboxOutline { border-radius: 6px !important; }
+html.cx-ready .emby-checkbox:checked + span::before, html.cx-ready .emby-radio:checked + span::before { background: #fff !important; }
+html.cx-ready ::-webkit-scrollbar { width: 12px; height: 12px; }
+html.cx-ready ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); border-radius: 12px; border: 3px solid transparent; background-clip: content-box; }
+html.cx-ready .MuiChip-root, html.cx-ready .MuiAvatar-root { border-radius: 999px; }
+html.cx-ready .MuiIconButton-root, html.cx-ready .paper-icon-button-light, html.cx-ready .headerButton { border-radius: 50% !important; }
+
+/* settings menu rows as rounded cards */
+html.cx-ready .listItem-border { background: #1a1a1e !important; margin: 0 0 10px !important; padding: 14px 18px !important; border: 1px solid rgba(255,255,255,.05) !important; }
+html.cx-ready .listItem-border:hover { background: #222227 !important; }
+html.cx-ready .listItem-border .listItemIcon { background: rgba(255,255,255,.1) !important; color: #fff; border-radius: 12px !important; width: 40px; height: 40px; display: grid; place-items: center; }
+html.cx-ready .listItem-border .listItemBodyText { font-weight: 600; font-size: 15px; }
+html.cx-ready .readOnlyContent h2, html.cx-ready .userProfilesIntro { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+html.cx-ready .dashboardColumn .cardBox, html.cx-ready .dashboardSection .card { background: #1a1a1e !important; }
+html.cx-ready .MuiToolbar-root { background: transparent; }
+html.cx-ready .MuiDrawer-paper .MuiListSubheader-root { background: transparent !important; text-transform: none; font-weight: 600; color: #8c8c94; }
+.nf-card.poster .info .t, .nf-card.poster .info .m { display: none !important; }
+.nf-card.poster .info { justify-content: center; }
+.nf-card.poster .acts { justify-content: center; }
+.nf-card .info .acts { pointer-events: auto; }
+
+/* hover overlay lives inside the image now */
+.nf-card .im .info { position: absolute; left: 12px; right: 12px; bottom: 12px; top: auto; background: none; padding: 0; box-shadow: none; border-radius: 0; opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s; }
+.nf-card.poster .im .info { left: 10px; right: 10px; bottom: 10px; }
+@media (hover: hover) and (pointer: fine) { .nf-card:hover .im .info { opacity: 1; transform: none; transition-delay: .08s; } }
+.nf-card .im .info .t { text-shadow: 0 1px 8px rgba(0,0,0,.8); }
+:is(#cx, #cx-ui) .ic-s svg path, :is(#cx, #cx-ui) .nf-card .acts svg path { stroke-width: .3; }
+
+/* Discover (Seerr) cards: same look as library cards, plus an ownership mark */
+.dmark { position: absolute; top: 10px; left: 10px; z-index: 4; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px 4px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .01em; color: #e8e8ec; background: rgba(17,17,19,.72); backdrop-filter: blur(10px); border: 1px dashed rgba(255,255,255,.4); }
+.dmark svg { width: 12px !important; height: 12px !important; }
+.dmark.own { border-style: solid; border-color: rgba(94,224,138,.5); color: #7cf0a3; }
+.dmark.req { border-style: solid; border-color: rgba(255,196,87,.5); color: #ffd27a; }
+.nf-card.notown .im { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.12); }
+.nf-card.notown .im .bgi { filter: saturate(.85) brightness(.92); }
+.nf-card.notown:hover .im .bgi { filter: none; }
+/* menus now live in #cx-ui */
+.sp-menu button { background: none; color: #eee; font-size: 14px; }

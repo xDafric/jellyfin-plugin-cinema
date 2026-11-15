@@ -1,0 +1,21 @@
+[
+  {
+    "guid": "8f3b6a1e-5d2c-4c7a-9e41-3b7d0c1a2f64",
+    "name": "Cinema",
+    "description": "Netflix and Spotify style interface with built-in Seerr, Radarr, Sonarr and Aurral support.",
+    "overview": "A modern replacement front end: Netflix-style home, Spotify-style music, watchlist, Seerr requests and discovery, download progress, release calendar and music requests through Aurral.",
+    "owner": "Dafric",
+    "category": "General",
+    "imageUrl": "",
+    "versions": [
+      {
+        "version": "1.0.1.0",
+        "changelog": "Brand name fix, Aurral discovery shelves, modal cleanup, no-restart interface updates.",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.1.0.zip",
+        "checksum": "8d13bcb63d8134b8249f6b75443e7e0e",
+        "timestamp": "2026-11-15T13:00:00Z"
+      }
+    ]
+  }
+]

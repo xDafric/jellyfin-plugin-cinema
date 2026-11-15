@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Cinema</title>
+</head>
+<body>
+<div id="CinemaConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+    <div data-role="content">
+        <div class="content-primary">
+            <h2>Cinema</h2>
+            <p>Connect the services the Cinema interface uses. Keys stay on the server and are never sent to browsers.</p>
+            <form id="CinemaConfigForm">
+                <h3>Seerr / Jellyseerr / Overseerr</h3>
+                <div class="inputContainer"><input is="emby-input" type="text" id="SeerrUrl" label="URL (e.g. http://seerr:5055)" /></div>
+                <div class="inputContainer"><input is="emby-input" type="password" id="SeerrApiKey" label="Administrator API key" /></div>
+                <button is="emby-button" type="button" class="raised" data-test="seerr">Test connection</button>
+
+                <h3>Radarr</h3>
+                <div class="inputContainer"><input is="emby-input" type="text" id="RadarrUrl" label="URL (e.g. http://radarr:7878)" /></div>
+                <div class="inputContainer"><input is="emby-input" type="password" id="RadarrApiKey" label="API key" /></div>
+                <button is="emby-button" type="button" class="raised" data-test="radarr">Test connection</button>
+
+                <h3>Sonarr</h3>
+                <div class="inputContainer"><input is="emby-input" type="text" id="SonarrUrl" label="URL (e.g. http://sonarr:8989)" /></div>
+                <div class="inputContainer"><input is="emby-input" type="password" id="SonarrApiKey" label="API key" /></div>
+                <button is="emby-button" type="button" class="raised" data-test="sonarr">Test connection</button>
+
+                <h3>Aurral (music requests and discovery)</h3>
+                <div class="inputContainer"><input is="emby-input" type="text" id="AurralUrl" label="URL (e.g. http://aurral:3001)" /></div>
+                <div class="inputContainer"><input is="emby-input" type="password" id="AurralApiKey" label="API key (Aurral, Settings, General, API access)" /></div>
+                <button is="emby-button" type="button" class="raised" data-test="aurral">Test connection</button>
+
+                <h3>Options</h3>
+                <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="InjectEarly" /><span>Load the Cinema interface before the page renders (needs the File Transformation plugin)</span></label>
+                <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="ShareQueue" /><span>Let every user see download progress and the release calendar</span></label>
+
+                <div style="margin-top:1.5em">
+                    <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+                </div>
+                <p id="CinemaTestResult" style="margin-top:1em"></p>
+            </form>
+        </div>
+    </div>
+    <script type="text/javascript">
+        (function () {
+            var pluginId = '8f3b6a1e-5d2c-4c7a-9e41-3b7d0c1a2f64';
+            var fields = ['SeerrUrl', 'SeerrApiKey', 'RadarrUrl', 'RadarrApiKey', 'SonarrUrl', 'SonarrApiKey', 'AurralUrl', 'AurralApiKey'];
+            var checks = ['InjectEarly', 'ShareQueue'];
+            var page = document.querySelector('#CinemaConfigPage');
+
+            page.addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (c) {
+                    fields.forEach(function (f) { page.querySelector('#' + f).value = c[f] || ''; });
+                    checks.forEach(function (f) { page.querySelector('#' + f).checked = c[f] !== false; });
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+
+            page.querySelector('#CinemaConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (c) {
+                    fields.forEach(function (f) { c[f] = page.querySelector('#' + f).value.trim(); });
+                    checks.forEach(function (f) { c[f] = page.querySelector('#' + f).checked; });
+                    ApiClient.updatePluginConfiguration(pluginId, c).then(Dashboard.processPluginConfigurationUpdateResult);
+                });
+            });
+
+            page.querySelectorAll('[data-test]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var out = page.querySelector('#CinemaTestResult');
+                    out.textContent = 'Testing ' + btn.dataset.test + ' (save first if you changed the fields)...';
+                    ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + btn.dataset.test)).then(function (r) {
+                        out.textContent = btn.dataset.test + ': ' + (r.ok ? 'connected' : 'failed') + (r.message ? ' (' + r.message + ')' : '');
+                    }).catch(function () { out.textContent = btn.dataset.test + ': request failed'; });
+                });
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>
