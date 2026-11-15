@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.0.9.0",
+                             "changelog":  "Own editors for images, metadata, identify, refresh and delete (no more native frame), Android app fullscreen, phone safe areas.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.9.0.zip",
+                             "checksum":  "3456f70c85f0b863309042db0da3a37d",
+                             "timestamp":  "2026-11-21T12:00:00Z"
+                         },
+                         {
                              "version":  "1.0.8.0",
                              "changelog":  "Fixed native action dialogs (transparent, pre-warmed frame), touch player overlay and fullscreen, stale detail page after playback, music on phones (header chips, swipe-down player), touch smoothness.",
                              "targetAbi":  "12.4.0.0",

@@ -93,7 +93,7 @@ let ME = null; const me = async () => ME || (ME = await ApiClient.getCurrentUser
 async function itemMenu(e, it) {
   if (!feat('itemMenu')) return;
   e.preventDefault && e.preventDefault(); e.stopPropagation && e.stopPropagation();
-  const r = (e.currentTarget || e.target).getBoundingClientRect(); warmFrame(it.Id); const user = await me(); const admin = user.Policy && user.Policy.IsAdministrator;
+  const r = (e.currentTarget || e.target).getBoundingClientRect(); const user = await me(); const admin = user.Policy && user.Policy.IsAdministrator;
   const canDel = admin || (user.Policy && user.Policy.EnableContentDeletion);
   const ent = [];
   ent.push({ icon: 'play', label: t('play'), fn: () => playVideo(it) });
@@ -104,14 +104,14 @@ async function itemMenu(e, it) {
   ent.push({ icon: 'info', label: t('openDetails'), fn: () => go(itemHash(it) || '#/home') });
   if (admin) {
     ent.push('-');
-    ent.push({ icon: 'edit', label: t('editMeta'), fn: () => nativeCommand(it.Id, ['edit', 'editmetadata']) });
-    ent.push({ icon: 'film', label: t('editImages'), fn: () => nativeCommand(it.Id, ['editimages']) });
-    ent.push({ icon: 'search', label: t('identify'), fn: () => nativeCommand(it.Id, ['identify']) });
-    ent.push({ icon: 'refresh', label: t('refreshMeta'), fn: () => nativeCommand(it.Id, ['refresh']) });
+    ent.push({ icon: 'edit', label: t('editMeta'), fn: () => editMeta(it.Id) });
+    ent.push({ icon: 'film', label: t('editImages'), fn: () => editImages(it.Id) });
+    ent.push({ icon: 'search', label: t('identify'), fn: () => identifyItem(it) });
+    ent.push({ icon: 'refresh', label: t('refreshMeta'), fn: () => refreshItem(it) });
     ent.push({ icon: 'info', label: t('openNative'), fn: () => nativeCommand(it.Id, null) });
     ent.push({ icon: 'more', label: t('moreActions'), fn: () => showNativeActions(it, Math.min(r.left, innerWidth - 280), r.bottom + 6) });
   }
-  if (canDel) { ent.push('-'); ent.push({ icon: 'close', label: t('delete'), fn: () => nativeCommand(it.Id, ['delete']) }); }
+  if (canDel) { ent.push('-'); ent.push({ icon: 'close', label: t('delete'), fn: () => deleteItem(it) }); }
   openMenu(Math.min(r.left, innerWidth - 260), r.bottom + 6, ent);
 }
 /* Jellyfin's own item actions (metadata editor, image editor, identify, collections, download, plugin entries...)

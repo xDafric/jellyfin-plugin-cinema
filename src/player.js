@@ -96,6 +96,7 @@ function closePlayer(silent) {
   if (PL.started) { report('Stopped'); try { if (PL.method === 'Transcode') ApiClient.stopActiveEncodings(PL.psid); } catch (e) { } }
   stopTimers(); detach(); if (PL.el) { PL.el.remove(); PL.el = null; PL.v = null; }
   window.removeEventListener('popstate', onPop); document.removeEventListener('keydown', onKey, true);
+  if (PL.nfs) setNativeFs(false);
   if (fsEl()) try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { }
   try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { }
   PL.open = false; PL.started = false; COVER.hide();
@@ -254,6 +255,7 @@ function buildPlayerUI(it) {
       tip(t('plFs'), h('button', { class: 'pl-fs', onclick: () => toggleFs() }, pic('fs'))))),
     h('div', { class: 'pl-settings' }));
   getUI().append(el); PL.el = el; PL.v = v; PL.subsEl = subsEl; applySubStyle();
+  if (nativeFs()) setNativeFs(true);
   $('.pl-settings', el).addEventListener('click', e => e.stopPropagation()); $$('.pl-btn-wrap', el).forEach(w => w.addEventListener('click', e => e.stopPropagation()));
   try { const sv = parseFloat(localStorage.getItem('cx-pvol')); if (isFinite(sv) && pcfg('rememberVol', true)) v.volume = sv; } catch (e) { }
   function updVol() { volBar.set(v.muted ? 0 : v.volume); muteBtn.replaceChildren(pic(v.muted || v.volume === 0 ? 'mute' : 'vol')); }
@@ -319,9 +321,12 @@ function seekBarEl(onChange) {
 function wake() { if (!PL.el) return; PL.el.classList.remove('idle'); clearTimeout(PL.idleT); PL.idleT = setTimeout(() => { if (PL.v && !PL.v.paused && !$('.pl-menu.open, .pl-settings.open', PL.el)) PL.el.classList.add('idle'); }, 3200); }
 function togglePlay() { const v = PL.v; if (!v) return; v.paused ? v.play().catch(() => { }) : v.pause(); }
 function skip(s) { const v = PL.v; if (v) v.currentTime = Math.max(0, Math.min(v.duration || 1e9, v.currentTime + s)); wake(); }
-function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement; }
+const nativeFs = () => { const n = window.NativeShell, i = window.NativeInterface; return n && n.enableFullscreen ? n : (i && i.enableFullscreen ? i : null); };
+function setNativeFs(on) { const n = nativeFs(); if (!n) return false; try { on ? n.enableFullscreen() : n.disableFullscreen(); PL.nfs = on; if (typeof onFsChange === 'function') onFsChange(); } catch (e) { return false; } return true; }
+function fsEl() { return PL.nfs || document.fullscreenElement || document.webkitFullscreenElement; }
 function toggleFs() {
   const el = PL.el, v = PL.v; if (!el) return;
+  if (nativeFs()) { setNativeFs(!PL.nfs); return; }
   if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { } return; }
   const lock = () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } };
   const rq = el.requestFullscreen || el.webkitRequestFullscreen;
