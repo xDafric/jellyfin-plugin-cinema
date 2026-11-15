@@ -114,3 +114,15 @@ function deleteItem(it) {
   const go_ = h('button', { class: 'btn danger', onclick: async () => { go_.disabled = true; try { await jf('DELETE', 'Items/' + it.Id); toast('✓ ' + t('delDone')); d.close(); location.hash = '#/home'; } catch (e) { toast('⚠ ' + e.message); go_.disabled = false; } } }, ic('close'), t('delete'));
   d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel')), go_);
 }
+
+/* ----- Quick Connect: sign in another device (TV app, ...) with the code it shows ----- */
+function quickConnectDialog() {
+  const d = cxDialog(t('qcTitle')); const inp = h('input', { type: 'text', inputmode: 'numeric', maxlength: 8, placeholder: '123456', style: 'font-size:26px;letter-spacing:.25em;text-align:center' }); const st = h('p', { class: 'cxd-hint', style: 'text-align:center;min-height:20px' });
+  const go_ = h('button', { class: 'btn white', onclick: async () => {
+    const code = inp.value.replace(/\D/g, ''); if (code.length < 4) return; go_.disabled = true; st.textContent = '…';
+    try { const ok = await jf('POST', 'QuickConnect/Authorize', { code, userId: uid() }); if (ok === true || ok === 'true' || (ok && ok.Authenticated)) { st.textContent = '✓ ' + t('qcOk'); toast('✓ ' + t('qcOk')); setTimeout(d.close, 900); } else { st.textContent = '⚠ ' + t('qcBad'); go_.disabled = false; } }
+    catch (er) { st.textContent = '⚠ ' + t('qcBad'); go_.disabled = false; }
+  } }, ic('check'), t('qcGo'));
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') go_.click(); });
+  d.body.replaceChildren(h('p', { class: 'cxd-hint', style: 'margin-top:0' }, t('qcHint')), inp, st); d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel')), go_); setTimeout(() => inp.focus(), 250);
+}

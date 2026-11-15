@@ -1,5 +1,5 @@
 /* ---------- TV mode (Cinema TV app / big screen with a remote): D-pad navigation, focus ring, native player hand-off ---------- */
-const TVM = (() => { try { return !!window.CinemaTV || /CinemaTV/.test(navigator.userAgent) || localStorage.getItem('cx-tv-force') === '1'; } catch (e) { return false; } })();
+const TVM = (() => { try { return !!window.CinemaTV || /CinemaTV/.test(navigator.userAgent) || localStorage.getItem('cx-dev-tv') === '1' || localStorage.getItem('cx-tv-force') === '1'; } catch (e) { return false; } })();
 function tvInit() {
   const H = document.documentElement; H.classList.add('cx-tv');
   const SEL = 'a[href], button:not([disabled]), input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"]), [data-tvf]';
@@ -23,7 +23,7 @@ function tvInit() {
   const visible = e => { const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4) return false; const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return false; return r.bottom > -2000 && r.top < innerHeight + 2400; };
   /* the topmost modal layer limits where focus may go */
   const layer = () => { const q = ['.cxd-bg.show', '.sp-modal-bg', '.nf-pop', '.sp-ctx', '#cx-menu', '.sr-modal'].map(s => [...document.querySelectorAll(s)].filter(visible).pop()).filter(Boolean); const bgEl = q.find(e => e.matches('.cxd-bg, .sp-modal-bg')); return bgEl || q[0] || null; };
-  const cands = () => { const L = layer(); const scope = L || document; return [...scope.querySelectorAll(SEL)].filter(e => !e.closest('[inert], .hide, #cx-lite, .cx-nframe') && visible(e) && !(e.tagName === 'INPUT' && e.type === 'file')); };
+  const cands = () => { const L = layer(); const scope = L || document; return [...scope.querySelectorAll(SEL)].filter(e => !e.closest('[inert], .hide, #cx-lite, .cx-nframe, h2') && !e.matches('.nf-logo, .nf-logo *') && visible(e) && !(e.tagName === 'INPUT' && e.type === 'file')); };
   const ctr = r => ({ x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 });
   function pick(dir, cur, list) {
     const a = cur.getBoundingClientRect(), ac = ctr(a); let best = null, bs = 1e12;

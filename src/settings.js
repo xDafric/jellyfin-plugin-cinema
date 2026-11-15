@@ -99,6 +99,7 @@ async function settingsView(page) {
   }
   const S = {
     general: () => [card_(t('setGeneral'),
+      row(t('setTv'), t('setTvHint'), (() => { const b = h('button', { class: 'set-switch' + (devGet('tv') === '1' ? ' on' : ''), role: 'switch', onclick: () => { const on = devGet('tv') !== '1'; devSet('tv', on ? '1' : null); try { localStorage.removeItem('cx-tv-force'); } catch (e) { } b.classList.toggle('on', on); setTimeout(() => location.reload(), 250); } }, h('i')); return b; })()),
       toggle(t('setHero'), 'hero', t('setHeroHint'), 'hero'), toggle(t('setPeek'), 'peek', t('setPeekHint'), 'peek'),
       row(t('setPeekDelay'), t('setPeekDelayHint'), seg([[180, t('fast')], [320, t('normal')], [520, t('slow')]], 'peekDelay'), 'peekDelay', locked('peek')),
       toggle(t('setInfinite'), 'infinite', t('setInfiniteHint'), 'infiniteScroll'))],

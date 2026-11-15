@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.1.0",
+                             "changelog":  "TV mode setting, Quick Connect approval dialog in the account menu, cleaner TV focus and a Show all card at the end of rows.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.1.0.zip",
+                             "checksum":  "13392d655ff28d1899f15f262bd9ff0b",
+                             "timestamp":  "2026-11-24T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.0.0",
                              "changelog":  "TV mode for the Cinema TV Android TV app: remote control navigation and native player hand-off.",
                              "targetAbi":  "12.4.0.0",

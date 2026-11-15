@@ -90,7 +90,7 @@ function buildTop() {
   const popUser = h('div', { class: 'nf-pop nf-user hide' },
     h('div', { class: 'um-head', 'data-cx': 1 }, umAv, h('div', {}, umName, h('span', {}, 'Cinema'))),
     h('div', { class: 'um-sec m-only', 'data-cx': 1 }, mobileItems),
-    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('edit', 'ic-s'), t('settings') + ' · Cinema', '#/c/settings'), umItem(ic('user', 'ic-s'), t('prefs'), '#/mypreferencesmenu'), umItem(ic('info', 'ic-s'), t('dash'), '#/dashboard')),
+    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('edit', 'ic-s'), t('settings') + ' · Cinema', '#/c/settings'), umItem(ic('tv', 'ic-s'), t('quickConnect'), '#', () => quickConnectDialog()), umItem(ic('user', 'ic-s'), t('prefs'), '#/mypreferencesmenu'), umItem(ic('info', 'ic-s'), t('dash'), '#/dashboard')),
     plugSlot,
     h('div', { class: 'um-sec', 'data-cx': 1 }, h('div', { class: 'um-row', 'data-cx': 1 }, h('span', {}, t('pskin')), skinSw)),
     h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('close', 'ic-s'), t('logout'), '#', () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } }, 'um-danger')));
