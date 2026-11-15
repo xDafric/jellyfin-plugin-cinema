@@ -227,9 +227,10 @@ function buildPlayerUI(it) {
   const tip = (label, el) => { el.setAttribute('data-tip', label); el.setAttribute('aria-label', label); return el; };
   const subsEl = h('div', { class: 'pl-subs' });
   const el = h('div', { id: 'cx-player', class: 'loading' }, v, subsEl,
-    h('div', { class: 'pl-tap l' }), h('div', { class: 'pl-tap r' }),
+    h('div', { class: 'pl-tap l' }), h('div', { class: 'pl-tap c' }), h('div', { class: 'pl-tap r' }),
     h('div', { class: 'pl-top' }, tip(t('plBack'), h('button', { class: 'pl-back', onclick: backFromPlayer }, pic('back'))), h('div', { class: 'pl-ttl' }, h('div', { class: 'pl-title ell' }), h('div', { class: 'pl-sub ell' })), tip(t('plInfo'), h('button', { class: 'pl-round', onclick: () => showStats() }, pic('info')))),
     h('div', { class: 'pl-stats' }),
+    h('div', { class: 'pl-bigctl' }, h('button', { 'aria-label': '-10', onclick: () => skip(-10) }, skipIcon(-1)), h('button', { class: 'pl-bigpp', 'aria-label': 'Play / Pause', onclick: () => togglePlay() }, pic('play')), h('button', { 'aria-label': '+10', onclick: () => skip(10) }, skipIcon(1))),
     h('div', { class: 'pl-center' }, h('div', { class: 'pl-spin' }), h('div', { class: 'pl-status' })),
     h('div', { class: 'pl-flash' }),
     h('div', { class: 'pl-err' }, h('b', {}, t('plFail')), h('p', { class: 'pl-errmsg' }), h('div', { class: 'nf-btns', style: 'justify-content:center' },
@@ -263,8 +264,8 @@ function buildPlayerUI(it) {
     if (Date.now() - PL.lastRep > 10000 && !v.paused) { PL.lastRep = Date.now(); report('Progress', { EventName: 'timeupdate' }); }
     checkSegments(); checkNextCard();
   });
-  v.addEventListener('playing', () => { el.classList.remove('loading', 'err'); if (!PL.started) { PL.started = true; report('Start'); } ppBtn.replaceChildren(pic('pause')); el.classList.add('is-playing'); wake(); });
-  v.addEventListener('pause', () => { ppBtn.replaceChildren(pic('play')); el.classList.remove('is-playing'); report('Progress', { EventName: 'pause' }); wake(); });
+  v.addEventListener('playing', () => { el.classList.remove('loading', 'err'); if (!PL.started) { PL.started = true; report('Start'); } ppBtn.replaceChildren(pic('pause')); $('.pl-bigpp', el).replaceChildren(pic('pause')); el.classList.add('is-playing'); wake(); });
+  v.addEventListener('pause', () => { ppBtn.replaceChildren(pic('play')); $('.pl-bigpp', el).replaceChildren(pic('play')); el.classList.remove('is-playing'); report('Progress', { EventName: 'pause' }); wake(); });
   v.addEventListener('waiting', () => { if (!v.paused) { el.classList.add('loading'); $('.pl-status', el).textContent = ''; } });
   v.addEventListener('canplay', () => el.classList.remove('loading'));
   v.addEventListener('ended', () => { if (PL.nextItem && pcfg('autoNext', true)) playNextEp(); else backFromPlayer(); });
@@ -283,14 +284,16 @@ function buildPlayerUI(it) {
   seek.addEventListener('pointerup', e => { if (seekDrag) { seekDrag = false; v.currentTime = frac(e) * dur(); report('Progress', { EventName: 'timeupdate' }); } });
   /* tap zones: single tap toggles controls, double tap seeks (touch) */
   const flash = (txt, side) => { const f = $('.pl-flash', el); f.textContent = txt; f.className = 'pl-flash show ' + (side || ''); clearTimeout(f._t); f._t = setTimeout(() => { f.className = 'pl-flash'; }, 600); };
-  [['l', -10], ['r', 10]].forEach(([c, d]) => { const z = $('.pl-tap.' + c, el); let last = 0; z.addEventListener('click', e => { const now = Date.now(); if (now - last < 300) { skip(d); flash((d > 0 ? '+' : '') + d + ' s', c); last = 0; } else { last = now; setTimeout(() => { if (last === now) { el.classList.contains('idle') ? wake() : togglePlay(); } }, 310); } }); });
+  /* touch: tap = show/hide controls, double tap left/right = +-10 s, double tap middle = play/pause */
+  [['l', -10], ['c', 0], ['r', 10]].forEach(([c, d]) => { const z = $('.pl-tap.' + c, el); let last = 0; z.addEventListener('click', e => { const now = Date.now(); if (now - last < 280) { last = 0; if (d) { skip(d); flash((d > 0 ? '+' : '') + d + ' s', c); } else togglePlay(); } else { last = now; setTimeout(() => { if (last !== now) return; last = 0; if ($('.pl-menu.open, .pl-settings.open', el)) { closeMenus(); $('.pl-settings', el).classList.remove('open'); } else if (el.classList.contains('idle')) wake(); else { clearTimeout(PL.idleT); el.classList.add('idle'); } }, 290); } }); });
   v.addEventListener('click', () => { if (!matchMedia('(pointer:coarse)').matches) togglePlay(); });
   v.addEventListener('dblclick', () => { if (!matchMedia('(pointer:coarse)').matches) toggleFs(); });
-  el.addEventListener('mousemove', wake); el.addEventListener('touchstart', wake, { passive: true });
+  el.addEventListener('mousemove', wake);
   el.addEventListener('click', e => { if (!e.target.isConnected) return; closeMenus(); $('.pl-settings', el).classList.remove('open'); });
   v.addEventListener('play', () => flashIcon('play')); v.addEventListener('pause', () => flashIcon('pause'));
   function flashIcon(n) { if (!PL.started) return; const f = $('.pl-flash', el); f.replaceChildren(pic(n)); f.className = 'pl-flash icon show'; clearTimeout(f._t); f._t = setTimeout(() => { f.className = 'pl-flash'; }, 450); }
   wake();
+  if (matchMedia('(pointer:coarse)').matches && pcfg('autoFs', true)) { try { const r = el.requestFullscreen && el.requestFullscreen(); r && r.then && r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { })).catch(() => { }); } catch (e) { } }
 }
 function seekBarEl(onChange) {
   const fill = h('i'), bar = h('div', { class: 'pl-vbar' }, fill); let d = false;

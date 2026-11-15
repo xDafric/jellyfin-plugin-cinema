@@ -31,6 +31,8 @@ async function route() {
     try { const it = await getItem(r.q.get('id')); const hh = itemHash(it); if (hh) { location.replace(hh); return; } } catch (e) { }
   }
   if (p0 === 'video') { C.allowNative = false; COVER.hide(); }
+  /* the native video player stays completely stock: no skin on it */
+  H.classList.toggle('cx-ready', p0 !== 'video'); H.classList.toggle('cx-pskin', p0 !== 'video' && skinOn()); H.classList.toggle('cx-vanilla', p0 === 'video');
   const tab = r.q.get('tab');
   const overlay = (p0 === 'home' && (!tab || tab === '0')) || p0 === 'c';
   const full = !overlay && FULL.test(p0);

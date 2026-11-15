@@ -107,7 +107,7 @@ async function settingsView(page) {
       row(t('setHeroInterval'), t('setHeroIntervalHint'), seg([[6, '6 s'], [11, '11 s'], [16, '16 s'], [30, '30 s']], 'heroInterval'), 'heroInterval', locked('hero'))),
       card_(t('homeSections'), h('p', { class: 'set-hint' }, t('homeSectionsHint')), sectionsEditor())],
     player: () => [card_(t('setPlayer'),
-      toggle(t('setNative'), 'nativePlayer', t('setNativeHint'), 'ownPlayer'),
+      row(t('setDevPlayer'), t('setDevPlayerHint'), h('div', { class: 'pl-seg set-seg' }, [['own', t('plOwn')], ['native', t('plStd')]].map(([v, l]) => h('button', { class: playerMode() === v ? 'on' : '', onclick: e => { $$('button', e.currentTarget.parentElement).forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on'); devSet('player', v); } }, l))), null, locked('ownPlayer')),
       toggle(t('plAutoNext'), 'pl_autoNext', t('plAutoNextHint'), 'ownPlayer'), toggle(t('plAutoSkip'), 'pl_autoSkip', t('plAutoSkipHint'), 'ownPlayer'),
       row(t('plQuality'), t('plQualityHint'), seg([['auto', t('plAuto')], ['20', '1080p+'], ['8', '1080p'], ['4', '720p'], ['1.5', '480p']], 'pl_quality'), 'pl_quality', locked('ownPlayer')),
       toggle(t('plRemember'), 'pl_rememberVol', '', 'ownPlayer')),

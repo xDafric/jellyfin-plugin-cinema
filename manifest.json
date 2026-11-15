@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.0.7.0",
+                             "changelog":  "Player choice per device (phone vs desktop), stock Jellyfin player without any skin, touch-friendly Cinema player (tap, double tap, big controls, landscape), mobile detail page and layout polish.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.7.0.zip",
+                             "checksum":  "644a6dae769849840cf451af61dfb0b0",
+                             "timestamp":  "2026-11-19T12:00:00Z"
+                         },
+                         {
                              "version":  "1.0.6.0",
                              "changelog":  "Native item actions (images, metadata, identify) in an isolated frame, detail-page menu, clickable home sections with full browse pages, hidden tiny rows, actor pages with titles you do not own, richer request modal with cast photos and admin options, neutral account menu and restyled dialogs.",
                              "targetAbi":  "12.4.0.0",
