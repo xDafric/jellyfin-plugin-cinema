@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.0.5.0",
+                             "changelog":  "Tabler icon set across the interface and player.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.5.0.zip",
+                             "checksum":  "79f8a4f07f97615840efe750f56f5dce",
+                             "timestamp":  "2026-11-17T12:00:00Z"
+                         },
+                         {
                              "version":  "1.0.4.0",
                              "changelog":  "Lucide icons everywhere, player settings and seek fixes, music bar fix, item menu lists native and plugin actions, layout fixes.",
                              "targetAbi":  "12.4.0.0",

@@ -17,13 +17,10 @@ const PIC = {
   chap: 'M4 6h16v2H4V6zm0 5h10v2H4v-2zm0 5h16v2H4v-2z', next: 'M6 6.5v11a1 1 0 001.5.86L16 13.4V17h2V7h-2v3.6L7.5 5.64A1 1 0 006 6.5z', back: 'M15.5 5.5L9 12l6.5 6.5-1.5 1.5L6 12l8-8 1.5 1.5z', info: 'M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',
   eps: 'M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2zm14-1.5l4 2.5-4 2.5v-5z', skip: 'M5 5l8 7-8 7V5zm9 0h2v14h-2V5z'
 };
-const PICMAP = { play: 'play', pause: 'pause', vol: 'volume-2', mute: 'volume-x', cc: 'captions', audio: 'languages', gear: 'settings', pip: 'picture-in-picture-2', fs: 'maximize', fsx: 'minimize', chap: 'list', next: 'skip-forward', back: 'chevron-left', info: 'info', eps: 'list-video', skip: 'skip-forward' };
+const PICMAP = { play: 'player-play', pause: 'player-pause', vol: 'volume', mute: 'volume-3', cc: 'badge-cc', audio: 'language', gear: 'settings', pip: 'picture-in-picture', fs: 'maximize', fsx: 'minimize', chap: 'list-details', next: 'player-skip-forward', back: 'chevron-left', info: 'info-circle', eps: 'list-numbers', skip: 'player-skip-forward' };
 const PICFILL = { play: 1, pause: 1 };
-function pic(name) { return luSvg(PICMAP[name] || 'play', PICFILL[name]); }
-function skipIcon(dir) {
-  const s = luSvg(dir > 0 ? 'rotate-cw' : 'rotate-ccw'); s.classList.add('lu-skip');
-  const tx = document.createElementNS('http://www.w3.org/2000/svg', 'text'); tx.setAttribute('x', '12'); tx.setAttribute('y', '15.2'); tx.setAttribute('font-size', '7.6'); tx.setAttribute('font-weight', '700'); tx.setAttribute('text-anchor', 'middle'); tx.setAttribute('fill', 'currentColor'); tx.setAttribute('stroke', 'none'); tx.textContent = '10'; s.append(tx); return s;
-}
+function pic(name) { return luSvg(PICMAP[name] || 'player-play', PICFILL[name]); }
+function skipIcon(dir) { const s = luSvg(dir > 0 ? 'rewind-forward-10' : 'rewind-backward-10'); s.classList.add('lu-skip'); return s; }
 
 function deviceProfile() {
   const hevc = !!(window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="hvc1.1.6.L120.90,mp4a.40.2"'));
