@@ -1,0 +1,2 @@
+/* extended mode: a barely visible marker so you know it is on */
+html.cx-ext #cx-top .nf-logo::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #e50914); opacity: .55; margin-left: 8px; vertical-align: middle; }

@@ -92,6 +92,70 @@ public class CinemaController : ControllerBase
         return Ok(new { ok = true });
     }
 
+    // ---------------------------------------------------------------- hidden titles (extended mode code)
+
+    private static int _hiddenFails;
+
+    private static string HashCode(string salt, string code)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(salt + "|" + code));
+        return Convert.ToHexString(bytes);
+    }
+
+    [HttpGet("hidden/status")]
+    [Authorize]
+    public IActionResult HiddenStatus() => Ok(new { hasCode = !string.IsNullOrEmpty(Cfg.HiddenCodeHash) });
+
+    [HttpPost("hidden/verify")]
+    [Authorize]
+    public async Task<IActionResult> HiddenVerify([FromBody] JsonObject body, CancellationToken ct)
+    {
+        var code = body?["code"]?.ToString() ?? string.Empty;
+        if (string.IsNullOrEmpty(Cfg.HiddenCodeHash) || string.IsNullOrEmpty(code))
+        {
+            return Ok(new { ok = false });
+        }
+
+        var ok = System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(HashCode(Cfg.HiddenCodeSalt, code)),
+            Encoding.UTF8.GetBytes(Cfg.HiddenCodeHash));
+        if (ok)
+        {
+            Interlocked.Exchange(ref _hiddenFails, 0);
+            return Ok(new { ok = true });
+        }
+
+        var fails = Interlocked.Increment(ref _hiddenFails);
+        await Task.Delay(Math.Min(fails, 10) * 500, ct).ConfigureAwait(false);
+        return Ok(new { ok = false });
+    }
+
+    /// <summary>Admin only: set or change the code. An empty code removes it (extended mode can then not be unlocked).</summary>
+    [HttpPost("hidden/code")]
+    [Authorize]
+    public IActionResult HiddenSetCode([FromBody] JsonObject body)
+    {
+        if (!IsAdmin)
+        {
+            return Forbid();
+        }
+
+        var code = body?["code"]?.ToString() ?? string.Empty;
+        if (code.Length == 0)
+        {
+            Cfg.HiddenCodeHash = string.Empty;
+            Cfg.HiddenCodeSalt = string.Empty;
+        }
+        else
+        {
+            Cfg.HiddenCodeSalt = Guid.NewGuid().ToString("N");
+            Cfg.HiddenCodeHash = HashCode(Cfg.HiddenCodeSalt, code);
+        }
+
+        Plugin.Instance!.SaveConfiguration();
+        return Ok(new { ok = true, hasCode = code.Length > 0 });
+    }
+
     // ---------------------------------------------------------------- status / test
 
     [HttpGet("status")]

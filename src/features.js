@@ -109,6 +109,7 @@ async function itemMenu(e, it) {
     ent.push({ icon: 'search', label: t('identify'), fn: () => identifyItem(it) });
     ent.push({ icon: 'refresh', label: t('refreshMeta'), fn: () => refreshItem(it) });
     ent.push({ icon: 'info', label: t('openNative'), fn: () => nativeCommand(it.Id, null) });
+    if (HID.on) ent.push({ icon: 'close', label: t('hxHide') + ' / ' + t('hxUnhide'), fn: () => hxToggle(it) });
     ent.push({ icon: 'more', label: t('moreActions'), fn: () => showNativeActions(it, Math.min(r.left, innerWidth - 280), r.bottom + 6) });
   }
   if (canDel) { ent.push('-'); ent.push({ icon: 'close', label: t('delete'), fn: () => deleteItem(it) }); }

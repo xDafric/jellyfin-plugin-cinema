@@ -138,7 +138,7 @@ async function settingsView(page) {
       row(t('resetAll'), t('resetAllHint'), h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { if (!confirm(t('resetAllHint'))) return; CFGU = {}; await saveCfg({}); draw(); toast('✓'); } }, t('reset'))),
       row(t('clearCache'), t('clearCacheHint'), h('button', { class: 'btn grey', style: 'height:38px', onclick: () => { resetSeerrCache(); resetMyTracks && resetMyTracks(); C.libCache = null; toast('✓'); } }, t('clear'))),
       row(t('killSwitch'), t('killSwitchHint'), h('code', {}, 'cinemaUI.off()'))),
-      card_(t('about'), h('div', { class: 'set-about' }, h('div', {}, 'Cinema ', h('b', {}, (C.status && C.status.version) || ''), ' · ', h('a', { href: 'https://github.com/xDafric/jellyfin-plugin-cinema', target: '_blank', rel: 'noopener' }, 'GitHub')), h('div', { class: 'mi-pills' }, Object.entries((C.status && C.status.features) || {}).map(([k, v]) => h('i', { style: v ? '' : 'opacity:.4;text-decoration:line-through' }, k)))))]
+      card_(t('about'), h('div', { class: 'set-about' }, h('div', {}, 'Cinema ', hxTapper(h('b', {}, (C.status && C.status.version) || '')), ' · ', h('a', { href: 'https://github.com/xDafric/jellyfin-plugin-cinema', target: '_blank', rel: 'noopener' }, 'GitHub')), h('div', { class: 'mi-pills' }, Object.entries((C.status && C.status.features) || {}).map(([k, v]) => h('i', { style: v ? '' : 'opacity:.4;text-decoration:line-through' }, k)))))]
   };
   function draw() {
     nav.replaceChildren(...SET_TABS.map(([k, label, icon]) => h('button', { class: k === cur ? 'on' : '', onclick: () => { cur = k; draw(); } }, ic(icon, 'ic-s'), t(label))));

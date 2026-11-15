@@ -85,4 +85,9 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>JSON array of default home sections, e.g. [{"id":"continue","on":true}]. Empty = built-in order.</summary>
     public string DefaultSections { get; set; } = string.Empty;
+
+    /// <summary>Salted SHA-256 of the code that unlocks the extended (hidden titles) mode. Never leaves the server.</summary>
+    public string HiddenCodeHash { get; set; } = string.Empty;
+
+    public string HiddenCodeSalt { get; set; } = string.Empty;
 }

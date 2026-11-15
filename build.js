@@ -1,7 +1,7 @@
 // node build.js  ->  dist/cinema.js  (single file for JavaScript Injector)
 const fs = require('fs'), path = require('path');
 const r = f => fs.readFileSync(path.join(__dirname, 'src', f), 'utf8');
-const css = r('style.css') + String.fromCharCode(10) + r('extra.css') + String.fromCharCode(10) + r('plugins.css') + String.fromCharCode(10) + r('v3.css') + String.fromCharCode(10) + r('v4.css') + String.fromCharCode(10) + r('v5.css') + String.fromCharCode(10) + r('v6.css') + String.fromCharCode(10) + r('v7.css') + String.fromCharCode(10) + r('v8.css') + String.fromCharCode(10) + r('v9.css') + String.fromCharCode(10) + r('v10.css') + String.fromCharCode(10) + r('v11.css') + String.fromCharCode(10) + r('v12.css') + String.fromCharCode(10) + r('v13.css') + String.fromCharCode(10) + r('v14.css') + String.fromCharCode(10) + r('v15.css') + String.fromCharCode(10) + r('v16.css') + String.fromCharCode(10) + r('tv.css');
+const css = r('style.css') + String.fromCharCode(10) + r('extra.css') + String.fromCharCode(10) + r('plugins.css') + String.fromCharCode(10) + r('v3.css') + String.fromCharCode(10) + r('v4.css') + String.fromCharCode(10) + r('v5.css') + String.fromCharCode(10) + r('v6.css') + String.fromCharCode(10) + r('v7.css') + String.fromCharCode(10) + r('v8.css') + String.fromCharCode(10) + r('v9.css') + String.fromCharCode(10) + r('v10.css') + String.fromCharCode(10) + r('v11.css') + String.fromCharCode(10) + r('v12.css') + String.fromCharCode(10) + r('v13.css') + String.fromCharCode(10) + r('v14.css') + String.fromCharCode(10) + r('v15.css') + String.fromCharCode(10) + r('v16.css') + String.fromCharCode(10) + r('tv.css') + String.fromCharCode(10) + r('hidden.css');
 const out = `/* Cinema UI - Netflix + Spotify style frontend for Jellyfin 12. Kill switch: add #nocinema to the URL or run cinemaUI.off() */
 (function () {
 'use strict';
@@ -10,6 +10,7 @@ try { if (/nocinema/.test(location.hash + location.search) || localStorage.getIt
 const CSS_TEXT = ${JSON.stringify(css)};
 ${r('icons.js')}
 ${r('core.js')}
+${r('hidden.js')}
 ${r('nav.js')}
 ${r('features.js')}
 ${r('editors.js')}
