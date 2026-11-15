@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.0.8.0",
+                             "changelog":  "Fixed native action dialogs (transparent, pre-warmed frame), touch player overlay and fullscreen, stale detail page after playback, music on phones (header chips, swipe-down player), touch smoothness.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.8.0.zip",
+                             "checksum":  "bdd09ff17552217bb36cf6b6ef32e271",
+                             "timestamp":  "2026-11-20T12:00:00Z"
+                         },
+                         {
                              "version":  "1.0.7.0",
                              "changelog":  "Player choice per device (phone vs desktop), stock Jellyfin player without any skin, touch-friendly Cinema player (tap, double tap, big controls, landscape), mobile detail page and layout polish.",
                              "targetAbi":  "12.4.0.0",

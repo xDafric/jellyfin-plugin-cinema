@@ -93,7 +93,7 @@ let ME = null; const me = async () => ME || (ME = await ApiClient.getCurrentUser
 async function itemMenu(e, it) {
   if (!feat('itemMenu')) return;
   e.preventDefault && e.preventDefault(); e.stopPropagation && e.stopPropagation();
-  const r = (e.currentTarget || e.target).getBoundingClientRect(); const user = await me(); const admin = user.Policy && user.Policy.IsAdministrator;
+  const r = (e.currentTarget || e.target).getBoundingClientRect(); warmFrame(it.Id); const user = await me(); const admin = user.Policy && user.Policy.IsAdministrator;
   const canDel = admin || (user.Policy && user.Policy.EnableContentDeletion);
   const ent = [];
   ent.push({ icon: 'play', label: t('play'), fn: () => playVideo(it) });
@@ -119,13 +119,22 @@ async function itemMenu(e, it) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const DUP_ACTIONS = /^(play|resume|playfromstart|edit|editmetadata|editimages|identify|refresh|delete|markplayed|markunplayed|addtofavorites|removefromfavorites)$/i;
 const lite = (() => { let el = null; return { show() { if (!el) { el = h('div', { id: 'cx-lite' }, h('div', { class: 'spinner', style: 'margin:0' })); getUI().append(el); } el.classList.add('show'); }, hide() { if (el) el.classList.remove('show'); } }; })();
-const FRAME_CSS = `html.cx-iframe, html.cx-iframe body, html.cx-iframe .skinBody, html.cx-iframe .backgroundContainer { background: transparent !important; }
+const FRAME_CSS = `html.cx-ready.cx-iframe:not(.transparentDocument) body, html.cx-ready.cx-iframe:not(.transparentDocument) .backgroundContainer, html.cx-ready.cx-iframe:not(.transparentDocument) .skinBody { background: transparent !important; }
+html.cx-iframe, html.cx-iframe body, html.cx-iframe .skinBody, html.cx-iframe .backgroundContainer { background: transparent !important; }
 html.cx-iframe #reactRoot > *, html.cx-iframe .skinHeader, html.cx-iframe .page, html.cx-iframe .mainDrawer, html.cx-iframe .nowPlayingBar, html.cx-iframe .MuiAppBar-root { visibility: hidden !important; }
 html.cx-iframe dialog, html.cx-iframe .dialogContainer, html.cx-iframe .dialogBackdrop, html.cx-iframe .actionSheet, html.cx-iframe .formDialog, html.cx-iframe .MuiDialog-root, html.cx-iframe .MuiPopover-root, html.cx-iframe .toast, html.cx-iframe .toastContainer { visibility: visible !important; }`;
+/* one shared frame per item: opened when the menu opens, reused for listing actions and for running one */
+const NF = { id: null, p: null, t: 0 };
+function dropFrame() { clearTimeout(NF.t); if (NF.p) NF.p.then(f => f.fr.remove(), () => { }); NF.id = null; NF.p = null; }
+function warmFrame(id) {
+  if (NF.id === id && NF.p) { clearTimeout(NF.t); NF.t = setTimeout(dropFrame, 45000); return NF.p; }
+  dropFrame(); NF.id = id; NF.p = openNativeFrame(id); NF.p.catch(() => { if (NF.id === id) { NF.id = null; NF.p = null; } });
+  NF.t = setTimeout(dropFrame, 45000); return NF.p;
+}
 async function openNativeFrame(id) {
   const fr = h('iframe', { class: 'cx-nframe', src: location.pathname + location.search + '#/details?id=' + id + '&nocinema', allow: 'fullscreen' }); getUI().append(fr);
-  for (let i = 0; i < 160; i++) {
-    await sleep(120);
+  for (let i = 0; i < 200; i++) {
+    await sleep(100);
     try {
       const d = fr.contentDocument; if (!d || !d.documentElement) continue;
       if (!d.getElementById('cx-style-f') && d.head) { d.documentElement.classList.add('cx-ready', 'cx-iframe', 'cx-pskin'); const st = d.createElement('style'); st.id = 'cx-style-f'; st.textContent = CSS_TEXT + FRAME_CSS; d.head.append(st); const fl = d.createElement('link'); fl.rel = 'stylesheet'; fl.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'; d.head.append(fl); }
@@ -136,23 +145,32 @@ async function openNativeFrame(id) {
   fr.remove(); throw new Error('timeout');
 }
 const sheetOf = d => d.querySelector('.actionSheet, .dialog.actionsheet');
+const labelOf = b => ((b.querySelector('.listItemBodyText, .actionSheetItemText') || b).textContent || '').trim().replace(/\s+/g, ' ');
+async function openSheet(f) {
+  if (sheetOf(f.d)) { const s = sheetOf(f.d); if (s.querySelectorAll('button[data-id]').length) return s; }
+  f.more.click(); let sheet = null;
+  for (let i = 0; i < 40 && !(sheet && sheet.querySelectorAll('button[data-id]').length); i++) { await sleep(100); sheet = sheetOf(f.d); }
+  return sheet;
+}
 async function harvestItemMenu(id) {
-  let fr = null; const out = [];
+  const out = [];
   try {
-    const f = await openNativeFrame(id); fr = f.fr; f.more.click(); let sheet = null;
-    for (let i = 0; i < 40 && !(sheet && sheet.querySelectorAll('button[data-id]').length); i++) { await sleep(100); sheet = sheetOf(f.d); }
-    if (sheet) sheet.querySelectorAll('button[data-id]').forEach(b => { const id_ = b.dataset.id; if (DUP_ACTIONS.test(id_)) return; const label = ((b.querySelector('.listItemBodyText, .actionSheetItemText') || b).textContent || '').trim().replace(/\s+/g, ' '); const mi = (b.querySelector('.material-icons, .actionsheetMenuItemIcon') || {}).textContent; if (label) out.push({ id: id_, label, mi: mi && mi.length < 40 ? mi.trim() : '' }); });
+    const f = await warmFrame(id); const sheet = await openSheet(f);
+    if (sheet) sheet.querySelectorAll('button[data-id]').forEach(b => { const id_ = b.dataset.id; if (DUP_ACTIONS.test(id_)) return; const label = labelOf(b); const mi = (b.querySelector('.material-icons, .actionsheetMenuItemIcon') || {}).textContent; if (label) out.push({ id: id_, label, mi: mi && mi.length < 40 ? mi.trim() : '' }); });
+    const bd = f.d.querySelector('.dialogBackdrop'); sheet && f.d.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
   } catch (e) { console.warn('[cinema] harvest item menu', e); }
-  if (fr) fr.remove();
   return out;
 }
 async function runFrameCommand(id, cmds) {
   lite.show(); let fr = null;
   try {
-    const f = await openNativeFrame(id); fr = f.fr; f.more.click(); let btn = null;
-    for (let i = 0; i < 40 && !btn; i++) { await sleep(100); const sh = sheetOf(f.d); btn = sh && cmds.map(c => sh.querySelector('button[data-id="' + c + '"]')).find(Boolean); }
+    const f = await warmFrame(id); fr = f.fr; clearTimeout(NF.t); NF.id = null; NF.p = null;
+    let btn = null; const sh0 = await openSheet(f);
+    for (let i = 0; i < 20 && !btn; i++) { const sh = sheetOf(f.d); btn = sh && cmds.map(c => sh.querySelector('button[data-id="' + c + '"]')).find(Boolean); if (!btn) await sleep(100); }
     if (!btn) { toast(t('cmdNA')); fr.remove(); lite.hide(); return; }
-    btn.click(); fr.classList.add('show'); lite.hide();
+    btn.click();
+    for (let i = 0; i < 60; i++) { await sleep(100); let ready = false; try { ready = !!f.d.querySelector('.formDialog:not(.actionSheet), dialog[open]:not(.actionsheet):not(.actionSheet), .MuiDialog-root'); } catch (e) { } if (ready) break; }
+    await sleep(120); fr.classList.add('show'); lite.hide();
     let seen = false, gone = 0, waited = 0;
     await new Promise(res => {
       const iv = setInterval(() => {

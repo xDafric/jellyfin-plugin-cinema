@@ -27,7 +27,7 @@ async function route() {
   $$('.sr-modal').forEach(m => m.parentElement && m.parentElement.remove());
   const r = parse(); const p0 = (r.parts[0] || 'home').replace(/\.html$/, '');
   if (p0 === 'details' && !C.allowNative && r.q.get('id')) {
-    COVER.show();
+    H.classList.add('cx-hold'); COVER.show();
     try { const it = await getItem(r.q.get('id')); const hh = itemHash(it); if (hh) { location.replace(hh); return; } } catch (e) { }
   }
   if (p0 === 'video') { C.allowNative = false; COVER.hide(); }
@@ -39,6 +39,7 @@ async function route() {
   const frame = !overlay && !full;
   const isMusic = overlay && r.parts[1] === 'music';
   if (overlay) C.allowNative = false;
+  H.classList.remove('cx-hold'); if (p0 !== 'details') COVER.hide();
   H.classList.toggle('cx-on', overlay); H.classList.toggle('cx-frame', frame); H.classList.toggle('cx-full', full);
   root.style.display = overlay ? 'block' : 'none';
   if (!C.top) buildTop();

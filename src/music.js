@@ -126,7 +126,10 @@ function buildPlayer() {
   const fb = { sh: h('button', { class: 'pl-btn', onclick: toggleShuffle }, ic('shuffle')), pv: h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), pp: h('button', { class: 'pl-btn big', onclick: toggle }, ic('play')), nx: h('button', { class: 'pl-btn', onclick: () => next() }, ic('next')), rp: h('button', { class: 'pl-btn', onclick: cycleRepeat }, ic('repeat')) };
   const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleQueue(); } }, ic('queue'))), fcv,
     h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), fLike), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
-  function openFull(on) { full.classList.toggle('open', on); }
+  function openFull(on) { full.classList.toggle('open', on); full.style.transform = ''; }
+  let sy = null; full.addEventListener('touchstart', e => { if (e.target.closest('.bar, .seekwrap')) { sy = null; return; } sy = e.touches[0].clientY; full.style.transition = 'none'; }, { passive: true });
+  full.addEventListener('touchmove', e => { if (sy == null) return; const dy = e.touches[0].clientY - sy; if (dy > 0) full.style.transform = 'translateY(' + dy + 'px)'; }, { passive: true });
+  full.addEventListener('touchend', e => { if (sy == null) return; const dy = e.changedTouches[0].clientY - sy; sy = null; full.style.transition = ''; if (dy > 110) openFull(false); else full.style.transform = ''; });
 
   let lastId = null;
   P.subs.push(() => {
@@ -300,7 +303,13 @@ function buildSP() {
 const tint = async (url) => { const c = await dominant(url); C.sp.el.style.setProperty('--tint', rgb(c, 1)); C.sp.bgEl.style.setProperty('--tint', rgb(c.map(v => Math.round(v * .8)))); };
 function setHeader(opts) {
   opts = opts || {}; const hd = C.sp.header;
-  hd.replaceChildren(h('button', { class: 'sp-hbtn', 'aria-label': 'Back', onclick: () => history.back() }, ic('left')), h('button', { class: 'sp-hbtn', 'aria-label': 'Forward', onclick: () => history.forward() }, ic('right')));
+  const mob = matchMedia('(max-width: 800px)').matches; const rt = parse(); const v0 = rt.parts[2] === 'home' ? '' : (rt.parts[2] || '');
+  if (mob) {
+    const nm = (ME && ME.Name) || 'U';
+    if (v0) hd.replaceChildren(h('button', { class: 'sp-hbtn', 'aria-label': 'Back', onclick: () => history.back() }, ic('left')));
+    else hd.replaceChildren((() => { const a = h('a', { class: 'sp-avatar', href: '#/c/settings', 'aria-label': t('settings') }, nm[0].toUpperCase()); if (!ME) me().then(u => { a.textContent = (u.Name || 'U')[0].toUpperCase(); }); return a; })(),
+      h('div', { class: 'sp-chips' }, [['', t('all'), '#/c/music'], ['discover', t('discoverShort'), '#/c/music/discover'], ['library', t('library'), '#/c/music/library']].map(([k, l, hr]) => h('a', { class: 'sp-chip' + (v0 === k ? ' on' : ''), href: hr }, l))));
+  } else hd.replaceChildren(h('button', { class: 'sp-hbtn', 'aria-label': 'Back', onclick: () => history.back() }, ic('left')), h('button', { class: 'sp-hbtn', 'aria-label': 'Forward', onclick: () => history.forward() }, ic('right')));
   if (opts.search) { const inp = h('input', { type: 'text', placeholder: t('searchMusic'), value: opts.q || '', autocomplete: 'off' }); let tm; inp.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => go('#/c/music/search' + (inp.value.trim() ? '/' + encodeURIComponent(inp.value.trim()) : '')), 350); }); hd.append(h('div', { class: 'sp-hsearch' }, ic('search'), inp)); setTimeout(() => { if (!opts.q) inp.focus(); }, 50); }
   hd.append(h('div', { style: 'flex:1' }));
   if (opts.title) hd.append(h('b', { class: 'ell', style: 'opacity:0' }, opts.title));
@@ -309,7 +318,7 @@ function setHeader(opts) {
 C.renderMusic = async function (r) {
   if (!C.sp) buildSP();
   if (!C.libCache) loadLibrary().then(() => C.fillLib && C.fillLib());
-  const sp = C.sp; const [, , view, id] = r.parts;
+  const sp = C.sp; let [, , view, id] = r.parts; if (view === 'home') view = undefined;
   $$('.sp-navlink[data-k]', sp.side).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'discover' && view === 'discover')));
   $$('a[data-k]', sp.tabs).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'lib' && (view === 'library'))));
   $$('.sp-li', sp.libList).forEach(l => l.classList.toggle('on', !!id && l.dataset.id === id || (view === 'liked' && l.dataset.id === 'liked')));

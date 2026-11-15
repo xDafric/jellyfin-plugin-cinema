@@ -63,3 +63,38 @@
   body { overscroll-behavior-y: contain; }
   button, a { -webkit-tap-highlight-color: transparent; }
 }
+
+html.cx-hold body, html.cx-hold .skinBody, html.cx-hold .backgroundContainer { background: #111113 !important; } html.cx-hold #reactRoot { visibility: hidden !important; }
+.pl-tap { display: none !important; }
+
+/* ---- music on phones ---- */
+@media (max-width: 800px) {
+  .sp-main { background: #0f0f11; }
+  .sp-header { position: sticky; top: 0; z-index: 5; height: auto !important; min-height: 56px; padding: 10px 14px !important; gap: 10px; background: #0f0f11ee; display: flex; align-items: center; flex-wrap: nowrap; }
+  .sp-avatar { width: 36px; height: 36px; border-radius: 50%; background: #2c2c33; display: grid; place-items: center; font-weight: 800; font-size: 15px; flex: none; color: #fff; }
+  .sp-chips { display: flex; flex: 1; min-width: 0; flex-wrap: nowrap; gap: 8px; overflow-x: auto; scrollbar-width: none; } .sp-chips::-webkit-scrollbar { display: none; }
+  .sp-chip { flex: none; padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.1); font-weight: 600; font-size: 14px; color: #fff; transition: background .15s, transform .12s; } .sp-chip:active { transform: scale(.95); }
+  .sp-chip.on { background: #fff; color: #000; }
+  .sp-greet { display: none; }
+  .sp-content { padding-bottom: 200px !important; }
+  .sp-quick { grid-template-columns: 1fr 1fr; gap: 8px; } .sp-quick > * { height: 56px; border-radius: 10px; }
+  .sp-mini { backdrop-filter: blur(14px); box-shadow: 0 8px 24px rgba(0,0,0,.5); transition: transform .2s; } .sp-mini:active { transform: scale(.985); }
+  .sp-full { transition: transform .38s cubic-bezier(.2,.8,.2,1); border-radius: 0; }
+  .sp-full .cvbig { width: min(86vw, 52vh); margin: 0 auto; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+  .sp-full .ctr .pl-btn { width: 52px; height: 52px; } .sp-full .ctr .big { width: 72px; height: 72px; }
+}
+
+/* ---- touch smoothness ---- */
+@media (pointer: coarse) {
+  a, button, .nf-card, .sp-row, .sp-li, .sp-card { touch-action: manipulation; }
+  .nf-card, .sp-row, .btn, .sp-chip, .nf-chip { transition: transform .12s ease, background .15s ease; }
+  .nf-card:active, .sp-row:active { transform: scale(.97); }
+  .btn:active, .nf-chip:active { transform: scale(.95); }
+  .nf-peek { display: none !important; }
+  .nf-scroller, .nf-row-scroll, .sp-shelf { scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .nf-card, .sp-card { scroll-snap-align: start; }
+  .nf-top, .cx-tabs, .nf-hero::after { backdrop-filter: none !important; }
+  .cx-tabs { background: rgba(24,24,28,.96) !important; }
+  #cx-nf .nf-card .im { will-change: auto; }
+  .nf-sect, .nf-row { content-visibility: auto; contain-intrinsic-size: auto 260px; }
+}

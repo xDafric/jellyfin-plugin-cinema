@@ -96,8 +96,10 @@ function closePlayer(silent) {
   if (PL.started) { report('Stopped'); try { if (PL.method === 'Transcode') ApiClient.stopActiveEncodings(PL.psid); } catch (e) { } }
   stopTimers(); detach(); if (PL.el) { PL.el.remove(); PL.el = null; PL.v = null; }
   window.removeEventListener('popstate', onPop); document.removeEventListener('keydown', onKey, true);
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+  if (fsEl()) try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { }
+  try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { }
   PL.open = false; PL.started = false; COVER.hide();
+  if (!silent) setTimeout(() => refreshView(), 120);
 }
 function onPop() { closePlayer(); }
 function backFromPlayer() { if (history.state && history.state.cxplayer) history.back(); else closePlayer(); }
@@ -227,7 +229,7 @@ function buildPlayerUI(it) {
   const tip = (label, el) => { el.setAttribute('data-tip', label); el.setAttribute('aria-label', label); return el; };
   const subsEl = h('div', { class: 'pl-subs' });
   const el = h('div', { id: 'cx-player', class: 'loading' }, v, subsEl,
-    h('div', { class: 'pl-tap l' }), h('div', { class: 'pl-tap c' }), h('div', { class: 'pl-tap r' }),
+    
     h('div', { class: 'pl-top' }, tip(t('plBack'), h('button', { class: 'pl-back', onclick: backFromPlayer }, pic('back'))), h('div', { class: 'pl-ttl' }, h('div', { class: 'pl-title ell' }), h('div', { class: 'pl-sub ell' })), tip(t('plInfo'), h('button', { class: 'pl-round', onclick: () => showStats() }, pic('info')))),
     h('div', { class: 'pl-stats' }),
     h('div', { class: 'pl-bigctl' }, h('button', { 'aria-label': '-10', onclick: () => skip(-10) }, skipIcon(-1)), h('button', { class: 'pl-bigpp', 'aria-label': 'Play / Pause', onclick: () => togglePlay() }, pic('play')), h('button', { 'aria-label': '+10', onclick: () => skip(10) }, skipIcon(1))),
@@ -285,15 +287,28 @@ function buildPlayerUI(it) {
   /* tap zones: single tap toggles controls, double tap seeks (touch) */
   const flash = (txt, side) => { const f = $('.pl-flash', el); f.textContent = txt; f.className = 'pl-flash show ' + (side || ''); clearTimeout(f._t); f._t = setTimeout(() => { f.className = 'pl-flash'; }, 600); };
   /* touch: tap = show/hide controls, double tap left/right = +-10 s, double tap middle = play/pause */
-  [['l', -10], ['c', 0], ['r', 10]].forEach(([c, d]) => { const z = $('.pl-tap.' + c, el); let last = 0; z.addEventListener('click', e => { const now = Date.now(); if (now - last < 280) { last = 0; if (d) { skip(d); flash((d > 0 ? '+' : '') + d + ' s', c); } else togglePlay(); } else { last = now; setTimeout(() => { if (last !== now) return; last = 0; if ($('.pl-menu.open, .pl-settings.open', el)) { closeMenus(); $('.pl-settings', el).classList.remove('open'); } else if (el.classList.contains('idle')) wake(); else { clearTimeout(PL.idleT); el.classList.add('idle'); } }, 290); } }); });
+  let tapStart = null, lastTap = 0, lastZone = '', prevIdle = false;
+  el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; tapStart = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+  el.addEventListener('pointerup', e => {
+    if (e.pointerType === 'mouse' || !tapStart) return; const s0 = tapStart; tapStart = null;
+    if (Math.abs(e.clientX - s0.x) > 14 || Math.abs(e.clientY - s0.y) > 14 || Date.now() - s0.t > 500) return;
+    if (e.target.closest && e.target.closest('button, a, input, .pl-seek, .pl-settings, .pl-menu, .pl-skipseg, .pl-nextcard, .pl-err')) { if (!el.classList.contains('idle')) wake(); return; }
+    if ($('.pl-menu.open, .pl-settings.open', el)) { closeMenus(); $('.pl-settings', el).classList.remove('open'); wake(); return; }
+    const now = Date.now(); const r = el.getBoundingClientRect(); const z = (e.clientX - r.left) / r.width; const zone = z < .34 ? 'l' : z > .66 ? 'r' : 'c';
+    if (now - lastTap < 300 && zone === lastZone) {
+      lastTap = 0; if (zone === 'l') { skip(-10); flash('-10 s', 'l'); } else if (zone === 'r') { skip(10); flash('+10 s', 'r'); } else togglePlay();
+      if (prevIdle && zone !== 'c') { el.classList.add('idle'); clearTimeout(PL.idleT); } else wake(); return;
+    }
+    lastTap = now; lastZone = zone; prevIdle = el.classList.contains('idle');
+    if (prevIdle) wake(); else { clearTimeout(PL.idleT); el.classList.add('idle'); }
+  });
   v.addEventListener('click', () => { if (!matchMedia('(pointer:coarse)').matches) togglePlay(); });
   v.addEventListener('dblclick', () => { if (!matchMedia('(pointer:coarse)').matches) toggleFs(); });
-  el.addEventListener('mousemove', wake);
+  el.addEventListener('mousemove', () => { if (!matchMedia('(pointer:coarse)').matches) wake(); });
   el.addEventListener('click', e => { if (!e.target.isConnected) return; closeMenus(); $('.pl-settings', el).classList.remove('open'); });
   v.addEventListener('play', () => flashIcon('play')); v.addEventListener('pause', () => flashIcon('pause'));
   function flashIcon(n) { if (!PL.started) return; const f = $('.pl-flash', el); f.replaceChildren(pic(n)); f.className = 'pl-flash icon show'; clearTimeout(f._t); f._t = setTimeout(() => { f.className = 'pl-flash'; }, 450); }
   wake();
-  if (matchMedia('(pointer:coarse)').matches && pcfg('autoFs', true)) { try { const r = el.requestFullscreen && el.requestFullscreen(); r && r.then && r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { })).catch(() => { }); } catch (e) { } }
 }
 function seekBarEl(onChange) {
   const fill = h('i'), bar = h('div', { class: 'pl-vbar' }, fill); let d = false;
@@ -304,8 +319,16 @@ function seekBarEl(onChange) {
 function wake() { if (!PL.el) return; PL.el.classList.remove('idle'); clearTimeout(PL.idleT); PL.idleT = setTimeout(() => { if (PL.v && !PL.v.paused && !$('.pl-menu.open, .pl-settings.open', PL.el)) PL.el.classList.add('idle'); }, 3200); }
 function togglePlay() { const v = PL.v; if (!v) return; v.paused ? v.play().catch(() => { }) : v.pause(); }
 function skip(s) { const v = PL.v; if (v) v.currentTime = Math.max(0, Math.min(v.duration || 1e9, v.currentTime + s)); wake(); }
-function toggleFs() { if (document.fullscreenElement) document.exitFullscreen().catch(() => { }); else PL.el.requestFullscreen && PL.el.requestFullscreen().catch(() => { }); }
-document.addEventListener('fullscreenchange', () => { if (PL.el) { const b = $('.pl-fs', PL.el); b && b.replaceChildren(pic(document.fullscreenElement ? 'fsx' : 'fs')); } });
+function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement; }
+function toggleFs() {
+  const el = PL.el, v = PL.v; if (!el) return;
+  if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { } return; }
+  const lock = () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } };
+  const rq = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (rq) { const r = rq.call(el, { navigationUI: 'hide' }); if (r && r.then) r.then(lock).catch(() => { v.webkitEnterFullscreen && v.webkitEnterFullscreen(); }); else lock(); }
+  else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+}
+const onFsChange = () => { if (PL.el) { const b = $('.pl-fs', PL.el); b && b.replaceChildren(pic(fsEl() ? 'fsx' : 'fs')); } }; document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
 function onKey(e) {
   if (!PL.open || (e.target.closest && e.target.closest('input,textarea'))) return;
   const k = e.key; let used = true;
