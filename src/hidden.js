@@ -2,9 +2,9 @@
    Everything tagged "hidden" in Jellyfin disappears from every list, search and row of the interface.
    An extended mode (unlocked with a code, remembered per device) shows it again. */
 Object.assign(TX.en, { hxTitle: 'Extended mode', hxCodeHint: 'Enter your code.', hxUnlock: 'Unlock', hxLock: 'Deactivate', hxOn: 'Extended mode is active on this device.', hxBad: 'Wrong code', hxNone: 'Extended mode is not set up yet. An administrator has to choose a code first.',
-  hxSetup: 'Choose a code', hxSetupHint: 'Titles tagged "hidden" stay out of sight until this code is entered on a device.', hxNew: 'New code', hxSave: 'Save', hxChange: 'Change code', hxHide: 'Hide title', hxUnhide: 'Unhide title', hxHidden: 'Title hidden', hxShown: 'Title visible again', hxDone: 'Extended mode activated', hxOff: 'Extended mode deactivated', hxMin: 'At least 4 characters' });
+  hxSetup: 'Choose a code', hxSetupHint: 'Titles tagged "hidden" stay out of sight until this code is entered on a device.', hxNew: 'New code', hxSave: 'Save', hxChange: 'Change code', hxHide: 'Hide title', hxUnhide: 'Unhide title', hxHidden: 'Title hidden', hxShown: 'Title visible again', hxDone: 'Extended mode activated', hxOff: 'Extended mode deactivated', hxMin: 'At least 4 characters', hxIsHidden: 'Hidden title', hxStHidden: 'Hidden · show again', hxStVisible: 'Visible · hide', hxLockedT: 'Locked area', nuHide: 'Remove from Next up', nuDone: 'Removed from Next up', download: 'Download', editSubs: 'Edit subtitles' });
 Object.assign(TX.de, { hxTitle: 'Erweiterter Modus', hxCodeHint: 'Gib deinen Code ein.', hxUnlock: 'Entsperren', hxLock: 'Deaktivieren', hxOn: 'Der erweiterte Modus ist auf diesem Gerät aktiv.', hxBad: 'Falscher Code', hxNone: 'Der erweiterte Modus ist noch nicht eingerichtet. Ein Administrator muss zuerst einen Code festlegen.',
-  hxSetup: 'Code festlegen', hxSetupHint: 'Mit "hidden" getaggte Titel bleiben unsichtbar, bis dieser Code auf einem Gerät eingegeben wird.', hxNew: 'Neuer Code', hxSave: 'Speichern', hxChange: 'Code ändern', hxHide: 'Titel verstecken', hxUnhide: 'Titel wieder anzeigen', hxHidden: 'Titel versteckt', hxShown: 'Titel wieder sichtbar', hxDone: 'Erweiterter Modus aktiviert', hxOff: 'Erweiterter Modus deaktiviert', hxMin: 'Mindestens 4 Zeichen' });
+  hxSetup: 'Code festlegen', hxSetupHint: 'Mit "hidden" getaggte Titel bleiben unsichtbar, bis dieser Code auf einem Gerät eingegeben wird.', hxNew: 'Neuer Code', hxSave: 'Speichern', hxChange: 'Code ändern', hxHide: 'Titel verstecken', hxUnhide: 'Titel wieder anzeigen', hxHidden: 'Titel versteckt', hxShown: 'Titel wieder sichtbar', hxDone: 'Erweiterter Modus aktiviert', hxOff: 'Erweiterter Modus deaktiviert', hxMin: 'Mindestens 4 Zeichen', hxIsHidden: 'Versteckter Titel', hxStHidden: 'Versteckt · wieder anzeigen', hxStVisible: 'Sichtbar · verstecken', hxLockedT: 'Geschützter Bereich', nuHide: 'Aus "Als Nächstes" entfernen', nuDone: 'Aus "Als Nächstes" entfernt', download: 'Herunterladen', editSubs: 'Untertitel bearbeiten' });
 
 const HID = { on: false, ids: new Set(), series: new Set(), tmdb: new Set(), tvdb: new Set(), loaded: 0, p: null, tag: 'hidden' };
 try { HID.on = localStorage.getItem('cx-ext') === '1'; } catch (e) { }
@@ -70,7 +70,7 @@ async function hxDialog() {
   const d = cxDialog(t('hxTitle')); d.busy();
   let hasCode = false; try { hasCode = (await hxCall('GET', 'status')).hasCode; } catch (e) { return errBox(d, e); }
   const admin = !!(C.status && C.status.admin);
-  const pw = ph => h('input', { type: 'password', autocomplete: 'off', placeholder: ph || '', inputmode: 'text', style: 'font-size:22px;letter-spacing:.2em;text-align:center' });
+  const pw = ph => h('input', { type: 'password', class: 'hx-code', autocomplete: 'off', placeholder: ph || '••••', inputmode: 'text' });
   const st = h('p', { class: 'cxd-hint', style: 'text-align:center;min-height:20px' });
   const setup = () => {
     const a = pw(t('hxNew')); const save = h('button', { class: 'btn white', onclick: async () => {
@@ -88,10 +88,10 @@ async function hxDialog() {
   if (!hasCode) { if (admin) return setup(); d.body.replaceChildren(h('p', { class: 'cxd-hint', style: 'margin-top:0' }, t('hxNone'))); d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel'))); return; }
   const a = pw(); const go_ = h('button', { class: 'btn white', onclick: async () => {
     if (!a.value) return; go_.disabled = true; st.textContent = '…';
-    try { const r = await hxCall('POST', 'verify', { code: a.value }); if (r.ok) { st.textContent = '✓'; hxSet(true); } else { st.textContent = '⚠ ' + t('hxBad'); a.value = ''; go_.disabled = false; a.focus(); } } catch (e) { st.textContent = '⚠ ' + e.message; go_.disabled = false; }
+    try { const r = await hxCall('POST', 'verify', { code: a.value }); if (r.ok) { st.textContent = '✓'; hxSet(true); } else { st.textContent = '⚠ ' + t('hxBad'); a.classList.remove('shake'); void a.offsetWidth; a.classList.add('shake'); a.value = ''; go_.disabled = false; a.focus(); } } catch (e) { st.textContent = '⚠ ' + e.message; go_.disabled = false; }
   } }, ic('check'), t('hxUnlock'));
   a.addEventListener('keydown', e => { if (e.key === 'Enter') go_.click(); });
-  d.body.replaceChildren(h('p', { class: 'cxd-hint', style: 'margin-top:0' }, t('hxCodeHint')), a, st); d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel')), go_); setTimeout(() => a.focus(), 250);
+  d.body.replaceChildren(h('div', { class: 'hx-lock' }, ic('lock')), h('p', { class: 'cxd-hint', style: 'margin:0 0 14px;text-align:center' }, t('hxCodeHint')), a, st); d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel')), go_); setTimeout(() => a.focus(), 250);
 }
 /* hidden entry point: tap the version in Settings > About five times */
 function hxTapper(el) {
@@ -126,3 +126,6 @@ function hxSeerr(d) {
   if (d && Array.isArray(d.results)) d.results = d.results.filter(x => !hxSeerrHidden(x));
   return d;
 }
+
+if (HID.on) { const iv = setInterval(() => { if (window.ApiClient && ApiClient.getCurrentUserId && ApiClient.getCurrentUserId()) { clearInterval(iv); hxLoad().then(() => { try { route(); } catch (e) { } }).catch(() => { }); } }, 500); }
+const hxIsHiddenItem = it => HID.ids.has(it.Id) || (it.Tags || []).some(hxIsTag);

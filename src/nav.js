@@ -92,8 +92,7 @@ function buildTop() {
     h('div', { class: 'um-sec m-only', 'data-cx': 1 }, mobileItems),
     h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('edit', 'ic-s'), t('settings') + ' · Cinema', '#/c/settings'), umItem(ic('tv', 'ic-s'), t('quickConnect'), '#', () => quickConnectDialog()), umItem(ic('user', 'ic-s'), t('prefs'), '#/mypreferencesmenu'), umItem(ic('info', 'ic-s'), t('dash'), '#/dashboard')),
     plugSlot,
-    h('div', { class: 'um-sec', 'data-cx': 1 }, h('div', { class: 'um-row', 'data-cx': 1 }, h('span', {}, t('pskin')), skinSw)),
-    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('close', 'ic-s'), t('logout'), '#', () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } }, 'um-danger')));
+    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('logout', 'ic-s'), t('logout'), '#', () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } }, 'um-danger')));
   async function fillPlugins() {
     if (!feat('pluginMenus')) return;
     const list = (Date.now() - HARV.at < 60000 && HARV.items.length) ? HARV.items : await harvestMenus();

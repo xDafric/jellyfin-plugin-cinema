@@ -3,3 +3,17 @@ const LU = {"sun":"<path d=\"M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0\"/> <path 
 const LUMAP = { play: 'player-play', pause: 'player-pause', next: 'player-skip-forward', prev: 'player-skip-back', shuffle: 'arrows-shuffle', repeat: 'repeat', heart: 'heart', heartOn: 'heart', home: 'home', search: 'search', lib: 'books', plus: 'plus', queue: 'playlist', vol: 'volume', info: 'info-circle', left: 'chevron-left', right: 'chevron-right', close: 'x', more: 'dots', check: 'check', down: 'chevron-down', note: 'music', film: 'movie', tv: 'device-tv', star: 'star', list: 'list', user: 'user', edit: 'pencil', refresh: 'refresh', cal: 'calendar', gear: 'settings', fs: 'maximize' };
 const LUFILL = { play: 1, pause: 1, heartOn: 1, next: 1, prev: 1 };
 function luSvg(name, fill) { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'lu' + (fill ? ' lu-fill' : '')); s.innerHTML = LU[name] || ''; return s; }
+
+Object.assign(LU, {
+  'logout': '<path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/> <path d="M9 12h12l-3 -3"/> <path d="M18 15l3 -3"/>',
+  'lock': '<path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z"/> <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"/> <path d="M8 11v-4a4 4 0 1 1 8 0v4"/>',
+  'eye': '<path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/> <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>',
+  'eye-off': '<path d="M10.585 10.587a2 2 0 0 0 2.829 2.828"/> <path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87"/> <path d="M3 3l18 18"/>',
+  'download': '<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/> <path d="M7 11l5 5l5 -5"/> <path d="M12 4l0 12"/>',
+  'align-left': '<path d="M4 6l16 0"/> <path d="M4 12l10 0"/> <path d="M4 18l14 0"/>',
+  'microphone': '<path d="M9 2m0 3a3 3 0 0 1 3 -3h0a3 3 0 0 1 3 3v5a3 3 0 0 1 -3 3h0a3 3 0 0 1 -3 -3z"/> <path d="M5 10a7 7 0 0 0 14 0"/> <path d="M8 21l8 0"/> <path d="M12 17l0 4"/>',
+  'flame': '<path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 1 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 3 -2.791 3 -4 2z"/>',
+  'trophy': '<path d="M8 21l8 0"/> <path d="M12 17l0 4"/> <path d="M7 4l10 0"/> <path d="M17 4v8a5 5 0 0 1 -10 0v-8"/> <path d="M5 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/> <path d="M19 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>',
+  'sparkles': '<path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z"/> <path d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z"/> <path d="M9 18a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/>'
+});
+Object.assign(LUMAP, { logout: 'logout', lock: 'lock', eye: 'eye', eyeOff: 'eye-off', download: 'download', lyrics: 'align-left', mic: 'microphone', flame: 'flame', trophy: 'trophy', sparkles: 'sparkles' });

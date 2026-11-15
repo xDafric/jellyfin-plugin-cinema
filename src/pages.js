@@ -19,8 +19,8 @@ function infiniteGrid(container, fetchPage, makeCard, pageSize) {
   return { grid, reload() { grid.replaceChildren(); start = 0; done = false; more(); } };
 }
 
-Object.assign(TX.en, { wlReq: 'Requested · not available yet', wlSynced: 'Added to your watchlist' });
-Object.assign(TX.de, { wlReq: 'Angefragt · noch nicht verfügbar', wlSynced: 'Zur Watchlist hinzugefügt' });
+Object.assign(TX.en, { wlReq: 'On your Seerr watchlist · not in the library yet', wlSynced: 'Added to your watchlist' });
+Object.assign(TX.de, { wlReq: 'Auf deiner Seerr-Watchlist · noch nicht in der Bibliothek', wlSynced: 'Zur Watchlist hinzugefügt' });
 /* my own Seerr requests (the Seerr account is matched through the Jellyfin user id) */
 async function myRequests() {
   const r = await seerrGet('/request', { take: 300, skip: 0, filter: 'all', sort: 'added' }); const me_ = String(uid()).replace(/-/g, '').toLowerCase();
@@ -49,15 +49,16 @@ async function watchlistView(page) {
   const chips = h('div', { class: 'nf-seasons' }, [['Movie,Series', t('all')], ['Movie', t('movies')], ['Series', t('shows')]].map(([v, l]) => h('button', { class: 'nf-chip' + (v === type ? ' on' : ''), onclick: e => { type = v; $$('.nf-chip', chips).forEach(c => c.classList.remove('on')); e.currentTarget.classList.add('on'); g.reload(); drawReq(); } }, l)));
   wrap.append(chips);
   const g = infiniteGrid(wrap, (s, n) => items({ IncludeItemTypes: type, Filters: 'Likes', SortBy: 'DateCreated', SortOrder: 'Descending', StartIndex: s, Limit: n }), i => card(i, 'poster'));
-  const reqBox = h('div', { class: 'wl-req' }); wrap.append(reqBox); let reqs = null;
+  const reqBox = h('div', { class: 'wl-req' }); wrap.append(reqBox); let sw = null;
   async function drawReq() {
     if (!hasSeerr()) return;
-    try { if (!reqs) { const seenK = new Set(); reqs = (await myRequests()).filter(q => q.status !== 3 && q.media.status !== 5).filter(q => { const k = q.media.mediaType + q.media.tmdbId; if (seenK.has(k)) return false; seenK.add(k); return true; }); } } catch (e) { return; }
-    const list = reqs.filter(q => type === 'Movie,Series' || (type === 'Movie') === (q.media.mediaType !== 'tv')); reqBox.replaceChildren(); if (!list.length) return;
-    const lm = await libMap(), rm = await reqMap(); const grid = h('div', { class: 'nf-grid' }); reqBox.append(h('h2', { class: 'nf-sect-title', style: 'margin:34px 0 14px' }, t('wlReq')), grid);
-    list.forEach(async q => {
-      const md = q.media; const slot = h('div', { style: 'display:contents' }); grid.append(slot);
-      try { const meta = await reqMeta(md); const el = dCard(Object.assign({}, meta, { id: md.tmdbId, mediaType: md.mediaType === 'tv' ? 'tv' : 'movie', mediaInfo: { status: md.status >= 2 && md.status <= 4 ? md.status : 3 } }), lm, rm); const p = dlPct(md); if (p != null) el.querySelector('.im').append(h('div', { class: 'prog' }, h('i', { style: 'width:' + p + '%' }))); slot.append(el); } catch (e) { slot.remove(); }
+    try { if (!sw) { sw = []; for (let p = 1; p <= 6; p++) { const r = await seerrGet('/discover/watchlist', { page: p }); (r.results || []).forEach(x => { if (x.tmdbId && !sw.some(y => y.tmdbId === x.tmdbId && y.mediaType === x.mediaType)) sw.push({ mediaType: x.mediaType === 'tv' ? 'tv' : 'movie', tmdbId: x.tmdbId }); }); if (p >= (r.totalPages || 1)) break; } } } catch (e) { return; }
+    const lm = await libMap(), rm = await reqMap();
+    const list = sw.filter(x => !lm[x.mediaType + ':' + x.tmdbId] && (type === 'Movie,Series' || (type === 'Movie') === (x.mediaType !== 'tv'))); reqBox.replaceChildren(); if (!list.length) return;
+    const grid = h('div', { class: 'nf-grid' }); reqBox.append(h('h2', { class: 'nf-sect-title', style: 'margin:34px 0 14px' }, t('wlReq')), grid);
+    list.forEach(async x => {
+      const slot = h('div', { style: 'display:contents' }); grid.append(slot);
+      try { const meta = await reqMeta({ mediaType: x.mediaType, tmdbId: x.tmdbId }); slot.append(dCard(Object.assign({}, meta, { id: x.tmdbId, mediaType: x.mediaType }), lm, rm)); } catch (e) { slot.remove(); }
     });
   }
   syncWatchlist(); drawReq();
@@ -108,3 +109,5 @@ async function browseListView(page, kind, param) {
   bar.append(sel); wrap.append(bar);
   const g = infiniteGrid(wrap, (s, n) => items(Object.assign({ IncludeItemTypes: st.type || 'Movie,Series,BoxSet', SortBy: st.sort, SortOrder: st.order, StartIndex: s, Limit: n }, base)), i => card(i, 'poster'));
 }
+
+async function seerrWatch(x) { try { await cpostSeerr('/watchlist', { tmdbId: +x.id, mediaType: x.mediaType === 'tv' ? 'tv' : 'movie', title: x.title || x.name }); toast(t('wlAdded')); } catch (e) { toast('⚠ ' + ((e.responseJSON && e.responseJSON.message) || 'Seerr')); } }

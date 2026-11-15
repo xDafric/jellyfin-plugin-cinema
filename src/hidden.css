@@ -1,3 +1,15 @@
 /* extended mode: a barely visible marker on the account avatar so you know it is on */
 html.cx-ext .nf-avatar { position: relative; }
 html.cx-ext .nf-avatar::after { content: ''; position: absolute; right: -1px; top: -1px; width: 7px; height: 7px; border-radius: 50%; background: #fff; opacity: .55; box-shadow: 0 0 0 2px #141414; }
+.um-danger .um-ic, .um-danger:hover .um-ic { background: rgba(255,255,255,.1) !important; color: #fff; }
+.um-danger:hover { background: rgba(255,255,255,.06); }
+.nf-card.hx .im { box-shadow: inset 0 0 0 2px rgba(255,255,255,.22); }
+.hx-badge { position: absolute; right: 8px; top: 8px; z-index: 4; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); }
+.hx-badge svg { width: 14px !important; height: 14px !important; }
+.hx-lock { width: 64px; height: 64px; margin: 6px auto 14px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #34343d, #1f1f25); box-shadow: 0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.1); }
+.hx-lock svg { width: 28px; height: 28px; }
+.cxd input.hx-code { display: block; width: 100%; box-sizing: border-box; height: 56px; text-align: center; font-size: 24px; letter-spacing: .35em; background: rgba(255,255,255,.06) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.12) !important; border-radius: 16px !important; outline: 0; transition: border-color .2s, box-shadow .2s; }
+.cxd input.hx-code:focus { border-color: rgba(255,255,255,.5) !important; box-shadow: 0 0 0 4px rgba(255,255,255,.08); }
+.cxd input.hx-code::placeholder { letter-spacing: .3em; color: #55555e; }
+.cxd input.hx-code.shake { animation: hxShake .4s; border-color: #ff6b6b !important; }
+@keyframes hxShake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }

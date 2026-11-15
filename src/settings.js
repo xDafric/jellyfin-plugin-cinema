@@ -1,7 +1,7 @@
 /* ---------- configurable home sections, settings page, requests page ---------- */
 const SEC = {
   continue: { label: () => t('continue'), run: () => api('Users/' + uid() + '/Items/Resume', { Limit: 20, MediaTypes: 'Video', Fields: F_BASE, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }), kind: 'thumb' },
-  nextup: { label: () => t('nextup'), run: () => api('Shows/NextUp', { userId: uid(), Limit: 20, Fields: F_BASE, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }), kind: 'thumb' },
+  nextup: { label: () => t('nextup'), run: () => api('Shows/NextUp', { userId: uid(), Limit: 50, Fields: F_BASE, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }).then(r => { const hide = new Set(CFGU.nuHide || []); r.Items = r.Items.filter(i => !hide.has(i.SeriesId) && !(i.ParentIndexNumber === 1 && i.IndexNumber === 1)).slice(0, 20); return r; }), kind: 'thumb' },
   newMovies: { label: () => t('newMovies'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster', href: '#/c/movies' },
   newShows: { label: () => t('newShows'), run: () => items({ IncludeItemTypes: 'Series', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster', href: '#/c/shows' },
   top: { label: () => t('top'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 20, MinCommunityRating: 7 }), kind: 'thumb' },
@@ -9,6 +9,14 @@ const SEC = {
   favs: { label: () => t('favs'), run: () => items({ IncludeItemTypes: 'Movie,Series', Filters: 'IsFavorite', Limit: 30 }), kind: 'poster', href: '#/c/list' },
   random: { label: () => t('random'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'Random', Limit: 20 }), kind: 'thumb' },
   because: { label: () => t('because'), kind: 'poster', run: async () => { const r = await items({ IncludeItemTypes: 'Movie,Series', Filters: 'IsPlayed', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 1 }); const last = r.Items[0]; if (!last) return []; SEC.because.title = t('because') + ' ' + last.Name; return api('Items/' + last.Id + '/Similar', { userId: uid(), limit: 20, Fields: F_BASE }); } },
+  top10Movies: { label: () => t('top10Movies'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating,SortName', SortOrder: 'Descending', Limit: 10, MinCommunityRating: 6.5, Fields: F_BASE }), kind: 'top10' },
+  top10Shows: { label: () => t('top10Shows'), run: () => items({ IncludeItemTypes: 'Series', SortBy: 'CommunityRating,SortName', SortOrder: 'Descending', Limit: 10, Fields: F_BASE }), kind: 'top10' },
+  spotlight: { label: () => t('spotlight'), run: () => items({ IncludeItemTypes: 'Movie,Series', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 12, HasOverview: true, Fields: F_BASE + ',Overview' }).then(r => { r.Items = r.Items.filter(i => i.BackdropImageTags && i.BackdropImageTags.length || i.ParentBackdropImageTags); return r; }), kind: 'spotlight' },
+  genreTiles: { label: () => t('genreTiles'), tiles: true },
+  recentEps: { label: () => t('recentEps'), run: () => api('Users/' + uid() + '/Items/Latest', { IncludeItemTypes: 'Episode', Limit: 24, Fields: F_BASE, GroupItems: false, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }), kind: 'thumb' },
+  collections: { label: () => t('collections'), run: () => items({ IncludeItemTypes: 'BoxSet', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster', min: 2 },
+  unwatched: { label: () => t('unwatched'), run: () => items({ IncludeItemTypes: 'Movie', Filters: 'IsUnplayed', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 20, MinCommunityRating: 7 }), kind: 'thumb' },
+  decade: { label: p => p.title || t('decade'), custom: true, run: p => { const a = +p.param; return items({ IncludeItemTypes: 'Movie', Years: Array.from({ length: 10 }, (_, i) => a + i).join(','), SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24 }); }, kind: 'poster' },
   genres: { label: () => t('genresRandom'), multi: true },
   seerrTrending: { label: () => t('trending') + ' (Seerr)', seerr: '/discover/trending' },
   seerrMovies: { label: () => t('popMovies') + ' (Seerr)', seerr: '/discover/movies' },
@@ -17,22 +25,24 @@ const SEC = {
   collection: { label: p => p.title || t('collection'), custom: true, run: p => items({ ParentId: p.param, SortBy: 'PremiereDate', Limit: 40 }), kind: 'poster' },
   library: { label: p => p.title || 'Library', custom: true, run: p => items({ ParentId: p.param, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster' }
 };
-const DEFAULT_SECTIONS = ['continue', 'nextup', 'newMovies', 'newShows', 'top', 'watchlist', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
+const DEFAULT_SECTIONS = ['continue', 'nextup', 'spotlight', 'top10Movies', 'newMovies', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'watchlist', 'collections', 'top', 'unwatched', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
 const sectionsCfg = () => { const c = cfg('sections'); return c && c.length ? c : DEFAULT_SECTIONS; };
 
 async function homeView2(page) {
-  if (cfg('hero') !== false) { const hero = await heroFor('Movie,Series').catch(() => []); if (hero.length) page.append(heroEl(hero)); else page.append(h('div', { style: 'height:90px' })); } else page.append(h('div', { style: 'height:90px' }));
+  const heroHost = h('div', { class: 'nf-hero-host', style: 'min-height:90px' }); page.append(heroHost);
+  if (cfg('hero') !== false) heroFor('Movie,Series').then(hero => { if (hero.length && heroHost.isConnected) heroHost.replaceChildren(heroEl(hero)); heroHost.style.minHeight = ''; }).catch(() => { });
   const rows = h('div', { class: 'nf-rows' }); page.append(rows);
   const list = sectionsCfg().filter(s => s.on !== false && SEC[s.id]);
   const first = list.slice(0, 7), rest = list.slice(7);
   const render = s => {
     const d = SEC[s.id];
     if (d.multi) return genreRows(rows, 'Movie', s.n || 4);
+    if (d.tiles) return genreTilesRow(rows);
     if (d.seerr) return seerrRow(rows, s.title || d.label(s), d.seerr);
     if (d.seerrRec) return seerrRecRow(rows);
     const title = s.title || (s.id === 'because' ? null : d.label(s));
     if (s.id === 'because') { const ph = h('div', { class: 'nf-rowph' }); rows.append(ph); Promise.resolve(d.run(s)).then(l => { const arr = (l && l.Items) || l || []; if (arr.length) ph.replaceWith(row(d.title || t('because'), arr, d.kind)); else ph.remove(); }).catch(() => ph.remove()); return; }
-    lazyRow(rows, title, () => d.run(s), d.kind || 'poster', { href: d.href || (d.custom ? '#/c/browse/' + s.id + '/' + encodeURIComponent(s.param) : undefined), min: d.custom ? 4 : 1 });
+    lazyRow(rows, title, () => d.run(s), d.kind || 'poster', { min: d.min, href: d.href || (d.custom ? '#/c/browse/' + s.id + '/' + encodeURIComponent(s.param) : undefined), min: d.min || (d.custom ? 4 : 1) });
   };
   first.forEach(render);
   if (!rest.length && cfg('infinite') !== false) endlessRows(rows, page);
@@ -84,13 +94,14 @@ async function settingsView(page) {
         SEC[s.id] && SEC[s.id].custom ? h('button', { 'aria-label': 'Remove', onclick: () => { secs.splice(i, 1); persist(); draw_(); } }, ic('close')) : null))));
     }
     draw_();
-    const types = [['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')]];
+    const types = [['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')], ['top10Movies', t('top10Movies')], ['top10Shows', t('top10Shows')], ['spotlight', t('spotlight')], ['genreTiles', t('genreTiles')], ['recentEps', t('recentEps')], ['collections', t('collections')], ['unwatched', t('unwatched')], ['decade', t('decade')]];
     const typeSel = h('select', {}, types.filter(([k]) => !secs.some(s => s.id === k && !SEC[k].custom)).map(([k, l]) => h('option', { value: k }, l)));
     const valSel = h('select', {});
     async function fillVals() { valSel.replaceChildren(); valSel.style.display = ''; const k = typeSel.value;
       if (k === 'genre') { const g = await api('Genres', { userId: uid(), IncludeItemTypes: 'Movie,Series', SortBy: 'SortName' }); g.Items.forEach(x => valSel.append(h('option', { value: x.Name }, x.Name))); }
       else if (k === 'collection') { const g = await items({ IncludeItemTypes: 'BoxSet', SortBy: 'SortName', Limit: 200 }); g.Items.forEach(x => valSel.append(h('option', { value: x.Id, 'data-t': x.Name }, x.Name))); }
       else if (k === 'library') { const v = await api('Users/' + uid() + '/Views'); v.Items.forEach(x => valSel.append(h('option', { value: x.Id, 'data-t': x.Name }, x.Name))); }
+      else if (k === 'decade') { [1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020].forEach(y => valSel.append(h('option', { value: y, 'data-t': y + 's' }, y + 's'))); }
       else valSel.style.display = 'none'; }
     typeSel.addEventListener('change', fillVals); fillVals();
     const addBtn = h('button', { class: 'btn white', style: 'height:40px', onclick: () => { const k = typeSel.value; const o = valSel.selectedOptions[0]; secs.push(SEC[k].custom ? { id: k, on: true, param: valSel.value, title: o && o.dataset.t } : { id: k, on: true }); persist(); draw_(); } }, ic('plus'), t('add'));
@@ -123,8 +134,7 @@ async function settingsView(page) {
       const swatches = h('div', { class: 'set-sw' }, ['#e50914', '#ff6a3d', '#f5b301', '#34c759', '#0a84ff', '#8b5cf6', '#ff2d92', '#ffffff'].map(c => h('button', { style: 'background:' + c, class: cfg('accent') === c ? 'on' : '', 'aria-label': c, onclick: async () => { await saveCfg({ accent: c }); draw(); } })));
       return [card_(t('setLook'),
         row(t('accent'), t('accentHint'), h('div', { style: 'display:flex;gap:10px;align-items:center' }, swatches, acc), 'accent'),
-        row(t('setCardSize'), t('setCardSizeHint'), seg([['s', t('small')], ['m', t('medium')], ['l', t('large')]], 'cardSize'), 'cardSize'),
-        row(t('pskin'), t('pskinHint'), (() => { const b = h('button', { class: 'set-switch' + (skinOn() ? ' on' : ''), onclick: () => { setSkin(!skinOn()); b.classList.toggle('on', skinOn()); } }, h('i')); return b; })()))];
+        row(t('setCardSize'), t('setCardSizeHint'), seg([['s', t('small')], ['m', t('medium')], ['l', t('large')]], 'cardSize'), 'cardSize'))];
     },
     services: () => {
       const dot = (ok, name, hint) => h('div', { class: 'set-svc' }, h('i', { class: ok ? 'ok' : '' }), h('div', {}, h('b', {}, name), h('span', {}, ok ? t('connected') : t('notConnected'))), hint ? h('a', { class: 'sp-pillbtn dark', href: hint }, t('open')) : null);
@@ -198,4 +208,16 @@ async function endlessRows(rows, page) {
   };
   const io = new IntersectionObserver(es => { if (es[0].isIntersecting) next(); }, { root: C.nf.el, rootMargin: '900px' });
   io.observe(sentinel);
+}
+
+Object.assign(TX.en, { top10Movies: 'Top 10 movies', top10Shows: 'Top 10 shows', spotlight: 'Spotlight', genreTiles: 'Browse by genre', recentEps: 'New episodes', collections: 'Collections', unwatched: 'Unwatched gems', decade: 'Decade' });
+Object.assign(TX.de, { top10Movies: 'Top 10 Filme', top10Shows: 'Top 10 Serien', spotlight: 'Im Rampenlicht', genreTiles: 'Nach Genre stöbern', recentEps: 'Neue Folgen', collections: 'Sammlungen', unwatched: 'Ungesehene Highlights', decade: 'Jahrzehnt' });
+const GTCOL = ['#e50914', '#7a3cff', '#0a8f6a', '#e08a00', '#1f6feb', '#c2185b', '#00838f', '#8e24aa', '#d84315', '#2e7d32'];
+async function genreTilesRow(container) {
+  const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
+  try {
+    const g = await api('Genres', { userId: uid(), IncludeItemTypes: 'Movie,Series', SortBy: 'SortName' }); const list = g.Items.slice(0, 40); if (list.length < 4) return ph.remove();
+    const sc = h('div', { class: 'nf-scroller' }, list.map((x, i) => h('a', { class: 'nf-card gtile', style: '--c:' + GTCOL[i % GTCOL.length], href: '#/c/browse/genre/' + encodeURIComponent(x.Name) }, h('b', {}, x.Name))));
+    ph.replaceWith(h('section', { class: 'nf-row tiles' }, h('h2', {}, t('genreTiles')), h('button', { class: 'nf-arrow l', onclick: () => sc.scrollBy({ left: -sc.clientWidth * .85 }) }, ic('left')), sc, h('button', { class: 'nf-arrow r', onclick: () => sc.scrollBy({ left: sc.clientWidth * .85 }) }, ic('right'))));
+  } catch (e) { ph.remove(); }
 }

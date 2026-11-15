@@ -9,24 +9,30 @@ const SORTS = { popularity: ['popularity.desc', 'popularity.desc'], rating: ['vo
 
 async function discoverView2(page) {
   if (!(await waitSeerr())) { page.append(h('div', { class: 'nf-page-pad' }, h('h1', {}, t('discover')), h('div', { class: 'nf-empty' }, 'Seerr is not available.'))); return; }
-  const [lm, rm] = await Promise.all([libMap(), reqMap()]);
+  const wrap = h('div', {}); page.append(wrap); const skel = h('div', { style: 'height:62vh;display:grid;place-items:center' }, h('div', { class: 'spinner' })); wrap.append(skel);
+  const heroP = seerrGet('/discover/trending', { page: 1 }).then(r => r.results.filter(x => x.backdropPath && x.overview && (x.mediaType === 'movie' || x.mediaType === 'tv')).slice(0, 8)).catch(() => []);
+  const [lm, rm, heroRaw, genres] = await Promise.all([libMap(), reqMap(), heroP, dcGenres()]); skel.remove();
   const make = x => dCard(x, lm, rm);
-  const st = { type: 'all', genre: '', sort: 'popularity', hideOwned: false, q: '' };
-  const wrap = h('div', {}); page.append(wrap);
-  const hero = await seerrGet('/discover/trending', { page: 1 }).then(r => r.results.filter(x => x.backdropPath && x.overview && (x.mediaType === 'movie' || x.mediaType === 'tv')).slice(0, 8).map(x => toHero(x, lm, rm))).catch(() => []);
-  const heroHolder = h('div', {}, hero.length ? heroEl(hero) : h('div', { style: 'height:90px' })); wrap.append(heroHolder);
+  const st = { type: 'all', genre: '', genreName: '', sort: 'popularity', hideOwned: false, q: '' };
+  const hero = heroRaw.map(x => toHero(x, lm, rm));
+  const heroHolder = h('div', {}, hero.length ? heroEl(hero) : h('div', { style: 'height:90px' })); wrap.prepend(heroHolder);
   /* filter bar */
-  const genres = await dcGenres();
-  const typeChips = h('div', { style: 'display:flex;gap:8px' }, [['all', t('all')], ['movie', t('movies')], ['tv', t('shows')]].map(([v, l]) => h('button', { class: 'nf-chip' + (v === st.type ? ' on' : ''), onclick: e => { st.type = v; $$('.nf-chip', typeChips).forEach(c => c.classList.remove('on')); e.currentTarget.classList.add('on'); fillGenres(); refresh(); } }, l)));
-  const gSel = h('select', { onchange: e => { st.genre = e.target.value; refresh(); } });
-  function fillGenres() { const list = st.type === 'tv' ? genres.tv : st.type === 'movie' ? genres.movie : mergeGenres(); gSel.replaceChildren(h('option', { value: '' }, t('genres')), ...list.map(g => h('option', { value: g.id }, g.name))); st.genre = ''; }
+  const segBtn = (v, l) => h('button', { class: 'dc-seg' + (v === st.type ? ' on' : ''), onclick: e => { st.type = v; $$('.dc-seg', typeChips).forEach(c => c.classList.remove('on')); e.currentTarget.classList.add('on'); fillGenres(); refresh(); } }, l);
+  const typeChips = h('div', { class: 'dc-segs' }, [['all', t('all')], ['movie', t('movies')], ['tv', t('shows')]].map(([v, l]) => segBtn(v, l)));
+  const gSel = h('select', { onchange: e => { st.genre = e.target.value; st.genreName = e.target.selectedOptions[0] ? e.target.selectedOptions[0].textContent : ''; refresh(); } });
   const mergeGenres = () => { const seen = {}; return genres.movie.concat(genres.tv).filter(g => (seen[g.id] ? false : (seen[g.id] = true))); };
+  function fillGenres() { const list = st.type === 'tv' ? genres.tv : st.type === 'movie' ? genres.movie : mergeGenres(); gSel.replaceChildren(h('option', { value: '' }, t('genres')), ...list.map(g => h('option', { value: g.id }, g.name))); st.genre = ''; st.genreName = ''; }
   fillGenres();
   const sSel = h('select', { onchange: e => { st.sort = e.target.value; refresh(); } }, [['popularity', t('sortPop')], ['rating', t('sortRating')], ['newest', t('sortNew')]].map(([v, l]) => h('option', { value: v }, l)));
   const hide = h('input', { type: 'checkbox', onchange: e => { st.hideOwned = e.target.checked; refresh(); } });
-  let qT; const q = h('input', { type: 'text', placeholder: t('search') + ' (Seerr)…', oninput: e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); refresh(); }, 400); } });
-  const bar = h('div', { class: 'dc-bar' }, typeChips, gSel, sSel, h('label', {}, hide, t('hideOwned')), q);
+  let qT; const q = h('input', { type: 'text', placeholder: t('dcSearch'), oninput: e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); refresh(); }, 400); } });
+  const bar = h('div', { class: 'dc-bar' }, typeChips, h('div', { class: 'dc-sel' }, gSel), h('div', { class: 'dc-sel' }, sSel), h('label', { class: 'dc-tg' }, hide, h('i'), h('span', {}, t('hideOwned'))), h('div', { class: 'dc-q' }, ic('search', 'ic-s'), q));
   wrap.append(bar);
+  /* genre tiles (Netflix-style "browse by genre") */
+  const tiles = h('div', { class: 'dc-tiles' });
+  const GCOL = ['#e50914', '#7a3cff', '#0a8f6a', '#e08a00', '#1f6feb', '#c2185b', '#00838f', '#8e24aa', '#d84315', '#2e7d32'];
+  mergeGenres().forEach((g, i) => tiles.append(h('button', { class: 'dc-tile', style: '--c:' + GCOL[i % GCOL.length], onclick: () => { st.type = genres.movie.some(x => x.id === g.id) ? 'movie' : 'tv'; $$('.dc-seg', typeChips).forEach((c, k) => c.classList.toggle('on', ['all', 'movie', 'tv'][k] === st.type)); fillGenres(); gSel.value = g.id; st.genre = String(g.id); st.genreName = g.name; refresh(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, h('b', {}, g.name))));
+  const tilesWrap = h('div', { class: 'dc-tiles-w' }, h('h2', { class: 'nf-sect-title', style: 'margin:0 0 12px' }, t('browseGenre')), tiles); wrap.append(tilesWrap);
   const personal = h('div', { class: 'nf-rows', style: 'margin-top:10px' }); wrap.append(personal);
   const gridHost = h('div', { class: 'nf-page-pad', style: 'padding-top:0' }); wrap.append(gridHost);
   let grid = null;
@@ -58,9 +64,9 @@ async function discoverView2(page) {
     };
   }
   function refresh() {
-    gridHost.replaceChildren(); personal.style.display = filtered() ? 'none' : ''; heroHolder.style.display = filtered() ? 'none' : '';
+    gridHost.replaceChildren(); personal.style.display = filtered() ? 'none' : ''; tilesWrap.style.display = filtered() ? 'none' : ''; heroHolder.style.display = filtered() ? 'none' : '';
     gridHost.style.paddingTop = filtered() ? '10px' : '0'; wrap.style.paddingTop = filtered() ? '88px' : '0';
-    gridHost.append(h('h2', { style: 'margin:10px 0 16px;font-size:22px' }, st.q ? t('results') + ' “' + st.q + '”' : filtered() ? t('discover') : t('moreToExplore')));
+    gridHost.append(h('h2', { style: 'margin:10px 0 16px;font-size:26px;font-weight:800;letter-spacing:-.02em' }, st.q ? t('results') + ' “' + st.q + '”' : st.genreName ? st.genreName : filtered() ? t('discover') : t('moreToExplore')));
     grid = infiniteGrid(gridHost, fetcher(), make, 40);
   }
   buildPersonal(); refresh();
@@ -80,3 +86,6 @@ async function personalRows(container, make, lm, rm) {
     top.forEach(name => { const g = gl.movie.find(x => x.name === name) || gl.tv.find(x => x.name === name); if (g) lazyRow(container, t('moreOf') + ' ' + name, () => seerrGet('/discover/movies', { page: 1, genre: g.id, sortBy: 'popularity.desc' }).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: 'movie' })).filter(x => dStatus(x, lm, rm).k !== 'own')), 'poster', { make }); });
   } catch (e) { console.warn('[cinema] personal rows', e); }
 }
+
+Object.assign(TX.en, { dcSearch: 'Search movies & shows…', browseGenre: 'Browse by genre' });
+Object.assign(TX.de, { dcSearch: 'Filme & Serien suchen…', browseGenre: 'Nach Genre stöbern' });

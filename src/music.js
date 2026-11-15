@@ -114,7 +114,8 @@ function buildPlayer() {
   const sv = parseFloat((() => { try { return localStorage.getItem('cx-vol'); } catch (e) { return null; } })()); P.audio.volume = isFinite(sv) ? sv : 1; vol.set(P.audio.volume);
   const bQ = h('button', { class: 'pl-btn', onclick: toggleQueue, 'aria-label': t('queue') }, ic('queue'));
   const bMute = h('button', { class: 'pl-btn', onclick: () => { P.audio.muted = !P.audio.muted; vol.set(P.audio.muted ? 0 : P.audio.volume); } }, ic('vol'));
-  const right = h('div', { class: 'pl-r' }, bQ, bMute, vol);
+  const bL = h('button', { class: 'pl-btn', onclick: toggleLyrics, 'aria-label': t('lyrics') }, ic('mic'));
+  const right = h('div', { class: 'pl-r' }, bL, bQ, bMute, vol);
   const bar = h('div', { class: 'sp-player' }, left, center, right);
 
   /* mobile mini + full */
@@ -124,7 +125,7 @@ function buildPlayer() {
   const fcur = h('span', {}, '0:00'), fdur = h('span', {}, '0:00');
   const fseek = seekBar(null, (f, commit) => { if (P.audio.duration) { if (commit) P.audio.currentTime = f * P.audio.duration; fcur.textContent = fmtTime(f * P.audio.duration); } });
   const fb = { sh: h('button', { class: 'pl-btn', onclick: toggleShuffle }, ic('shuffle')), pv: h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), pp: h('button', { class: 'pl-btn big', onclick: toggle }, ic('play')), nx: h('button', { class: 'pl-btn', onclick: () => next() }, ic('next')), rp: h('button', { class: 'pl-btn', onclick: cycleRepeat }, ic('repeat')) };
-  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleQueue(); } }, ic('queue'))), fcv,
+  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { style: 'display:flex' }, h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleLyrics(); } }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleQueue(); } }, ic('queue')))), fcv,
     h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), fLike), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
   function openFull(on) { full.classList.toggle('open', on); full.style.transform = ''; }
   let sy = null; full.addEventListener('touchstart', e => { if (e.target.closest('.bar, .seekwrap')) { sy = null; return; } sy = e.touches[0].clientY; full.style.transition = 'none'; }, { passive: true });
@@ -170,7 +171,7 @@ function buildPlayer() {
 }
 let tickUI = () => { };
 let queueEl = null;
-function toggleQueue() { if (queueEl) { queueEl.remove(); queueEl = null; return; } queueEl = h('div', { class: 'sp-queue' }); $('.sp-main', root).parentElement.append(queueEl); renderQueue(); }
+function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; return; } queueEl = h('div', { class: 'sp-queue' }); $('.sp-main', root).parentElement.append(queueEl); renderQueue(); }
 function renderQueue() {
   if (!queueEl) return; const it = cur();
   const rowQ = (x, k) => h('div', { class: 'sp-qi' + (k === P.i ? ' playing' : ''), onclick: () => { P.i = k; loadCurrent(); } }, h('div', Object.assign({ class: 'cv' }, bg(trackImg(x, 100)))), h('div', {}, h('b', { class: 'ell' }, x.Name), h('span', { class: 'ell' }, artistText(x))));
@@ -445,3 +446,36 @@ C.updateNPill = function () {
   if (!pill) { pill = h('div', { id: 'cx-npill', class: 'nf-npill', onclick: () => go('#/c/music') }, h('div', { class: 'cv' }), h('div', { class: 'tx' }, h('b', { class: 'ell' }), h('span', { class: 'ell' })), h('button', { class: 'pp', onclick: e => { e.stopPropagation(); toggle(); } })); root.append(pill); }
   $('.cv', pill).style.backgroundImage = 'url("' + trackImg(it, 100) + '")'; $('b', pill).textContent = it.Name; $('span', pill).textContent = artistText(it); $('.pp', pill).replaceChildren(ic(P.audio.paused ? 'play' : 'pause'));
 };
+
+/* ---------- lyrics (plain + time-synced, straight from Jellyfin's lyric providers / .lrc files) ---------- */
+Object.assign(TX.en, { lyrics: 'Lyrics', noLyrics: 'No lyrics found for this song.', lyrSynced: 'Synced', lyrPlain: 'Not synced' });
+Object.assign(TX.de, { lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
+let lyrEl = null, lyrLines = null, lyrId = null, lyrAt = -1, lyrSynced = false;
+function toggleLyrics() {
+  if (lyrEl) { lyrEl.remove(); lyrEl = null; return; }
+  if (queueEl) { queueEl.remove(); queueEl = null; }
+  lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); $('.sp-main', root).parentElement.append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics();
+}
+async function loadLyrics(it) {
+  lyrId = it.Id; lyrLines = null; lyrAt = -1; drawLyrics(true);
+  try { const r = await api('Audio/' + it.Id + '/Lyrics'); if (lyrId !== it.Id) return; lyrLines = (r.Lyrics || []).map(l => ({ t: l.Start != null ? l.Start / 1e7 : null, s: l.Text })); lyrSynced = lyrLines.length > 0 && lyrLines.filter(l => l.t != null).length > lyrLines.length / 2; }
+  catch (e) { if (lyrId !== it.Id) return; lyrLines = []; lyrSynced = false; }
+  drawLyrics();
+}
+function drawLyrics(loading) {
+  if (!lyrEl) return; const it = cur();
+  const head = h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, t('lyrics')), h('button', { class: 'pl-btn', onclick: toggleLyrics }, ic('close')));
+  const sub_ = it ? h('div', { class: 'lyr-song' }, h('b', { class: 'ell' }, it.Name), h('span', { class: 'ell' }, artistText(it) + (lyrLines && lyrLines.length ? ' · ' + (lyrSynced ? t('lyrSynced') : t('lyrPlain')) : ''))) : null;
+  let body;
+  if (loading || lyrLines == null) body = h('div', { class: 'spinner', style: 'margin:60px auto' });
+  else if (!lyrLines.length) body = h('div', { class: 'nf-empty', style: 'padding:40px 10px' }, t('noLyrics'));
+  else body = h('div', { class: 'lyr-body' + (lyrSynced ? ' sync' : '') }, lyrLines.map((l, i) => h('p', { class: 'lyr-l' + (l.s ? '' : ' gap'), 'data-i': i, onclick: lyrSynced && l.t != null ? () => { P.audio.currentTime = l.t; } : null }, l.s || '♪')));
+  lyrEl.replaceChildren(head, sub_ || '', body);
+}
+P.audio.addEventListener('timeupdate', () => {
+  if (!lyrEl || !lyrSynced || !lyrLines || !lyrLines.length) return; const now = P.audio.currentTime + .25; let idx = -1;
+  for (let i = 0; i < lyrLines.length; i++) { if (lyrLines[i].t != null && lyrLines[i].t <= now) idx = i; else if (lyrLines[i].t != null) break; }
+  if (idx === lyrAt) return; lyrAt = idx; const ps = lyrEl.querySelectorAll('.lyr-l'); ps.forEach((p, i) => { p.classList.toggle('on', i === idx); p.classList.toggle('past', i < idx); });
+  const el = ps[idx]; if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+});
+P.subs.push(() => { if (lyrEl && cur() && cur().Id !== lyrId) loadLyrics(cur()); });
