@@ -29,3 +29,5 @@
 .cal-ev > span { padding-bottom: 12px; }
 @media (max-width: 800px) { .cal-grid { grid-template-columns: 1fr; } .cal-dow { display: none; } .cal-day.other { display: none; } .cal-day { min-height: 0; } .dl-row { grid-template-columns: 1fr; gap: 6px; } }
 .sp-tile .pbtn.busy { opacity: .5; pointer-events: none; }
+.sp-shelf { grid-auto-columns: minmax(170px, 220px); }
+@media (max-width: 800px) { .sp-shelf { grid-auto-columns: 40vw; } }

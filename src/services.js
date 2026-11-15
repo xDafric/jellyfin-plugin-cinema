@@ -80,7 +80,7 @@ const aList = r => Array.isArray(r) ? r : (r && (r.results || r.items || r.artis
 const aName = o => pk(o, ['name', 'artistName', 'title', 'albumName']) || '?';
 const aImg = o => { const u = pk(o, ['image', 'imageUrl', 'cover', 'coverUrl', 'thumbnail', 'artwork', 'picture']); return typeof u === 'string' ? (u.startsWith('http') ? u : '') : ''; };
 function aurralTile(o, kind) {
-  const name = aName(o); const sub = kind === 'artist' ? t('artist') : [pk(o, ['artistName', 'artist']) || '', pk(o, ['year', 'releaseYear'])].filter(Boolean).join(' · ');
+  const name = aName(o); const sub = kind === 'artist' ? t('artist') : [pk(o, ['artistName', 'artist']) || '', pk(o, ['year', 'releaseYear']) || String(o.releaseDate || '').slice(0, 4)].filter(Boolean).join(' · ');
   const el = tile({ name, sub: sub + ' · ' + t('notOwned'), img: aImg(o), round: kind === 'artist', href: '#', play: null });
   const btn = h('button', { class: 'pbtn show', 'aria-label': t('request'), onclick: async e => { e.stopPropagation(); btn.classList.add('busy'); try { await requestAurral(o, kind); toast('✓ ' + t('requested')); } catch (er) { toast('⚠ ' + ((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } btn.classList.remove('busy'); } }, ic('plus'));
   el.append(btn); el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el;
@@ -94,7 +94,8 @@ async function aurralSearchShelves(node, q) {
   if (!plug().aurral) return;
   try {
     const [ar, al] = await Promise.all([aget('/api/search', { q, scope: 'artist', limit: 10 }).catch(() => null), aget('/api/search', { q, scope: 'album', limit: 10 }).catch(() => null)]);
-    const a = aList(ar), b = aList(al);
+    let a = aList(ar); const b = aList(al);
+    if (!a.length && b.length) { const seen = new Set(); b.forEach(x => { const id = x.artistMbid; if (id && !seen.has(id)) { seen.add(id); a.push({ type: 'artist', id, name: x.artistName }); } }); }
     if (a.length) node.append(shelf(t('musicRequestArtists'), a.map(o => aurralTile(o, 'artist'))));
     if (b.length) node.append(shelf(t('musicRequestAlbums'), b.map(o => aurralTile(o, 'album'))));
   } catch (e) { }
