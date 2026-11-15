@@ -1,2 +1,3 @@
-/* extended mode: a barely visible marker so you know it is on */
-html.cx-ext #cx-top .nf-logo::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #e50914); opacity: .55; margin-left: 8px; vertical-align: middle; }
+/* extended mode: a barely visible marker on the account avatar so you know it is on */
+html.cx-ext .nf-avatar { position: relative; }
+html.cx-ext .nf-avatar::after { content: ''; position: absolute; right: -1px; top: -1px; width: 7px; height: 7px; border-radius: 50%; background: #fff; opacity: .55; box-shadow: 0 0 0 2px #141414; }

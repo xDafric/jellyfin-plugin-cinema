@@ -19,13 +19,49 @@ function infiniteGrid(container, fetchPage, makeCard, pageSize) {
   return { grid, reload() { grid.replaceChildren(); start = 0; done = false; more(); } };
 }
 
+Object.assign(TX.en, { wlReq: 'Requested · not available yet', wlSynced: 'Added to your watchlist' });
+Object.assign(TX.de, { wlReq: 'Angefragt · noch nicht verfügbar', wlSynced: 'Zur Watchlist hinzugefügt' });
+/* my own Seerr requests (the Seerr account is matched through the Jellyfin user id) */
+async function myRequests() {
+  const r = await seerrGet('/request', { take: 300, skip: 0, filter: 'all', sort: 'added' }); const me_ = String(uid()).replace(/-/g, '').toLowerCase();
+  return (r.results || []).filter(q => q.media && q.media.tmdbId && String((q.requestedBy && q.requestedBy.jellyfinUserId) || '').replace(/-/g, '').toLowerCase() === me_);
+}
+/* a request that became available is added to the Jellyfin watchlist once (processed request ids are kept per user, so removing it again sticks) */
+const WLSYNC = { busy: false };
+async function syncWatchlist() {
+  if (WLSYNC.busy || !feat('watchlist') || !hasSeerr()) return; WLSYNC.busy = true;
+  try {
+    const avail = (await myRequests()).filter(q => q.status === 2 && q.media.status === 5); const seen = new Set(CFGU.wlSeen || []);
+    if (!CFGU.wlSeen) { await saveCfg({ wlSeen: avail.map(q => q.id) }); return; } // first run: only requests that finish from now on
+    const todo = avail.filter(q => !seen.has(q.id)); if (!todo.length) return;
+    resetSeerrCache(); const lm = await libMap(); let added = 0;
+    for (const q of todo) {
+      const it = lm[q.media.mediaType + ':' + q.media.tmdbId]; if (!it) continue; // not scanned into the library yet: try again later
+      if (!isWatch(it)) { await ApiClient.updateUserItemRating(uid(), it.Id, true); added++; } seen.add(q.id);
+    }
+    if (seen.size !== (CFGU.wlSeen || []).length) await saveCfg({ wlSeen: [...seen].slice(-600) });
+    if (added) { toast('✓ ' + t('wlSynced') + (added > 1 ? ' (' + added + ')' : '')); C.libCache = null; if (/watchlist/.test(location.hash)) route(); }
+  } catch (e) { console.warn('[cinema] watchlist sync', e); } finally { WLSYNC.busy = false; }
+}
 async function watchlistView(page) {
   const wrap = h('div', { class: 'nf-page-pad' }, h('h1', {}, t('watchlist'))); page.append(wrap);
   let type = 'Movie,Series';
-  const chips = h('div', { class: 'nf-seasons' }, [['Movie,Series', t('all')], ['Movie', t('movies')], ['Series', t('shows')]].map(([v, l]) => h('button', { class: 'nf-chip' + (v === type ? ' on' : ''), onclick: e => { type = v; $$('.nf-chip', chips).forEach(c => c.classList.remove('on')); e.currentTarget.classList.add('on'); g.reload(); } }, l)));
+  const chips = h('div', { class: 'nf-seasons' }, [['Movie,Series', t('all')], ['Movie', t('movies')], ['Series', t('shows')]].map(([v, l]) => h('button', { class: 'nf-chip' + (v === type ? ' on' : ''), onclick: e => { type = v; $$('.nf-chip', chips).forEach(c => c.classList.remove('on')); e.currentTarget.classList.add('on'); g.reload(); drawReq(); } }, l)));
   wrap.append(chips);
   const g = infiniteGrid(wrap, (s, n) => items({ IncludeItemTypes: type, Filters: 'Likes', SortBy: 'DateCreated', SortOrder: 'Descending', StartIndex: s, Limit: n }), i => card(i, 'poster'));
-  setTimeout(() => { if (!g.grid.children.length) g.grid.after(h('div', { class: 'nf-empty' }, t('empty'))); }, 2500);
+  const reqBox = h('div', { class: 'wl-req' }); wrap.append(reqBox); let reqs = null;
+  async function drawReq() {
+    if (!hasSeerr()) return;
+    try { if (!reqs) { const seenK = new Set(); reqs = (await myRequests()).filter(q => q.status !== 3 && q.media.status !== 5).filter(q => { const k = q.media.mediaType + q.media.tmdbId; if (seenK.has(k)) return false; seenK.add(k); return true; }); } } catch (e) { return; }
+    const list = reqs.filter(q => type === 'Movie,Series' || (type === 'Movie') === (q.media.mediaType !== 'tv')); reqBox.replaceChildren(); if (!list.length) return;
+    const lm = await libMap(), rm = await reqMap(); const grid = h('div', { class: 'nf-grid' }); reqBox.append(h('h2', { class: 'nf-sect-title', style: 'margin:34px 0 14px' }, t('wlReq')), grid);
+    list.forEach(async q => {
+      const md = q.media; const slot = h('div', { style: 'display:contents' }); grid.append(slot);
+      try { const meta = await reqMeta(md); const el = dCard(Object.assign({}, meta, { id: md.tmdbId, mediaType: md.mediaType === 'tv' ? 'tv' : 'movie', mediaInfo: { status: md.status >= 2 && md.status <= 4 ? md.status : 3 } }), lm, rm); const p = dlPct(md); if (p != null) el.querySelector('.im').append(h('div', { class: 'prog' }, h('i', { style: 'width:' + p + '%' }))); slot.append(el); } catch (e) { slot.remove(); }
+    });
+  }
+  syncWatchlist(); drawReq();
+  setTimeout(() => { if (!g.grid.children.length && !reqBox.children.length) g.grid.after(h('div', { class: 'nf-empty' }, t('empty'))); }, 3000);
 }
 
 async function personView(page, id) {

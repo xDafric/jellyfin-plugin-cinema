@@ -1,6 +1,6 @@
 /* ---------- Discover: Seerr recommendations rendered with the same cards as the library ---------- */
 let SEERR = 'JellyfinEnhanced/jellyseerr';
-const seerrGet = (path, params) => fetch(ApiClient.getUrl(SEERR + path, params), { headers: { Authorization: 'MediaBrowser Token="' + ApiClient.accessToken() + '"' } }).then(r => { if (!r.ok) throw new Error('seerr ' + r.status); return r.json(); });
+const seerrGet = (path, params) => Promise.resolve(HID.on ? null : hxReady()).then(() => fetch(ApiClient.getUrl(SEERR + path, params), { headers: { Authorization: 'MediaBrowser Token="' + ApiClient.accessToken() + '"' } }).then(r => { if (!r.ok) throw new Error('seerr ' + r.status); return r.json(); }).then(d => hxSeerr(d)));
 const TM = (p, w) => p ? 'https://image.tmdb.org/t/p/' + w + p : '';
 let libMapP = null, reqMapP = null;
 const libMap = () => libMapP || (libMapP = items({ IncludeItemTypes: 'Movie,Series', Fields: 'ProviderIds', Limit: 10000, EnableImageTypes: 'Primary' }).then(r => { const m = {}; r.Items.forEach(i => { const id = (i.ProviderIds || {}).Tmdb; if (id) m[(i.Type === 'Series' ? 'tv' : 'movie') + ':' + id] = i; }); return m; }).catch(() => ({})));

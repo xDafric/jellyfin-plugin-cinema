@@ -6,7 +6,7 @@ Object.assign(TX.en, { hxTitle: 'Extended mode', hxCodeHint: 'Enter your code.',
 Object.assign(TX.de, { hxTitle: 'Erweiterter Modus', hxCodeHint: 'Gib deinen Code ein.', hxUnlock: 'Entsperren', hxLock: 'Deaktivieren', hxOn: 'Der erweiterte Modus ist auf diesem Gerät aktiv.', hxBad: 'Falscher Code', hxNone: 'Der erweiterte Modus ist noch nicht eingerichtet. Ein Administrator muss zuerst einen Code festlegen.',
   hxSetup: 'Code festlegen', hxSetupHint: 'Mit "hidden" getaggte Titel bleiben unsichtbar, bis dieser Code auf einem Gerät eingegeben wird.', hxNew: 'Neuer Code', hxSave: 'Speichern', hxChange: 'Code ändern', hxHide: 'Titel verstecken', hxUnhide: 'Titel wieder anzeigen', hxHidden: 'Titel versteckt', hxShown: 'Titel wieder sichtbar', hxDone: 'Erweiterter Modus aktiviert', hxOff: 'Erweiterter Modus deaktiviert', hxMin: 'Mindestens 4 Zeichen' });
 
-const HID = { on: false, ids: new Set(), series: new Set(), loaded: 0, p: null, tag: 'hidden' };
+const HID = { on: false, ids: new Set(), series: new Set(), tmdb: new Set(), tvdb: new Set(), loaded: 0, p: null, tag: 'hidden' };
 try { HID.on = localStorage.getItem('cx-ext') === '1'; } catch (e) { }
 if (HID.on) document.documentElement.classList.add('cx-ext');
 const hxIsTag = s => String(s).toLowerCase() === HID.tag;
@@ -14,11 +14,11 @@ const _rawFetch = window.fetch.bind(window);
 const HX_LIST = /\/(Users\/[^/]+\/)?Items(\/Latest|\/Resume|\/Suggestions)?(\?|$)|\/Items\/[^/?]+\/(Similar|Recommendations)\b|\/Shows\/(NextUp|Upcoming|[^/?]+\/(Episodes|Seasons))\b|\/Search\/Hints\b|\/Movies\/Recommendations\b|\/Playlists\/[^/?]+\/Items\b|\/Trailers\b|\/Artists(\/AlbumArtists)?(\?|$)|\/Persons(\?|$)|\/Genres(\?|$)/i;
 function hxAuthHeader() { return { Authorization: 'MediaBrowser Client="Cinema", Device="Web", DeviceId="cinema-web", Version="1.0", Token="' + ApiClient.accessToken() + '"' }; }
 async function hxLoad() {
-  const r = await _rawFetch(ApiClient.getUrl('Users/' + uid() + '/Items', { Recursive: true, Tags: HID.tag, Fields: 'Tags', EnableImages: false, EnableUserData: false, EnableTotalRecordCount: false }), { headers: hxAuthHeader() });
+  const r = await _rawFetch(ApiClient.getUrl('Users/' + uid() + '/Items', { Recursive: true, Tags: HID.tag, Fields: 'ProviderIds', EnableImages: false, EnableUserData: false, EnableTotalRecordCount: false }), { headers: hxAuthHeader() });
   if (!r.ok) throw new Error('hidden set ' + r.status);
-  const d = await r.json(); const ids = new Set(), series = new Set();
-  for (const it of d.Items || []) { ids.add(it.Id); if (it.Type === 'Series' || it.Type === 'Season') series.add((it.Type === 'Series' ? it.Name : it.SeriesName || '').toLowerCase()); }
-  series.delete(''); HID.ids = ids; HID.series = series; HID.loaded = Date.now();
+  const d = await r.json(); const ids = new Set(), series = new Set(), tmdb = new Set(), tvdb = new Set();
+  for (const it of d.Items || []) { ids.add(it.Id); const pi = it.ProviderIds || {}; const k = it.Type === 'Series' ? 'tv' : 'movie'; if (pi.Tmdb) tmdb.add(k + ':' + pi.Tmdb); if (pi.Tvdb) tvdb.add(String(pi.Tvdb)); if (it.Type === 'Series' || it.Type === 'Season') series.add((it.Type === 'Series' ? it.Name : it.SeriesName || '').toLowerCase()); }
+  series.delete(''); HID.ids = ids; HID.series = series; HID.tmdb = tmdb; HID.tvdb = tvdb; HID.loaded = Date.now();
 }
 function hxReady() {
   if (HID.loaded && Date.now() - HID.loaded < 600000) return null;
@@ -105,4 +105,24 @@ async function hxToggle(it) {
     full.Tags = has ? tags.filter(x => !hxIsTag(x)) : tags.concat(HID.tag); full.TagItems = full.Tags.map(n => ({ Name: n }));
     await jf('POST', 'Items/' + it.Id, null, full); toast('✓ ' + t(has ? 'hxShown' : 'hxHidden')); await hxReload();
   } catch (e) { toast('⚠ ' + (e.message || e)); }
+}
+
+/* Seerr / Radarr / Sonarr answers (requests, discover, queue, calendar) must not give hidden titles away either */
+function hxSeerrHidden(x) {
+  if (!x || typeof x !== 'object') return false;
+  const md = x.media || x.mediaInfo || {};
+  const mt = md.mediaType || x.mediaType || x.type || (x.source === 'radarr' ? 'movie' : x.source === 'sonarr' ? 'tv' : '');
+  if (mt === 'person') return false;
+  const kind = mt === 'tv' ? 'tv' : 'movie';
+  const tm = md.tmdbId || x.tmdbId || (x.mediaType && x.id ? x.id : 0) || (kind === 'tv' && x.tmdbSeriesId) || 0;
+  if (tm && HID.tmdb.has(kind + ':' + tm)) return true;
+  if (kind === 'tv' && x.tmdbSeriesId && HID.tmdb.has('tv:' + x.tmdbSeriesId)) return true;
+  const tv = md.tvdbId || x.tvdbId; if (tv && HID.tvdb.has(String(tv))) return true;
+  return false;
+}
+function hxSeerr(d) {
+  if (HID.on || !HID.loaded) return d;
+  if (Array.isArray(d)) return d.filter(x => !hxSeerrHidden(x));
+  if (d && Array.isArray(d.results)) d.results = d.results.filter(x => !hxSeerrHidden(x));
+  return d;
 }

@@ -1,0 +1,126 @@
+/* ---------- dashboard + admin pages (Jellyfin's React/MUI screens): every element in the Cinema look ---------- */
+html.cx-ready { --dx-a: #f2f2f5; --dx-a-soft: rgba(255, 255, 255, .12); --dx-a-text: #e8e8ec; --dx-card: #18181c; --dx-line: rgba(255, 255, 255, .07); }
+
+/* shell */
+html.cx-ready .MuiDrawer-paper { background: linear-gradient(180deg, #0f0f12, #0b0b0d) !important; }
+html.cx-ready .MuiDrawer-paper .MuiListItemButton-root { min-height: 42px; font-weight: 500; color: #c4c4cc; }
+html.cx-ready .MuiDrawer-paper .MuiListItemButton-root.Mui-selected { background: rgba(255, 255, 255, .1) !important; color: #fff; }
+html.cx-ready .MuiDrawer-paper .MuiListItemIcon-root { color: inherit; opacity: .85; min-width: 38px; }
+html.cx-ready .MuiDrawer-paper .MuiListItemButton-root.Mui-selected .MuiListItemIcon-root { color: var(--dx-a-text); opacity: 1; }
+html.cx-ready .MuiDrawer-paper .MuiListSubheader-root { font-size: 11px; letter-spacing: .12em; text-transform: uppercase !important; color: #6f6f78 !important; font-weight: 700; }
+html.cx-ready .MuiAppBar-root { box-shadow: none !important; }
+html.cx-ready .MuiToolbar-root .MuiIconButton-root:hover { background: rgba(255, 255, 255, .08); }
+
+/* headings, text */
+html.cx-ready .MuiTypography-h1, html.cx-ready .MuiTypography-h2, html.cx-ready .MuiTypography-h3 { font-weight: 800 !important; letter-spacing: -.02em; }
+html.cx-ready .MuiTypography-h4, html.cx-ready .MuiTypography-h5, html.cx-ready .MuiTypography-h6 { font-weight: 700 !important; letter-spacing: -.01em; }
+html.cx-ready .MuiTypography-colorTextSecondary, html.cx-ready .MuiFormHelperText-root, html.cx-ready .MuiTypography-body2 { color: #9a9aa4; }
+html.cx-ready a.MuiLink-root, html.cx-ready .MuiLink-root { color: #fff !important; text-decoration-color: transparent !important; transition: text-decoration-color .2s; }
+html.cx-ready .MuiFormHelperText-root a, html.cx-ready .MuiTypography-body1 a.MuiLink-root, html.cx-ready .MuiTypography-body2 a.MuiLink-root { color: var(--dx-a-text) !important; }
+html.cx-ready a.MuiLink-root:hover { text-decoration-color: currentColor !important; }
+html.cx-ready .MuiBreadcrumbs-root a { color: #9a9aa4 !important; }
+
+/* surfaces: cards, paper, lists, tables */
+html.cx-ready .MuiCard-root, html.cx-ready .MuiPaper-outlined { background: var(--dx-card) !important; border: 1px solid var(--dx-line) !important; border-radius: 20px !important; box-shadow: none !important; overflow: hidden; transition: transform .2s, border-color .2s, background .2s; }
+html.cx-ready .MuiCard-root:hover { border-color: rgba(255, 255, 255, .14) !important; }
+html.cx-ready .MuiCardActionArea-root:hover .MuiCardActionArea-focusHighlight { opacity: .04; }
+html.cx-ready .MuiCardMedia-root { background: linear-gradient(135deg, #2b2b33, #1b1b20 70%) !important; color: rgba(255, 255, 255, .85) !important; }
+html.cx-ready .MuiCardMedia-root .MuiSvgIcon-root { filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4)); }
+html.cx-ready .MuiCardContent-root { padding: 14px 16px !important; }
+html.cx-ready .MuiAvatar-colorDefault, html.cx-ready .MuiAvatar-root:not(:has(img)) { background: linear-gradient(135deg, #3a3a43, #25252b) !important; color: #fff !important; }
+html.cx-ready .MuiAvatar-root { box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+html.cx-ready .MuiList-root .MuiListItem-root, html.cx-ready .MuiList-root .MuiListItemButton-root { border-radius: 14px; }
+html.cx-ready .MuiListItemButton-root:not(.Mui-selected):hover { background: rgba(255, 255, 255, .06) !important; }
+html.cx-ready .MuiDivider-root { border-color: var(--dx-line) !important; }
+html.cx-ready .MuiTableContainer-root, html.cx-ready .MuiDataGrid-root { background: var(--dx-card) !important; border: 1px solid var(--dx-line) !important; border-radius: 18px !important; }
+html.cx-ready .MuiTableCell-root { border-color: var(--dx-line) !important; color: #d8d8de; }
+html.cx-ready .MuiTableHead-root .MuiTableCell-root { color: #8c8c96; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; background: rgba(255, 255, 255, .03); }
+html.cx-ready .MuiTableRow-hover:hover, html.cx-ready .MuiTableBody-root .MuiTableRow-root:hover { background: rgba(255, 255, 255, .04) !important; }
+html.cx-ready .MuiDataGrid-columnHeaders { background: rgba(255, 255, 255, .03) !important; border-color: var(--dx-line) !important; }
+html.cx-ready .MuiDataGrid-cell, html.cx-ready .MuiDataGrid-footerContainer { border-color: var(--dx-line) !important; }
+html.cx-ready .MuiAccordion-root { background: var(--dx-card) !important; border: 1px solid var(--dx-line); border-radius: 18px !important; box-shadow: none !important; }
+html.cx-ready .MuiAccordion-root::before { display: none; }
+
+/* form controls */
+html.cx-ready .MuiFormLabel-root, html.cx-ready .MuiInputLabel-root { color: #9a9aa4 !important; font-weight: 500; }
+html.cx-ready .MuiFormLabel-root.Mui-focused, html.cx-ready .MuiInputLabel-root.Mui-focused { color: var(--dx-a-text) !important; }
+html.cx-ready .MuiInputBase-root, html.cx-ready .MuiFilledInput-root, html.cx-ready .MuiOutlinedInput-root { background: rgba(255, 255, 255, .055) !important; border-radius: 14px !important; transition: background .2s, box-shadow .2s; }
+html.cx-ready .MuiFilledInput-root::before, html.cx-ready .MuiFilledInput-root::after, html.cx-ready .MuiInput-root::before, html.cx-ready .MuiInput-root::after { display: none !important; }
+html.cx-ready .MuiInputBase-root:hover { background: rgba(255, 255, 255, .08) !important; }
+html.cx-ready .MuiInputBase-root.Mui-focused { background: rgba(255, 255, 255, .09) !important; box-shadow: 0 0 0 3px var(--dx-a-soft), inset 0 0 0 1px color-mix(in srgb, var(--accent-nf, #e50914) 70%, transparent); }
+html.cx-ready .MuiInputBase-input { color: #f2f2f5; }
+html.cx-ready .MuiSelect-icon, html.cx-ready .MuiInputAdornment-root { color: #9a9aa4; }
+html.cx-ready .MuiCheckbox-root, html.cx-ready .MuiRadio-root { color: #6f6f78 !important; }
+html.cx-ready .MuiCheckbox-root.Mui-checked, html.cx-ready .MuiRadio-root.Mui-checked, html.cx-ready .MuiCheckbox-root.MuiCheckbox-indeterminate { color: var(--dx-a) !important; }
+html.cx-ready .MuiSwitch-track { background: #44444c !important; opacity: 1 !important; border-radius: 999px; }
+html.cx-ready .MuiSwitch-switchBase.Mui-checked { color: #111 !important; }
+html.cx-ready .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track { background: var(--dx-a) !important; opacity: 1 !important; }
+html.cx-ready .MuiSwitch-thumb { box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
+html.cx-ready .MuiSlider-root { color: var(--dx-a) !important; }
+html.cx-ready .MuiSlider-thumb { box-shadow: 0 0 0 6px var(--dx-a-soft); }
+html.cx-ready .MuiLinearProgress-root { background: rgba(255, 255, 255, .1) !important; border-radius: 999px; height: 6px; }
+html.cx-ready .MuiLinearProgress-bar { background: var(--dx-a) !important; border-radius: 999px; }
+html.cx-ready .MuiCircularProgress-root { color: var(--dx-a) !important; }
+html.cx-ready .MuiFormControlLabel-label { color: #e0e0e6; }
+
+/* buttons */
+html.cx-ready .MuiButton-outlined { background: rgba(255, 255, 255, .05) !important; color: #f2f2f5 !important; border: 1px solid rgba(255, 255, 255, .14) !important; }
+html.cx-ready .MuiButton-outlined:hover { background: rgba(255, 255, 255, .1) !important; }
+html.cx-ready .MuiButton-text { color: var(--dx-a-text) !important; }
+html.cx-ready .MuiButton-text:hover { background: var(--dx-a-soft) !important; }
+html.cx-ready .MuiButton-containedError, html.cx-ready .MuiButton-colorError.MuiButton-contained { background: rgba(255, 255, 255, .06) !important; color: #f2f2f5 !important; border: 1px solid rgba(255, 255, 255, .16) !important; }
+html.cx-ready .MuiButton-containedError:hover { background: rgba(255, 255, 255, .12) !important; }
+html.cx-ready .MuiFab-root { background: #fff !important; color: #000 !important; }
+html.cx-ready .MuiToggleButton-root { border-color: var(--dx-line) !important; color: #c4c4cc; border-radius: 12px !important; }
+html.cx-ready .MuiToggleButton-root.Mui-selected { background: var(--dx-a-soft) !important; color: #fff !important; }
+
+/* tabs, chips, badges, tooltips, alerts */
+html.cx-ready .MuiTabs-indicator { background: var(--dx-a) !important; height: 3px; border-radius: 3px; }
+html.cx-ready .MuiTab-root { text-transform: none !important; font-weight: 600; color: #9a9aa4; }
+html.cx-ready .MuiTab-root.Mui-selected { color: #fff !important; }
+html.cx-ready .MuiChip-root { background: rgba(255, 255, 255, .09) !important; color: #e8e8ec !important; font-weight: 600; }
+html.cx-ready .MuiChip-colorPrimary { background: var(--dx-a-soft) !important; color: var(--dx-a-text) !important; }
+html.cx-ready .MuiBadge-colorPrimary { background: var(--dx-a) !important; color: #fff !important; }
+html.cx-ready .MuiTooltip-tooltip { background: rgba(30, 30, 36, .96) !important; border: 1px solid var(--dx-line); border-radius: 10px !important; font-size: 12.5px; backdrop-filter: blur(10px); }
+html.cx-ready .MuiAlert-root { border-radius: 16px !important; border: 1px solid var(--dx-line); background: #1c1c21 !important; color: #e8e8ec !important; }
+html.cx-ready .MuiAlert-standardError { background: rgba(211, 59, 59, .14) !important; border-color: rgba(211, 59, 59, .35); }
+html.cx-ready .MuiAlert-standardWarning { background: rgba(255, 170, 40, .12) !important; border-color: rgba(255, 170, 40, .3); }
+html.cx-ready .MuiAlert-standardSuccess { background: rgba(60, 200, 120, .12) !important; border-color: rgba(60, 200, 120, .3); }
+html.cx-ready .MuiSnackbarContent-root { background: #26262c !important; border-radius: 14px !important; }
+
+/* dialogs and menus */
+html.cx-ready .MuiDialog-paper { background: linear-gradient(180deg, #202026, #17171b) !important; border: 1px solid rgba(255, 255, 255, .09) !important; border-radius: 24px !important; box-shadow: 0 40px 100px rgba(0, 0, 0, .7) !important; }
+html.cx-ready .MuiDialogTitle-root { font-weight: 800 !important; letter-spacing: -.01em; }
+html.cx-ready .MuiBackdrop-root:not(.MuiBackdrop-invisible) { background: rgba(0, 0, 0, .62) !important; backdrop-filter: blur(6px); }
+html.cx-ready .MuiMenuItem-root.Mui-selected { background: var(--dx-a-soft) !important; }
+html.cx-ready .MuiMenuItem-root:hover { background: rgba(255, 255, 255, .08) !important; }
+
+/* classic (non-React) admin screens: sections, lists, inputs */
+html.cx-ready .content-primary, html.cx-ready .content-secondary { max-width: 1100px; }
+html.cx-ready .verticalSection, html.cx-ready .detailSection { margin-bottom: 30px; }
+html.cx-ready .paperList { background: var(--dx-card) !important; border: 1px solid var(--dx-line); }
+html.cx-ready .listItem-content, html.cx-ready .listItemBody { color: #e8e8ec; }
+html.cx-ready .fieldDescription, html.cx-ready .listItemBodyText.secondary { color: #8f8f99 !important; }
+html.cx-ready .inputLabel, html.cx-ready .selectLabel { color: #9a9aa4 !important; }
+html.cx-ready .emby-select-withcolor, html.cx-ready .emby-select { border-radius: 14px !important; }
+html.cx-ready .emby-checkbox:checked + span + .checkboxOutline { background: var(--dx-a) !important; border-color: var(--dx-a) !important; }
+html.cx-ready .emby-radio:checked + span + .radioOutline .radioOutlineInner, html.cx-ready .emby-radio:checked + span::before { background: var(--dx-a) !important; }
+html.cx-ready .itemProgressBar .itemProgressBarForeground, html.cx-ready .innerCardFooter .itemProgressBarForeground { background: var(--dx-a) !important; }
+html.cx-ready .backgroundProgress { background: rgba(255, 255, 255, .1) !important; }
+html.cx-ready .backgroundProgress .progressBarForeground, html.cx-ready .taskProgressInner { background: var(--dx-a) !important; }
+html.cx-ready .raised.button-accent, html.cx-ready .button-accent { background: #fff !important; color: #000 !important; }
+html.cx-ready .button-delete, html.cx-ready .btnDelete { color: #ff7b7b !important; }
+html.cx-ready .toast, html.cx-ready .toastContainer .toast { background: #26262c !important; border-radius: 14px !important; }
+html.cx-ready .selectionCommandsPanel { background: #1c1c21 !important; }
+html.cx-ready .listItemIcon.listItemIcon-transparent, html.cx-ready .material-icons.listItemIcon { color: var(--dx-a-text); }
+
+html.cx-ready input[type=range] { accent-color: var(--dx-a); }
+html.cx-ready .dashboardColumn .cardBox, html.cx-ready .dashboardSection .card { background: var(--dx-card) !important; }
+
+/* classic cards with colourful default backgrounds (users, libraries, devices) */
+html.cx-ready [class*="defaultCardBackground"] { background: linear-gradient(135deg, #34343d, #1f1f25 80%) !important; color: rgba(255, 255, 255, .9) !important; }
+html.cx-ready [class*="defaultCardBackground"] .cardImageIcon, html.cx-ready [class*="defaultCardBackground"] .material-icons { color: rgba(255, 255, 255, .85) !important; text-shadow: 0 8px 20px rgba(0, 0, 0, .4); }
+html.cx-ready .card .cardContent, html.cx-ready .cardBox { border-radius: 18px; }
+html.cx-ready .cardBox { background: var(--dx-card) !important; border: 1px solid var(--dx-line); overflow: hidden; transition: border-color .2s, transform .2s; }
+html.cx-ready .cardBox:hover { border-color: rgba(255, 255, 255, .16); }
+html.cx-ready .cardFooter, html.cx-ready .cardText { color: #d4d4da; }

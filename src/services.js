@@ -2,7 +2,7 @@
 const plug = () => C.status || {};
 const aurralOn = () => !!(C.status && C.status.aurral) && feat('musicDiscovery');
 const usePluginSeerr = () => !!plug().seerr;
-const cget = (path, params) => api('Cinema' + path, params);
+const cget = (path, params) => Promise.resolve(HID.on ? null : hxReady()).then(() => api('Cinema' + path, params)).then(d => hxSeerr(d));
 async function cpost(path, body) { return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema' + path), data: JSON.stringify(body || {}), contentType: 'application/json', dataType: 'json' }); }
 async function loadStatus() { try { C.status = await api('Cinema/status'); if (C.status.seerr) SEERR = 'Cinema/seerr'; } catch (e) { C.status = null; } }
 
