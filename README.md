@@ -7,7 +7,7 @@ A Netflix and Spotify style interface for Jellyfin 12, with a server plugin that
 - Watchlist, Seerr discovery and requests, download progress, release calendar, music requests through Aurral.
 - Home sections you can reorder and add to, stored per user.
 
-Needs Jellyfin 12.4. The File Transformation plugin is recommended so the interface loads before the page renders.
+Needs Jellyfin 12.4. No other plugin is required: Cinema loads its interface itself before the page renders.
 
 ## Install through the plugin repository
 1. Jellyfin Dashboard, Plugins, Repositories, add:

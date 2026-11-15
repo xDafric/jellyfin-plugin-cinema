@@ -65,7 +65,7 @@ async function settingsView(page) {
   const toggle = (label, key, hint) => { const on = cfg(key) !== false && !!cfg(key) || (cfg(key) === true); const b = h('button', { class: 'set-switch' + (cfg(key) ? ' on' : ''), role: 'switch', onclick: () => { const v = !cfg(key); saveCfg({ [key]: v }); b.classList.toggle('on', v); } }, h('i')); return h('div', { class: 'set-row' }, h('div', {}, h('b', {}, label), hint ? h('span', {}, hint) : null), b); };
   wrap.append(card_(t('general'),
     toggle(t('setHero'), 'hero', t('setHeroHint')), toggle(t('setPeek'), 'peek', t('setPeekHint')), toggle(t('setInfinite'), 'infinite', t('setInfiniteHint')),
-    toggle(t('setSeerrWl'), 'seerrWatchlistSync', t('setSeerrWlHint'))));
+    toggle(t('setSeerrWl'), 'seerrWatchlistSync', t('setSeerrWlHint')), toggle(t('setNative'), 'nativePlayer', t('setNativeHint'))));
   const acc = h('input', { type: 'color', value: cfg('accent') || '#e50914', onchange: e => saveCfg({ accent: e.target.value }) });
   wrap.append(card_(t('appearance'), h('div', { class: 'set-row' }, h('div', {}, h('b', {}, t('accent')), h('span', {}, t('accentHint'))), acc)));
   /* home sections editor */

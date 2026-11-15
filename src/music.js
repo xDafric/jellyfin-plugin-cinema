@@ -12,14 +12,16 @@ const artistLinks = it => (it.ArtistItems || []).length ? it.ArtistItems.map((a,
 const artistText = it => (it.ArtistItems || []).length ? it.ArtistItems.map(a => a.Name).join(', ') : (it.AlbumArtist || (it.Artists || []).join(', ') || '');
 
 function streamUrl(it) {
+  if (it._preview) return /^https?:/.test(it._preview) ? it._preview : withKey(ApiClient.getUrl('Cinema/aurral/' + it._preview.replace(/^\//, '')));
   return ApiClient.getUrl('Audio/' + it.Id + '/universal', {
     UserId: uid(), DeviceId: ApiClient.deviceId(), MaxStreamingBitrate: 140000000, Container: 'opus,mp3|mp3,aac,m4a|aac,m4b|aac,flac,webma,webm|webma,wav,ogg',
     TranscodingContainer: 'mp3', TranscodingProtocol: 'http', AudioCodec: 'mp3', ApiKey: ApiClient.accessToken(), PlaySessionId: P.psid, EnableRedirection: true, EnableRemoteMedia: false
   });
 }
-const rep = (kind, extra) => { try { const it = cur(); if (!it) return; const o = Object.assign({ ItemId: it.Id, PlaySessionId: P.psid, PositionTicks: Math.floor(P.audio.currentTime * 1e7), IsPaused: P.audio.paused, CanSeek: true, MediaSourceId: it.Id, PlayMethod: 'DirectStream', QueueableMediaTypes: ['Audio'] }, extra); ApiClient['reportPlayback' + kind](o); } catch (e) { } };
+const rep = (kind, extra) => { try { const it = cur(); if (!it || it._ext) return; const o = Object.assign({ ItemId: it.Id, PlaySessionId: P.psid, PositionTicks: Math.floor(P.audio.currentTime * 1e7), IsPaused: P.audio.paused, CanSeek: true, MediaSourceId: it.Id, PlayMethod: 'DirectStream', QueueableMediaTypes: ['Audio'] }, extra); ApiClient['reportPlayback' + kind](o); } catch (e) { } };
 function loadCurrent(autoplay) {
   const it = cur(); if (!it) return;
+  if (it._ext && !it._preview) { toast(t('noPreview') + ': ' + it.Name); setTimeout(() => next(), 600); return; }
   if (P.reportedStart) rep('Stopped');
   P.psid = 'cx' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   P.audio.src = streamUrl(it);
@@ -230,11 +232,11 @@ function trackList(tracks, ctx) {
   let lastDisc = null;
   tracks.forEach((it, idx) => {
     if (ctx.discs && it.ParentIndexNumber && it.ParentIndexNumber !== lastDisc && tracks.some(x => (x.ParentIndexNumber || 1) > 1)) { lastDisc = it.ParentIndexNumber; wrap.append(h('div', { class: 'sp-disc' }, ic('note', 'ic-s'), 'Disc ' + lastDisc)); }
-    const lk = trackLikeBtn(it, 'lk');
+    const lk = it._ext ? h('button', { class: 'lk on rq', title: t('request'), onclick: e => { e.stopPropagation(); requestExtTrack(it); } }, ic('plus')) : trackLikeBtn(it, 'lk');
     const play = () => playList(tracks, idx, { ctx: ctx.id ? { id: ctx.id } : null });
-    const rowEl = h('div', { class: 'sp-row' + (noAlb ? ' noalb' : '') + (cur() && cur().Id === it.Id ? ' playing' : ''), 'data-id': it.Id, ondblclick: play, onclick: () => { if (matchMedia('(pointer:coarse)').matches || innerWidth <= 800) play(); }, oncontextmenu: e => trackMenu(e, it, ctx) },
+    const rowEl = h('div', { class: 'sp-row' + (it._ext ? ' ext' : '') + (noAlb ? ' noalb' : '') + (cur() && cur().Id === it.Id ? ' playing' : ''), 'data-id': it.Id, ondblclick: play, onclick: () => { if (matchMedia('(pointer:coarse)').matches || innerWidth <= 800) play(); }, oncontextmenu: e => trackMenu(e, it, ctx) },
       h('div', { class: 'ix' }, h('span', { class: 'n' }, ctx.number === 'idx' ? idx + 1 : (it.IndexNumber || idx + 1)), h('div', { class: 'eq' }, h('i'), h('i'), h('i')), h('button', { class: 'pl', onclick: e => { e.stopPropagation(); (cur() && cur().Id === it.Id) ? toggle() : play(); } }, ic('play'))),
-      h('div', { class: 'ti' }, ctx.noCover ? null : h('div', Object.assign({ class: 'cv' }, bg(trackImg(it, 100)))), h('div', { class: 'tx' }, h('div', { class: 'tn ell' }, it.Name), h('div', { class: 'ta ell' }, artistLinks(it)))),
+      h('div', { class: 'ti' }, ctx.noCover ? null : h('div', Object.assign({ class: 'cv' }, bg(trackImg(it, 100)))), h('div', { class: 'tx' }, h('div', { class: 'tn ell' }, it.Name), h('div', { class: 'ta ell' }, artistLinks(it), it._ext ? h('span', { class: 'xb' }, t('notOwned')) : null))),
       noAlb ? null : h('div', { class: 'al ell' }, it.AlbumId ? h('a', { href: '#/c/music/album/' + it.AlbumId }, it.Album) : (it.Album || '')),
       h('div', { class: 'du' }, lk, h('span', { class: 'tm' }, fmtTime((it.RunTimeTicks || 0) / 1e7)), h('button', { class: 'mo', onclick: e => trackMenu(e, it, ctx) }, ic('more'))));
     if (noAlb) { /* grid has 4 cols: ix, ti, (empty spacer removed), du */ }
@@ -277,7 +279,7 @@ function buildSP() {
   }
   C.fillLib = fillLib;
   const side = h('div', { class: 'sp-side' },
-    h('div', { class: 'sp-card sp-top' }, h('a', { class: 'sp-navlink', href: '#/c/music', 'data-k': 'home' }, ic('home'), t('home')), h('a', { class: 'sp-navlink', href: '#/c/music/search', 'data-k': 'search' }, ic('search'), t('search')), h('a', { class: 'sp-navlink', href: '#/home' }, ic('film'), t('moviesTv'))),
+    h('div', { class: 'sp-card sp-top' }, h('a', { class: 'sp-navlink', href: '#/c/music', 'data-k': 'home' }, ic('home'), t('home')), h('a', { class: 'sp-navlink', href: '#/c/music/search', 'data-k': 'search' }, ic('search'), t('search')), h('a', { class: 'sp-navlink', href: '#/c/music/discover', 'data-k': 'discover' }, ic('star'), t('discoverShort')), h('a', { class: 'sp-navlink', href: '#/home' }, ic('film'), t('moviesTv'))),
     h('div', { class: 'sp-card sp-lib' }, h('div', { class: 'sp-libhead' }, h('span', { style: 'display:flex;gap:10px;align-items:center' }, ic('lib'), t('library')), h('button', { 'aria-label': t('createPl'), onclick: () => promptName(t('createPl'), async n => { const r = await createPlaylist(n, []); go('#/c/music/playlist/' + r.Id); }) }, ic('plus'))), chips, libList));
   /* main */
   const scroll = h('div', { class: 'sp-scroll' });
@@ -308,7 +310,7 @@ C.renderMusic = async function (r) {
   if (!C.sp) buildSP();
   if (!C.libCache) loadLibrary().then(() => C.fillLib && C.fillLib());
   const sp = C.sp; const [, , view, id] = r.parts;
-  $$('.sp-navlink[data-k]', sp.side).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search')));
+  $$('.sp-navlink[data-k]', sp.side).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'discover' && view === 'discover')));
   $$('a[data-k]', sp.tabs).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'lib' && (view === 'library'))));
   $$('.sp-li', sp.libList).forEach(l => l.classList.toggle('on', !!id && l.dataset.id === id || (view === 'liked' && l.dataset.id === 'liked')));
   C.scrollPos[C.lastKey] = sp.scroll.scrollTop; C.lastKey = r.raw;
@@ -322,6 +324,9 @@ C.renderMusic = async function (r) {
     else if (view === 'album') await mAlbum(node, id);
     else if (view === 'artist') await mArtist(node, id);
     else if (view === 'liked') await mLiked(node);
+    else if (view === 'discover') await mDiscover(node);
+    else if (view === 'disc') await mDisc(node, id);
+    else if (view === 'ext') await mExtAlbum(node, id, r.q);
     else if (view === 'mix') await mMix(node, decodeURIComponent(id));
     else if (view === 'library') await mLibrary(node);
   } catch (e) { console.error('[cinema music]', e); node.append(h('div', { class: 'nf-empty' }, t('empty'))); }
@@ -350,6 +355,7 @@ async function mHome(n) {
   }
   n.append(shelf(t('yourPl'), lib.playlists.map(plTile)));
   n.append(shelf(t('mixes'), (await genres).Items.map((g, i) => mixTile(g.Name, i))));
+  n.append(plug().aurral ? h('div', { class: 'sp-disc-cta' }, h('div', {}, h('b', {}, t('discoverMusic')), h('span', {}, t('discoverCta'))), h('a', { class: 'sp-pillbtn', href: '#/c/music/discover' }, t('open'))) : '');
   n.append(shelf(t('newAlb'), lib.albums.slice().sort((a, b) => (b.DateCreated || '').localeCompare(a.DateCreated || '')).slice(0, 14).map(albumTile)));
   n.append(shelf(t('artists'), shuffleArr(lib.artists).slice(0, 14).map(artistTile)));
   if (recAlb.length > 3) n.append(shelf(t('recent') + ' · ' + t('albums'), recAlb.slice(0, 14).map(albumTile)));
@@ -415,9 +421,11 @@ async function mArtist(n, id) {
   const all = await tracksOf({ ArtistIds: id, SortBy: 'SortName', Limit: 500 });
   pageHead(n, { type: t('artist'), title: ar.Name, round: true, img: imgUrl(ar, 'Primary', 500), meta: [all.length + ' ' + t('songsN')] });
   const ctx = { id, number: 'idx' }; n.append(actionsBar(all, ctx));
+  window.__artistNode = n; window.__artistItem = ar;
   n.append(h('h2', { style: 'margin-top:8px' }, t('popularTracks')), trackList(top.slice(0, 5), { id: id + '-top', number: 'idx' }));
   $$('.sp-th', n).forEach(x => x.remove());
   n.append(shelf(t('discography'), alb.map(albumTile)));
+  await aurralArtistExtras(n, ar);
   if (ar.Overview) n.append(h('h2', {}, t('artist')), h('p', { style: 'color:#b3b3b3;line-height:1.6;max-width:780px' }, ar.Overview.replace(/<[^>]+>/g, '')));
 }
 

@@ -362,7 +362,7 @@ public class CinemaController : ControllerBase
     private static readonly string[] AurralReadPrefixes =
     {
         "api/search", "api/discover", "api/library/artists", "api/library/albums", "api/library/tracks", "api/library/recent",
-        "api/library/downloads", "api/library/canonical", "api/requests", "api/artists", "api/health/bootstrap"
+        "api/library/downloads", "api/library/canonical", "api/requests", "api/artists", "api/health/bootstrap", "api/deezer"
     };
 
     private static readonly string[] AurralWritePrefixes =

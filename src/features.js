@@ -17,7 +17,7 @@ async function toggleFav(it) { const on = !ud(it).IsFavorite; await ApiClient.up
 async function togglePlayed(it) { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData = Object.assign(ud(it), { Played: on }); toast(on ? t('markedWatched') : t('markedUnwatched')); return on; }
 
 /* per-user settings (synced through Jellyfin DisplayPreferences) */
-const CFG_DEF = { hero: true, peek: true, seerrWatchlistSync: false, sections: null, accent: '#e50914', infinite: true };
+const CFG_DEF = { nativePlayer: false, hero: true, peek: true, seerrWatchlistSync: false, sections: null, accent: '#e50914', infinite: true };
 let CFG = Object.assign({}, CFG_DEF);
 const cfg = k => CFG[k];
 async function loadCfg() {
@@ -36,13 +36,15 @@ function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpoi
 function hidePeek(delay) { clearTimeout(PEEK.t); clearTimeout(PEEK.hideT); PEEK.hideT = setTimeout(() => { if (PEEK.el) PEEK.el.classList.remove('show'); PEEK.cur = null; }, delay || 0); }
 function showPeek(anchor, d) {
   const el = peekEl(); const r = anchor.getBoundingClientRect();
-  const W = Math.max(300, Math.min(400, r.width * 1.6));
+  const W = d.poster ? Math.max(250, Math.min(340, r.width * 1.5)) : Math.max(300, Math.min(400, r.width * 1.6));
   let left = r.left + r.width / 2 - W / 2; left = Math.max(12, Math.min(innerWidth - W - 12, left));
   el.style.width = W + 'px';
   const btns = h('div', { class: 'pa' }, d.actions.map(a => a === '-' ? h('span', { class: 'sp' }) : h('button', { class: a.primary ? 'pl' : (a.on ? 'on' : ''), 'aria-label': a.label, title: a.label, onclick: async e => { e.stopPropagation(); const res = await a.fn(e); if (a.refresh) a.refresh(); } }, ic(typeof a.icon === 'function' ? a.icon() : a.icon))));
   el.replaceChildren(
     h('div', { class: 'pi', onclick: () => { hidePeek(); d.open && d.open(); } }, d.img ? h('div', Object.assign({ class: 'bgi' }, bg(d.img))) : null, h('div', { class: 'pt ell' }, d.title)),
     h('div', { class: 'pb' }, btns, h('div', { class: 'pm' }, d.meta.filter(Boolean).map((m, i) => h('span', { class: m.cls || '' }, m.t || m))), d.overview ? h('div', { class: 'po clamp2' }, d.overview) : null));
+  el.classList.toggle('poster', !!d.poster);
+  el.classList.toggle('poster', !!d.poster);
   el.classList.remove('show'); el.style.visibility = 'hidden'; el.style.top = '0px'; el.style.left = left + 'px';
   requestAnimationFrame(() => {
     const H = el.offsetHeight; let top = r.top + r.height / 2 - H / 2 - 24; top = Math.max(80, Math.min(innerHeight - H - 12, top));
@@ -52,20 +54,20 @@ function showPeek(anchor, d) {
 }
 function attachPeek(el, anchor, getDesc) {
   if (!matchMedia('(hover:hover) and (pointer:fine)').matches || cfg('peek') === false) return;
-  el.addEventListener('pointerenter', () => { clearTimeout(PEEK.hideT); clearTimeout(PEEK.t); PEEK.t = setTimeout(() => showPeek(anchor, getDesc()), PEEK.cur ? 80 : 420); });
+  el.addEventListener('pointerenter', () => { clearTimeout(PEEK.hideT); clearTimeout(PEEK.t); PEEK.t = setTimeout(() => showPeek(anchor, getDesc()), PEEK.cur ? 60 : 320); });
   el.addEventListener('pointerleave', () => { clearTimeout(PEEK.t); hidePeek(160); });
   el.addEventListener('click', () => hidePeek());
 }
 window.addEventListener('scroll', () => hidePeek(), { capture: true, passive: true });
 
-function libDesc(it) {
+function libDesc(it, poster) {
   const isEp = it.Type === 'Episode'; const hash = itemHash(it) || '#/home';
   const wl = h('span'); const acts = [
     { icon: 'play', label: t('play'), primary: true, fn: () => { hidePeek(); it.Type === 'MusicAlbum' ? C.playAlbum(it) : playVideo(it); } },
     { icon: () => isWatch(it) ? 'check' : 'plus', label: t('watchlist'), fn: async e => { await toggleWatch(it); const b = e.currentTarget; if (b) b.replaceChildren(ic(isWatch(it) ? 'check' : 'plus')); } },
     { icon: () => ud(it).IsFavorite ? 'heartOn' : 'heart', label: t('mylist'), fn: async e => { await toggleFav(it); const b = e.currentTarget; if (b) b.replaceChildren(ic(ud(it).IsFavorite ? 'heartOn' : 'heart')); } },
     '-', { icon: 'more', label: t('more'), fn: e => itemMenu(e, it) }, { icon: 'down', label: t('info'), fn: () => { hidePeek(); go(hash); } }];
-  return { img: imgUrl(it, 'Backdrop', 700) || imgUrl(it, 'Thumb', 700) || imgUrl(it, 'Primary', 500), title: isEp ? (it.SeriesName || it.Name) : it.Name, open: () => go(hash), actions: acts,
+  return { poster: !!poster, img: poster ? (imgUrl(it, 'Primary', 600) || imgUrl(it, 'Backdrop', 700)) : (imgUrl(it, 'Backdrop', 700) || imgUrl(it, 'Thumb', 700) || imgUrl(it, 'Primary', 500)), title: isEp ? (it.SeriesName || it.Name) : it.Name, open: () => go(hash), actions: acts,
     meta: [it.CommunityRating ? { t: Math.round(it.CommunityRating * 10) + '%', cls: 'g' } : null, yearOf(it), it.OfficialRating ? { t: it.OfficialRating, cls: 'badge' } : null, it.RunTimeTicks ? fmtMin(it.RunTimeTicks) : (it.Type === 'Series' ? t('shows') : null), ...(it.Genres || []).slice(0, 2)],
     overview: isEp ? ('S' + (it.ParentIndexNumber || 0) + ':E' + (it.IndexNumber || 0) + ' · ' + it.Name) : it.Overview };
 }

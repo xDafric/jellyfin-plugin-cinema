@@ -81,10 +81,19 @@ function buildTop() {
   const skinBtn = h('button', { 'data-cx': 1, onclick: e => { e.stopPropagation(); setSkin(!skinOn()); skinBtn.textContent = skinLabel(); } }, skinLabel());
   popUser.append(skinBtn);
   popUser.append(h('button', { 'data-cx': 1, onclick: () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } } }, t('logout')));
-  const menu = h('div', { class: 'nf-menu-wrap' }, h('button', { 'aria-label': 'Account', onclick: e => { e.stopPropagation(); closePops(popUser); popUser.classList.toggle('hide'); } }, av), popUser);
+  const plugSlot = h('div', { class: 'plug-slot' }); popUser.prepend(plugSlot);
+  async function fillPlugins() {
+    const list = (Date.now() - HARV.at < 60000 && HARV.items.length) ? HARV.items : await harvestMenus();
+    plugSlot.replaceChildren(); if (!list.length) return;
+    plugSlot.append(h('div', { class: 'pop-h', 'data-cx': 1 }, t('pluginsH')));
+    list.forEach(i => plugSlot.append(h('a', { 'data-cx': 1, href: i.href || '#', onclick: e => { if (i.href) return; e.preventDefault(); closePops(); if (i.el) i.el.click(); else clickNativeMenu(i.label); } }, i.icon ? h('span', { class: 'mi material-icons' }, i.icon) : ic('list', 'ic-s'), i.label)));
+    plugSlot.append(h('div', { class: 'pop-sep', 'data-cx': 1 }));
+  }
+  const menu = h('div', { class: 'nf-menu-wrap' }, h('button', { 'aria-label': 'Account', onclick: e => { e.stopPropagation(); closePops(popUser); const open = popUser.classList.toggle('hide') === false; if (open) fillPlugins(); } }, av), popUser);
   function closePops(except) { $$('.nf-pop').forEach(p => { if (p !== except) p.classList.add('hide'); }); }
   document.addEventListener('click', () => closePops());
-  const top = h('div', { id: 'cx-top', class: 'nf-nav' }, h('a', { class: 'nf-logo', href: '#/home' }, BRAND.toUpperCase()), links, more, h('div', { class: 'nf-spacer' }), sWrap, menu);
+  links.append(more);
+  const top = h('div', { id: 'cx-top', class: 'nf-nav' }, h('a', { class: 'nf-logo', href: '#/home' }, BRAND.toUpperCase()), links, h('div', { class: 'nf-spacer' }), sWrap, menu);
   const tabs = h('div', { class: 'cx-tabs hide' },
     ...[['home', '#/home', 'home', t('home')], ['movies', '#/c/movies', 'film', t('movies')], ['shows', '#/c/shows', 'tv', t('shows')], ['music', '#/c/music', 'note', t('music')]].map(([k, href, i, label]) => h('a', { href, 'data-k': k }, ic(i), label)),
     h('a', { 'data-k': 'discover', href: '#/c/discover' }, ic('star'), t('discover')),

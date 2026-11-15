@@ -1,0 +1,13 @@
+/* ===== v8: external tracks, harvest, cta ===== */
+.sp-row .xb { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; border: 1px dashed rgba(255,255,255,.4); font-size: 10.5px; font-weight: 600; color: #cfcfd5; vertical-align: middle; letter-spacing: .01em; }
+.sp-row .du .lk.rq { opacity: 1; color: #fff; background: rgba(255,255,255,.1); border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
+.sp-row .du .lk.rq:hover { background: rgba(255,255,255,.22); }
+.sp-row .du .lk.rq svg { width: 16px; height: 16px; }
+.notown-tile .cv { filter: saturate(.8) brightness(.92); }
+.sp-disc-cta { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 28px 0 0; padding: 18px 22px; border-radius: 18px; background: linear-gradient(120deg, rgba(30,215,96,.18), rgba(255,255,255,.04)); }
+.sp-disc-cta b { display: block; font-size: 17px; } .sp-disc-cta span { color: #b3b3b3; font-size: 14px; }
+html.cx-harvest .MuiPopover-root, html.cx-harvest .MuiMenu-root, html.cx-harvest .MuiBackdrop-root { opacity: 0 !important; pointer-events: none !important; transition: none !important; }
+.plug-slot:empty { display: none; }
+.rt-chip small { margin-left: 4px; }
+.sp-row.ext .tn { color: #c9c9ce; } .sp-row .ta .xb { margin-left: 8px; }
+.nf-pop { min-width: 260px; } .nf-pop a, .nf-pop button { white-space: nowrap; }

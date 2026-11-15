@@ -1,115 +1,82 @@
-using System.Reflection;
-using System.Runtime.Loader;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using System.Text;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace Jellyfin.Plugin.Cinema;
 
-/// <summary>Registers a File Transformation callback that adds the Cinema script to index.html before first paint.</summary>
-public sealed class InjectionService : IHostedService
+/// <summary>Adds the Cinema script to the web client's index.html before it reaches the browser. No other plugin needed.</summary>
+public sealed class IndexInjectionStartupFilter : IStartupFilter
 {
-    private static readonly Guid TransformId = Guid.Parse("2c9a4f1d-6b7e-4d8a-8a52-0f3e7b9c1d10");
-    private readonly ILogger<InjectionService> _logger;
-    private CancellationTokenSource? _cts;
-
-    public InjectionService(ILogger<InjectionService> logger) => _logger = logger;
-
-    public Task StartAsync(CancellationToken cancellationToken)
+    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
     {
-        _cts = new CancellationTokenSource();
-        _ = Task.Run(() => RegisterLoop(_cts.Token), CancellationToken.None);
-        return Task.CompletedTask;
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        _cts?.Cancel();
-        return Task.CompletedTask;
-    }
-
-    private async Task RegisterLoop(CancellationToken ct)
-    {
-        for (var i = 0; i < 90 && !ct.IsCancellationRequested; i++)
+        return app =>
         {
-            try
-            {
-                if (TryRegister())
-                {
-                    _logger.LogInformation("Cinema: registered index.html transformation with File Transformation");
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Cinema: could not register with File Transformation (attempt {Attempt})", i + 1);
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
-        }
-
-        _logger.LogWarning("Cinema: File Transformation not found. The UI script must be loaded another way (for example JavaScript Injector with src /Cinema/ui.js).");
-    }
-
-    private static bool TryRegister()
-    {
-        var ft = AssemblyLoadContext.All.SelectMany(c => c.Assemblies)
-            .FirstOrDefault(a => a.FullName?.Contains(".FileTransformation", StringComparison.Ordinal) == true);
-        var type = ft?.GetType("Jellyfin.Plugin.FileTransformation.PluginInterface");
-        var method = type?.GetMethod("RegisterTransformation", BindingFlags.Public | BindingFlags.Static);
-        if (method is null)
-        {
-            return false;
-        }
-
-        var json = JsonSerializer.Serialize(new
-        {
-            id = TransformId,
-            fileNamePattern = "index.html",
-            callbackAssembly = typeof(InjectionService).Assembly.FullName,
-            callbackClass = typeof(TransformCallbacks).FullName,
-            callbackMethod = nameof(TransformCallbacks.PatchIndex)
-        });
-
-        var paramType = method.GetParameters()[0].ParameterType;
-        object payload;
-        if (paramType == typeof(string))
-        {
-            payload = json;
-        }
-        else
-        {
-            var parse = paramType.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static, new[] { typeof(string) })
-                ?? throw new InvalidOperationException("Unsupported payload type " + paramType);
-            payload = parse.Invoke(null, new object[] { json })!;
-        }
-
-        method.Invoke(null, new[] { payload });
-        return true;
+            app.UseMiddleware<IndexInjectionMiddleware>();
+            next(app);
+        };
     }
 }
 
-public class PatchRequestPayload
-{
-    [JsonPropertyName("contents")]
-    public string? Contents { get; set; }
-}
-
-public static class TransformCallbacks
+public sealed class IndexInjectionMiddleware
 {
     private const string Marker = "Cinema/ui.js";
+    private const string Tag = "<style id=\"cx-critical\">html:not(.cx-ready):not(.cx-off) #reactRoot{opacity:0;animation:cxrv .01s 3s forwards}@keyframes cxrv{to{opacity:1}}</style><script src=\"../Cinema/ui.js\"></script>";
+    private readonly RequestDelegate _next;
 
-    public static string PatchIndex(PatchRequestPayload payload)
+    public IndexInjectionMiddleware(RequestDelegate next) => _next = next;
+
+    public async Task InvokeAsync(HttpContext context)
     {
-        var html = payload.Contents ?? string.Empty;
-        if (Plugin.Instance?.Configuration.InjectEarly == false || html.Contains(Marker, StringComparison.Ordinal))
+        var path = (context.Request.Path.Value ?? string.Empty).TrimEnd('/');
+        var isIndex = path.EndsWith("/web/index.html", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/web", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith("/web", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrEmpty(path);
+        if (!isIndex || Plugin.Instance?.Configuration.InjectEarly == false || !HttpMethods.IsGet(context.Request.Method))
         {
-            return html;
+            await _next(context).ConfigureAwait(false);
+            return;
         }
 
-        const string Tag = "<style id=\"cx-critical\">html:not(.cx-ready):not(.cx-off) #reactRoot{opacity:0;animation:cxrv .01s 3s forwards}@keyframes cxrv{to{opacity:1}}</style><script src=\"../Cinema/ui.js\"></script>";
-        var idx = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
-        return idx < 0 ? html + Tag : html.Insert(idx, Tag);
+        // ask the pipeline for an uncompressed, unconditional response so the body can be edited
+        context.Request.Headers.Remove("Accept-Encoding");
+        context.Request.Headers.Remove("If-None-Match");
+        context.Request.Headers.Remove("If-Modified-Since");
+
+        var original = context.Response.Body;
+        using var buffer = new MemoryStream();
+        context.Response.Body = buffer;
+        try
+        {
+            await _next(context).ConfigureAwait(false);
+        }
+        finally
+        {
+            context.Response.Body = original;
+        }
+
+        var bytes = buffer.ToArray();
+        var type = context.Response.ContentType ?? string.Empty;
+        if (context.Response.StatusCode == StatusCodes.Status200OK && type.Contains("text/html", StringComparison.OrdinalIgnoreCase) && bytes.Length > 0)
+        {
+            var html = Encoding.UTF8.GetString(bytes);
+            if (!html.Contains(Marker, StringComparison.Ordinal))
+            {
+                var idx = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+                html = idx < 0 ? html + Tag : html.Insert(idx, Tag);
+                bytes = Encoding.UTF8.GetBytes(html);
+            }
+        }
+
+        if (!context.Response.HasStarted)
+        {
+            context.Response.ContentLength = bytes.Length;
+        }
+
+        if (bytes.Length > 0)
+        {
+            await original.WriteAsync(bytes).ConfigureAwait(false);
+        }
     }
 }

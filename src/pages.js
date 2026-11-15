@@ -8,7 +8,7 @@ function infiniteGrid(container, fetchPage, makeCard, pageSize) {
     try {
       const r = await fetchPage(start, pageSize); const arr = r.Items || r;
       arr.forEach(i => grid.append(makeCard(i))); start += arr.length;
-      if (arr.length < pageSize || (r.TotalRecordCount != null && start >= r.TotalRecordCount)) done = true;
+      if (r.done !== undefined) done = !!r.done; else if (arr.length < pageSize || (r.TotalRecordCount != null && start >= r.TotalRecordCount)) done = true;
     } catch (e) { done = true; console.warn('[cinema] page failed', e); }
     busy = false;
     if (!done && sentinel.isConnected && sentinel.getBoundingClientRect().top < innerHeight + 500) more();
