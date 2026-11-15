@@ -10,29 +10,58 @@ async function loadStatus() { try { C.status = await api('Cinema/status'); if (C
 function closeModal(m) { m.remove(); }
 async function seerrModal(x) {
   const mt = x.mediaType === 'tv' ? 'tv' : 'movie';
-  const bgEl = h('div', { class: 'sp-modal-bg', onclick: e => { if (e.target === bgEl) closeModal(bgEl); } }); const box = h('div', { class: 'sr-modal' }, h('div', { class: 'spinner', style: 'margin:60px auto' })); bgEl.append(box); getUI().append(bgEl);
+  const bgEl = h('div', { class: 'sp-modal-bg', onclick: e => { if (e.target === bgEl) closeModal(bgEl); } }); const box = h('div', { class: 'sr-modal' }, h('div', { class: 'spinner', style: 'margin:80px auto' })); bgEl.append(box); getUI().append(bgEl);
   let d; try { d = await seerrGet('/' + mt + '/' + x.id); } catch (e) { box.replaceChildren(h('div', { class: 'nf-empty' }, '⚠ ' + e.message)); return; }
+  const admin = !!((await me()).Policy || {}).IsAdministrator;
   const lm = await libMap(), rm = await reqMap(); d.mediaType = mt; d.id = x.id; const st = dStatus(Object.assign({}, d, { mediaType: mt, id: x.id, mediaInfo: d.mediaInfo }), lm, rm);
   const title = d.title || d.name; const year = (d.releaseDate || d.firstAirDate || '').slice(0, 4);
-  const cast = ((d.credits && d.credits.cast) || []).slice(0, 10);
+  const crew = (d.credits && d.credits.crew) || []; const cast = ((d.credits && d.credits.cast) || []).slice(0, 18);
+  const names = jobs => [...new Set(crew.filter(c => jobs.includes(c.job)).map(c => c.name))].slice(0, 3).join(', ');
   const seasons = (d.seasons || []).filter(s => s.seasonNumber > 0); const picked = new Set(seasons.map(s => s.seasonNumber));
   const have = new Set(((d.mediaInfo && d.mediaInfo.seasons) || []).filter(s => s.status >= 2).map(s => s.seasonNumber)); have.forEach(n => picked.delete(n));
+  const money = n => n ? '$' + (n >= 1e6 ? (n / 1e6).toFixed(n >= 1e8 ? 0 : 1) + ' Mio.' : n.toLocaleString()) : '';
+  const lang = (d.spokenLanguages || []).find(l => l.iso_639_1 === d.originalLanguage); const trailer = (d.relatedVideos || []).find(v => v.site === 'YouTube' && v.type === 'Trailer') || (d.relatedVideos || []).find(v => v.site === 'YouTube');
+  const runtime = d.runtime || (d.episodeRunTime && d.episodeRunTime[0]);
+  const facts = [[t('factDirector'), names(['Director'])], [t('factWriter'), names(['Screenplay', 'Writer', 'Story', 'Creator'])], [t('factStatus'), d.status], [t('factLang'), lang ? (lang.name || lang.english_name) : d.originalLanguage], [t('factRuntime'), runtime ? runtime + ' ' + t('min') : ''], [t('factBudget'), money(d.budget)], [t('factRevenue'), money(d.revenue)], [t('factStudio'), (d.productionCompanies || []).slice(0, 3).map(c => c.name).join(', ')], [t('factNetwork'), (d.networks || []).slice(0, 3).map(c => c.name).join(', ')], [t('factSeasons'), mt === 'tv' && d.numberOfSeasons ? d.numberOfSeasons + ' · ' + (d.numberOfEpisodes || '') + ' ' + t('episodes') : '']].filter(f => f[1]);
   const status = h('div', { class: 'sr-status' });
+  const adv = { serverId: null, profileId: null, rootFolder: null };
   const btn = h('button', { class: 'btn white' }, ic('plus'), t('request'));
-  const upd = () => { btn.disabled = false; };
   btn.onclick = async () => {
     btn.disabled = true; btn.textContent = '…';
-    try { const body = { mediaType: mt, mediaId: x.id }; if (mt === 'tv') body.seasons = [...picked]; await cpostSeerr('/request', body); toast('✓ ' + t('requested')); resetSeerrCache(); closeModal(bgEl); }
+    try { const body = { mediaType: mt, mediaId: x.id }; if (mt === 'tv') body.seasons = [...picked]; if (adv.serverId != null) body.serverId = adv.serverId; if (adv.profileId != null) body.profileId = adv.profileId; if (adv.rootFolder) body.rootFolder = adv.rootFolder; await cpostSeerr('/request', body); toast('✓ ' + t('requested')); resetSeerrCache(); closeModal(bgEl); }
     catch (e) { toast('⚠ ' + ((e.responseJSON && e.responseJSON.message) || e.statusText || 'error')); btn.disabled = false; btn.replaceChildren(ic('plus'), t('request')); }
   };
   if (st.k === 'own') { status.append(h('span', { class: 'dmark own' }, ic('check', 'ic-s'), t('inLib'))); if (st.item) btn.replaceWith(h('button', { class: 'btn white', onclick: () => { closeModal(bgEl); playVideo(st.item); } }, ic('play'), t('play'))); else btn.remove(); }
   else if (st.k === 'req' && mt === 'movie') { status.append(h('span', { class: 'dmark req' }, ic('star', 'ic-s'), t('requested'))); btn.remove(); }
-  const seasonBox = mt === 'tv' ? h('div', { class: 'sr-seasons' }, seasons.map(s => h('label', { class: 'nf-chip' + (have.has(s.seasonNumber) ? ' dis' : picked.has(s.seasonNumber) ? ' on' : ''), onclick: e => { e.preventDefault(); if (have.has(s.seasonNumber)) return; picked.has(s.seasonNumber) ? picked.delete(s.seasonNumber) : picked.add(s.seasonNumber); e.currentTarget.classList.toggle('on'); } }, (L === 'de' ? 'Staffel ' : 'Season ') + s.seasonNumber + (have.has(s.seasonNumber) ? ' ✓' : '')))) : null;
+  const seasonBox = mt === 'tv' && seasons.length ? h('div', { class: 'sr-seasons' }, seasons.map(s => h('label', { class: 'nf-chip' + (have.has(s.seasonNumber) ? ' dis' : picked.has(s.seasonNumber) ? ' on' : ''), onclick: e => { e.preventDefault(); if (have.has(s.seasonNumber)) return; picked.has(s.seasonNumber) ? picked.delete(s.seasonNumber) : picked.add(s.seasonNumber); e.currentTarget.classList.toggle('on'); } }, (L === 'de' ? 'Staffel ' : 'Season ') + s.seasonNumber + (s.episodeCount ? ' · ' + s.episodeCount : '') + (have.has(s.seasonNumber) ? ' ✓' : '')))) : null;
+  const ratings = h('div', { class: 'rt-row' });
+  seerrGet('/' + mt + '/' + x.id + (mt === 'movie' ? '/ratingscombined' : '/ratings')).then(r => { const rt = r.rt || r; const im = r.imdb; if (rt && rt.criticsScore != null) ratings.append(h('span', { class: 'rt-chip' }, 'Rotten Tomatoes ', h('b', {}, rt.criticsScore + '%'), rt.audienceScore != null ? h('small', {}, t('audience') + ' ' + rt.audienceScore + '%') : null)); if (im && im.criticsScore != null) ratings.append(h('span', { class: 'rt-chip' }, 'IMDb ', h('b', {}, im.criticsScore))); }).catch(() => { });
+  if (d.voteAverage) ratings.append(h('span', { class: 'rt-chip' }, 'TMDB ', h('b', {}, d.voteAverage.toFixed(1)), d.voteCount ? h('small', {}, (d.voteCount / 1000).toFixed(1) + 'k') : null));
+  /* request options for admins: server, quality profile, folder */
+  const advBox = h('details', { class: 'sr-adv' }, h('summary', {}, t('reqAdvanced')));
+  if (admin && st.k === 'none') {
+    const kind = mt === 'movie' ? 'radarr' : 'sonarr';
+    seerrGet('/service/' + kind).then(async servers => {
+      const list = (servers || []).filter(s => !s.is4k); if (!list.length) { advBox.remove(); return; }
+      const def = list.find(s => s.isDefault) || list[0]; const sel = (label, key) => { const el = h('select', { onchange: e => { adv[key] = key === 'rootFolder' ? e.target.value : (e.target.value === '' ? null : +e.target.value); } }); return { el, row: h('div', { class: 'sr-opt' }, h('label', {}, label), el) }; };
+      const sv = sel(t('reqServer'), 'serverId'), pf = sel(t('reqProfile'), 'profileId'), fo = sel(t('reqFolder'), 'rootFolder');
+      list.forEach(s => sv.el.append(h('option', { value: s.id, selected: s.id === def.id }, s.name)));
+      const fill = async id => { adv.serverId = id; try { const det = await seerrGet('/service/' + kind + '/' + id); pf.el.replaceChildren(...(det.profiles || []).map(p => h('option', { value: p.id, selected: p.id === def.activeProfileId }, p.name))); fo.el.replaceChildren(...(det.rootFolders || []).map(f => h('option', { value: f.path, selected: f.path === def.activeDirectory }, f.path))); adv.profileId = pf.el.value ? +pf.el.value : null; adv.rootFolder = fo.el.value || null; } catch (e) { } };
+      sv.el.onchange = e => fill(+e.target.value); await fill(def.id); advBox.append(h('div', { class: 'sr-opts' }, sv.row, pf.row, fo.row));
+    }).catch(() => advBox.remove());
+  } else advBox.remove();
+  const poster = TM(d.posterPath, 'w500');
   box.replaceChildren(
     h('div', Object.assign({ class: 'sr-hero' }, bg(TM(d.backdropPath, 'w1280'))), h('button', { class: 'sr-close', onclick: () => closeModal(bgEl), 'aria-label': 'Close' }, ic('close'))),
-    h('div', { class: 'sr-body' }, h('h2', {}, title), h('div', { class: 'nf-meta' }, d.voteAverage ? h('span', { class: 'match' }, Math.round(d.voteAverage * 10) + '%') : null, year ? h('span', {}, year) : null, d.runtime ? h('span', {}, d.runtime + ' ' + t('min')) : null, (d.genres || []).slice(0, 3).map(g => h('span', {}, g.name))),
-      status, h('p', { class: 'sr-ov' }, d.overview || ''), seasonBox, cast.length ? h('div', { class: 'sr-cast' }, cast.map(c => h('span', {}, c.name))) : null,
-      h('div', { class: 'nf-btns', style: 'margin-top:18px' }, btn, h('button', { class: 'btn grey', onclick: () => closeModal(bgEl) }, t('close')))));
+    h('div', { class: 'sr-body' },
+      h('div', { class: 'sr-top' }, poster ? h('div', Object.assign({ class: 'sr-poster' }, bg(poster))) : null,
+        h('div', { class: 'sr-head' }, h('h2', {}, title, year ? h('span', {}, ' (' + year + ')') : null), d.tagline ? h('p', { class: 'nf-tagline' }, d.tagline) : null,
+          h('div', { class: 'nf-meta' }, (d.genres || []).slice(0, 4).map(g => h('span', {}, g.name)), runtime ? h('span', {}, runtime + ' ' + t('min')) : null),
+          ratings, status,
+          h('div', { class: 'nf-btns', style: 'margin-top:14px' }, btn, trailer ? h('a', { class: 'btn grey', href: 'https://www.youtube.com/watch?v=' + trailer.key, target: '_blank', rel: 'noopener' }, ic('film'), t('watchTrailer')) : null, h('button', { class: 'btn grey', onclick: () => closeModal(bgEl) }, t('close'))))),
+      h('p', { class: 'sr-ov' }, d.overview || ''), seasonBox, advBox,
+      facts.length ? h('dl', { class: 'nf-facts sr-facts' }, facts.map(f => [h('dt', {}, f[0]), h('dd', {}, f[1])])) : null,
+      cast.length ? h('div', { class: 'sr-castw' }, h('h3', {}, t('moreCast')), h('div', { class: 'sr-cast2' }, cast.map(c => h('div', { class: 'sr-p' }, h('div', Object.assign({ class: 'pi' }, bg(c.profilePath ? TM(c.profilePath, 'w185') : ''))), h('b', {}, c.name), h('small', {}, c.character || '')))) ) : null));
 }
 function cpostSeerr(path, body) { return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl(SEERR + path), data: JSON.stringify(body), contentType: 'application/json', dataType: 'json' }); }
 

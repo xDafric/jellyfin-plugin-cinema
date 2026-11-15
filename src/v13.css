@@ -1,0 +1,19 @@
+/* ===== v13: native frame, neutral avatar, cast, modals ===== */
+.cx-nframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 9650; background: transparent; opacity: 0; pointer-events: none; color-scheme: dark; }
+.cx-nframe.show { opacity: 1; pointer-events: auto; }
+#cx-lite { position: fixed; inset: 0; z-index: 9640; display: none; place-items: center; background: rgba(0,0,0,.35); backdrop-filter: blur(3px); }
+#cx-lite.show { display: grid; }
+
+/* avatar + account menu: neutral, no heavy red */
+.nf-avatar, .um-av { background: #2c2c33 !important; color: #fff; border: 1px solid rgba(255,255,255,.14); box-shadow: none; font-weight: 700; }
+.nf-avatar { transition: background .2s, border-color .2s; } .nf-menu-wrap > button:hover .nf-avatar { background: #3a3a43 !important; border-color: rgba(255,255,255,.3); }
+.um-item:hover .um-ic { background: rgba(255,255,255,.18) !important; transform: scale(1.05); }
+.um-danger:hover .um-ic { background: rgba(255,69,58,.28) !important; }
+.um-av { font-size: 19px; }
+
+/* cast: full-bleed scroller with end padding */
+.nf-cast { margin-right: calc(-1 * var(--pad)); padding-right: var(--pad); scroll-padding-right: var(--pad); }
+.nf-cast .nf-person:last-child { margin-right: var(--pad); }
+.nf-sect .nf-scroller { padding-right: var(--pad); }
+.nf-person { flex: none; }
+.nf-person .pi { background-color: #26262c; }

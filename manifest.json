@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.0.6.0",
+                             "changelog":  "Native item actions (images, metadata, identify) in an isolated frame, detail-page menu, clickable home sections with full browse pages, hidden tiny rows, actor pages with titles you do not own, richer request modal with cast photos and admin options, neutral account menu and restyled dialogs.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.6.0.zip",
+                             "checksum":  "db6fa1a1786751e237b91d615abe5115",
+                             "timestamp":  "2026-11-18T12:00:00Z"
+                         },
+                         {
                              "version":  "1.0.5.0",
                              "changelog":  "Tabler icon set across the interface and player.",
                              "targetAbi":  "12.4.0.0",

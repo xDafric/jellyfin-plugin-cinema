@@ -109,61 +109,64 @@ async function itemMenu(e, it) {
   if (canDel) { ent.push('-'); ent.push({ icon: 'close', label: t('delete'), fn: () => nativeCommand(it.Id, ['delete']) }); }
   openMenu(Math.min(r.left, innerWidth - 260), r.bottom + 6, ent);
 }
-/* run a command of Jellyfin's own item menu (metadata editor, image editor, identify, ...) */
-function nativeCommand(id, cmds) {
-  hidePeek(); closeMenu();
-  document.documentElement.classList.add('cx-nativecmd'); C.returnHash = location.hash || '#/home';
-  C.allowNative = true; COVER.show(); location.hash = '#/details?id=' + id;
-  let tries = 0;
-  const iv = setInterval(() => {
-    tries++;
-    const page = $('#itemDetailPage:not(.hide)'); const more = page && $('.btnMoreCommands:not(.hide)', page);
-    if (!cmds) { if (page && page.querySelector('.detailPageContent, .detailPagePrimaryContainer')) { clearInterval(iv); COVER.hide(); } }
-    else if (more && cmds === '__menu') { clearInterval(iv); more.click(); setTimeout(() => { COVER.hide(); watchDialogClose(); }, 400); }
-    else if (more) {
-      clearInterval(iv); more.click(); let n = 0;
-      const iv2 = setInterval(() => {
-        n++; const sheet = $('.actionSheet, .dialog.actionsheet'); const btn = sheet && cmds.map(c => $('button[data-id="' + c + '"]', sheet)).find(Boolean);
-        if (btn) { clearInterval(iv2); btn.click(); setTimeout(() => COVER.hide(), 350); watchDialogClose(); }
-        else if (n > 25) { clearInterval(iv2); const dbg = sheet ? $$('button[data-id]', sheet).map(b => b.dataset.id).join(',') : 'no sheet'; console.warn('[cinema] command not found', cmds, dbg); toast(t('cmdNA')); COVER.hide(); }
-      }, 100);
-    }
-    if (tries > 80) { clearInterval(iv); COVER.hide(); }
-  }, 120);
-}
-
-/* after a native dialog (metadata editor, ...) closes, go back to where the user came from */
-function watchDialogClose() {
-  let seen = false, gone = 0;
-  const iv = setInterval(() => {
-    const open = $('dialog[open], .dialogContainer .dialog, .formDialog');
-    if (open) { seen = true; gone = 0; } else if (seen && ++gone >= 3) { clearInterval(iv); C.allowNative = false; document.documentElement.classList.remove('cx-nativecmd'); if (/^#\/details/.test(location.hash)) location.replace(location.pathname + location.search + (C.returnHash || '#/home')); }
-    if (!seen && ++gone > 40) { clearInterval(iv); document.documentElement.classList.remove('cx-nativecmd'); }
-  }, 400);
-}
-
-/* Jellyfin's own item actions (collections, playlists, download, share and everything other plugins add), listed in my menu */
+/* Jellyfin's own item actions (metadata editor, image editor, identify, collections, download, plugin entries...)
+   run inside an isolated copy of the web client (iframe). The page you are on is never navigated, so nothing flickers. */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const DUP_ACTIONS = /^(play|resume|playfromstart|edit|editmetadata|editimages|identify|refresh|delete|markplayed|markunplayed|addtofavorites|removefromfavorites)$/i;
+const lite = (() => { let el = null; return { show() { if (!el) { el = h('div', { id: 'cx-lite' }, h('div', { class: 'spinner', style: 'margin:0' })); getUI().append(el); } el.classList.add('show'); }, hide() { if (el) el.classList.remove('show'); } }; })();
+const FRAME_CSS = `html.cx-iframe, html.cx-iframe body, html.cx-iframe .skinBody, html.cx-iframe .backgroundContainer { background: transparent !important; }
+html.cx-iframe #reactRoot > *, html.cx-iframe .skinHeader, html.cx-iframe .page, html.cx-iframe .mainDrawer, html.cx-iframe .nowPlayingBar, html.cx-iframe .MuiAppBar-root { visibility: hidden !important; }
+html.cx-iframe dialog, html.cx-iframe .dialogContainer, html.cx-iframe .dialogBackdrop, html.cx-iframe .actionSheet, html.cx-iframe .formDialog, html.cx-iframe .MuiDialog-root, html.cx-iframe .MuiPopover-root, html.cx-iframe .toast, html.cx-iframe .toastContainer { visibility: visible !important; }`;
+async function openNativeFrame(id) {
+  const fr = h('iframe', { class: 'cx-nframe', src: location.pathname + location.search + '#/details?id=' + id + '&nocinema', allow: 'fullscreen' }); getUI().append(fr);
+  for (let i = 0; i < 160; i++) {
+    await sleep(120);
+    try {
+      const d = fr.contentDocument; if (!d || !d.documentElement) continue;
+      if (!d.getElementById('cx-style-f') && d.head) { d.documentElement.classList.add('cx-ready', 'cx-iframe', 'cx-pskin'); const st = d.createElement('style'); st.id = 'cx-style-f'; st.textContent = CSS_TEXT + FRAME_CSS; d.head.append(st); const fl = d.createElement('link'); fl.rel = 'stylesheet'; fl.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'; d.head.append(fl); }
+      const pg = d.querySelector('#itemDetailPage:not(.hide)'); const more = pg && pg.querySelector('.btnMoreCommands:not(.hide)');
+      if (more) return { fr, d, more };
+    } catch (e) { }
+  }
+  fr.remove(); throw new Error('timeout');
+}
+const sheetOf = d => d.querySelector('.actionSheet, .dialog.actionsheet');
 async function harvestItemMenu(id) {
-  const H = document.documentElement; const back = location.hash || '#/home'; H.classList.add('cx-harvest', 'cx-nativecmd'); COVER.show(); C.allowNative = true; location.hash = '#/details?id=' + id;
-  const out = [];
+  let fr = null; const out = [];
   try {
-    let more = null;
-    for (let i = 0; i < 80 && !more; i++) { await sleep(120); const page = $('#itemDetailPage:not(.hide)'); more = page && $('.btnMoreCommands:not(.hide)', page); }
-    if (more) {
-      more.click(); let sheet = null;
-      for (let i = 0; i < 30 && !(sheet && $$('button[data-id]', sheet).length); i++) { await sleep(100); sheet = $('.actionSheet, .dialog.actionsheet'); }
-      if (sheet) $$('button[data-id]', sheet).forEach(b => { const id_ = b.dataset.id; if (DUP_ACTIONS.test(id_)) return; const label = ((b.querySelector('.listItemBodyText, .actionSheetItemText') || b).textContent || '').trim().replace(/\s+/g, ' '); const mi = (b.querySelector('.material-icons, .actionsheetMenuItemIcon') || {}).textContent; if (label) out.push({ id: id_, label, mi: mi && mi.length < 40 ? mi.trim() : '' }); });
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); const bd = $('.dialogBackdrop, .dialogBackdropOpened'); if (bd) bd.click(); for (let i = 0; i < 15 && $('.actionSheet, .dialog.actionsheet'); i++) await sleep(100); await sleep(300);
-    }
+    const f = await openNativeFrame(id); fr = f.fr; f.more.click(); let sheet = null;
+    for (let i = 0; i < 40 && !(sheet && sheet.querySelectorAll('button[data-id]').length); i++) { await sleep(100); sheet = sheetOf(f.d); }
+    if (sheet) sheet.querySelectorAll('button[data-id]').forEach(b => { const id_ = b.dataset.id; if (DUP_ACTIONS.test(id_)) return; const label = ((b.querySelector('.listItemBodyText, .actionSheetItemText') || b).textContent || '').trim().replace(/\s+/g, ' '); const mi = (b.querySelector('.material-icons, .actionsheetMenuItemIcon') || {}).textContent; if (label) out.push({ id: id_, label, mi: mi && mi.length < 40 ? mi.trim() : '' }); });
   } catch (e) { console.warn('[cinema] harvest item menu', e); }
-  C.allowNative = false; location.replace(location.pathname + location.search + back); await sleep(500);
-  H.classList.remove('cx-harvest', 'cx-nativecmd'); COVER.hide();
+  if (fr) fr.remove();
   return out;
 }
+async function runFrameCommand(id, cmds) {
+  lite.show(); let fr = null;
+  try {
+    const f = await openNativeFrame(id); fr = f.fr; f.more.click(); let btn = null;
+    for (let i = 0; i < 40 && !btn; i++) { await sleep(100); const sh = sheetOf(f.d); btn = sh && cmds.map(c => sh.querySelector('button[data-id="' + c + '"]')).find(Boolean); }
+    if (!btn) { toast(t('cmdNA')); fr.remove(); lite.hide(); return; }
+    btn.click(); fr.classList.add('show'); lite.hide();
+    let seen = false, gone = 0, waited = 0;
+    await new Promise(res => {
+      const iv = setInterval(() => {
+        let open = false; try { open = !!f.d.querySelector('dialog[open], .dialogContainer .dialog, .formDialog, .actionSheet'); } catch (e) { clearInterval(iv); return res(); }
+        if (open) { seen = true; gone = 0; } else if (seen && ++gone >= 2) { clearInterval(iv); res(); }
+        if (!seen && ++waited > 14) { clearInterval(iv); res(); }
+      }, 350);
+    });
+  } catch (e) { console.warn('[cinema] native command', e); toast(t('cmdNA')); }
+  if (fr) fr.remove(); lite.hide(); refreshView();
+}
+function refreshView() { C.libCache = null; try { resetSeerrCache(); } catch (e) { } route(); }
+function nativeCommand(id, cmds) {
+  hidePeek(); closeMenu();
+  if (!cmds) { C.allowNative = true; location.hash = '#/details?id=' + id; return; }
+  runFrameCommand(id, cmds);
+}
 async function showNativeActions(it, x, y) {
-  const list = await harvestItemMenu(it.Id);
+  lite.show(); const list = await harvestItemMenu(it.Id); lite.hide();
   if (!list.length) { toast(t('cmdNA')); return; }
   openMenu(x, y, list.map(e => ({ mi: e.mi, label: e.label, fn: () => nativeCommand(it.Id, [e.id]) })));
 }

@@ -1,0 +1,43 @@
+/* ===== v14: request modal 2, native dialogs ===== */
+.sr-modal { width: min(1000px, 100%); max-height: 92vh; border-radius: 28px; }
+.sr-hero { height: 260px; }
+.sr-body { padding: 0 34px 32px; margin-top: -90px; }
+.sr-top { display: flex; gap: 26px; align-items: flex-end; }
+.sr-poster { width: 190px; aspect-ratio: 2/3; border-radius: 16px; background: #26262c center/cover; box-shadow: 0 20px 50px rgba(0,0,0,.6); flex: none; }
+.sr-head { min-width: 0; flex: 1; padding-bottom: 4px; }
+.sr-head h2 { margin: 0 0 6px; } .sr-head h2 span { font-weight: 500; color: #9a9aa2; font-size: .7em; }
+.sr-facts { grid-template-columns: 150px 1fr; margin-top: 18px; }
+.sr-castw { margin-top: 26px; } .sr-castw h3 { margin: 0 0 12px; font-size: 18px; }
+.sr-cast2 { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: thin; }
+.sr-p { flex: none; width: 96px; text-align: center; font-size: 12.5px; } .sr-p .pi { width: 96px; height: 96px; border-radius: 50%; background: #26262c center 18%/cover; margin-bottom: 8px; } .sr-p b { display: block; font-weight: 600; } .sr-p small { display: block; color: #8d8d95; margin-top: 2px; }
+.sr-adv { margin: 14px 0; background: rgba(255,255,255,.04); border-radius: 16px; padding: 4px 16px; } .sr-adv summary { cursor: pointer; padding: 10px 0; font-weight: 600; font-size: 14px; }
+.sr-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 4px 0 14px; } .sr-opt label { display: block; font-size: 12px; color: #9a9aa2; margin-bottom: 5px; font-weight: 600; }
+.sr-opt select { width: 100%; height: 40px; padding: 0 12px; border-radius: 12px; background: #202026; color: #fff; border: 1px solid rgba(255,255,255,.1); font: inherit; }
+@media (max-width: 800px) { .sr-top { flex-direction: column; align-items: flex-start; } .sr-poster { width: 120px; } .sr-body { padding: 0 18px 24px; } .sr-facts { grid-template-columns: 110px 1fr; } }
+
+/* native dialogs (metadata editor, image editor, identify, ...) */
+html.cx-ready .dialogBackdropOpened, html.cx-ready .dialogBackdrop { background: rgba(0,0,0,.62) !important; backdrop-filter: blur(10px); }
+html.cx-ready .formDialog, html.cx-ready dialog.formDialog, html.cx-ready .dialog:not(.actionsheet) { background: #17171b !important; border: 1px solid rgba(255,255,255,.08) !important; border-radius: 26px !important; box-shadow: 0 40px 100px rgba(0,0,0,.7) !important; color: #ececf0; overflow: hidden; }
+html.cx-ready .formDialogHeader { background: transparent !important; padding: 12px 18px !important; border-bottom: 1px solid rgba(255,255,255,.06); }
+html.cx-ready .formDialogHeaderTitle { font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+html.cx-ready .formDialogContent { padding: 8px 6px; }
+html.cx-ready .formDialogFooter { background: rgba(255,255,255,.03) !important; border-top: 1px solid rgba(255,255,255,.06); padding: 14px 22px; }
+html.cx-ready .formDialog h2, html.cx-ready .formDialog .sectionTitle { font-weight: 700; letter-spacing: -.01em; }
+html.cx-ready .formDialog .card .cardBox, html.cx-ready .formDialog .cardBox { background: #202026 !important; border: 1px solid rgba(255,255,255,.06); border-radius: 20px !important; padding: 12px 12px 10px; transition: transform .2s, background .2s, border-color .2s; }
+html.cx-ready .formDialog .cardBox:hover { background: #26262d !important; border-color: rgba(255,255,255,.14); transform: translateY(-2px); }
+html.cx-ready .formDialog .cardImageContainer, html.cx-ready .formDialog .cardImage { border-radius: 12px !important; background-color: #14141a; }
+html.cx-ready .formDialog .cardText { color: #e4e4e8; }
+html.cx-ready .formDialog .cardText-secondary { color: #8d8d95; }
+html.cx-ready .formDialog .paper-icon-button-light, html.cx-ready .formDialog .emby-button.paper-icon-button-light { width: 40px; height: 40px; border-radius: 50% !important; background: rgba(255,255,255,.08); color: #e8e8ec; transition: background .18s, transform .15s; }
+html.cx-ready .formDialog .paper-icon-button-light:hover { background: rgba(255,255,255,.18); transform: scale(1.06); }
+html.cx-ready .formDialog [class*="accent"], html.cx-ready .formDialog .button-accent, html.cx-ready .formDialog .emby-button.button-accent { background: #fff !important; color: #000 !important; }
+html.cx-ready .formDialog .fab, html.cx-ready .formDialog .btnBrowseAllImages, html.cx-ready .formDialog .fab.mini { background: rgba(255,255,255,.12) !important; color: #fff !important; box-shadow: none !important; }
+html.cx-ready .formDialog .fab:hover { background: rgba(255,255,255,.24) !important; }
+html.cx-ready .formDialog .emby-checkbox:checked + span + .checkboxOutline, html.cx-ready .formDialog .emby-checkbox:checked + span { background: #fff !important; }
+html.cx-ready .formDialog a,html.cx-ready .formDialog .button-link { color: #cfd3ff; }
+html.cx-ready .formDialog .emby-input, html.cx-ready .formDialog .emby-select, html.cx-ready .formDialog textarea { background: #202026 !important; }
+html.cx-ready .formDialog .checkboxContainer, html.cx-ready .formDialog .selectContainer { border-radius: 14px; }
+html.cx-ready .formDialog button.raised, html.cx-ready .formDialog .button-submit { padding: 10px 22px; }
+html.cx-ready .actionSheet, html.cx-ready .dialog.actionsheet { background: rgba(28,28,32,.97) !important; border: 1px solid rgba(255,255,255,.08) !important; border-radius: 20px !important; padding: 6px !important; box-shadow: 0 30px 70px rgba(0,0,0,.6) !important; backdrop-filter: blur(24px); }
+html.cx-ready .actionSheetMenuItem, html.cx-ready .actionSheet button.listItem { border-radius: 12px !important; transition: background .15s; }
+html.cx-ready .actionSheetMenuItem:hover { background: rgba(255,255,255,.1) !important; }
