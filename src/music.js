@@ -355,7 +355,7 @@ async function mHome(n) {
   }
   n.append(shelf(t('yourPl'), lib.playlists.map(plTile)));
   n.append(shelf(t('mixes'), (await genres).Items.map((g, i) => mixTile(g.Name, i))));
-  n.append(plug().aurral ? h('div', { class: 'sp-disc-cta' }, h('div', {}, h('b', {}, t('discoverMusic')), h('span', {}, t('discoverCta'))), h('a', { class: 'sp-pillbtn', href: '#/c/music/discover' }, t('open'))) : '');
+  n.append(aurralOn() ? h('div', { class: 'sp-disc-cta' }, h('div', {}, h('b', {}, t('discoverMusic')), h('span', {}, t('discoverCta'))), h('a', { class: 'sp-pillbtn', href: '#/c/music/discover' }, t('open'))) : '');
   n.append(shelf(t('newAlb'), lib.albums.slice().sort((a, b) => (b.DateCreated || '').localeCompare(a.DateCreated || '')).slice(0, 14).map(albumTile)));
   n.append(shelf(t('artists'), shuffleArr(lib.artists).slice(0, 14).map(artistTile)));
   if (recAlb.length > 3) n.append(shelf(t('recent') + ' · ' + t('albums'), recAlb.slice(0, 14).map(albumTile)));

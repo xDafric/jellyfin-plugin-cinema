@@ -2,7 +2,7 @@
 const DC = { genres: null };
 async function dcGenres() {
   if (DC.genres) return DC.genres;
-  try { const [m, t_] = await Promise.all([seerrGet('/genres/movie'), seerrGet('/genres/tv')]); DC.genres = { movie: m, tv: t_ }; } catch (e) { DC.genres = { movie: [], tv: [] }; }
+  try { const [m, t_] = await Promise.all([seerrGet('/genres/movie'), seerrGet('/genres/tv')]); if (Array.isArray(m) && m.length) DC.genres = { movie: m, tv: Array.isArray(t_) ? t_ : [] }; else return { movie: [], tv: [] }; } catch (e) { return { movie: [], tv: [] }; }
   return DC.genres;
 }
 const SORTS = { popularity: ['popularity.desc', 'popularity.desc'], rating: ['vote_average.desc', 'vote_average.desc'], newest: ['primary_release_date.desc', 'first_air_date.desc'] };

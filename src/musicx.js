@@ -29,7 +29,7 @@ async function requestExtTrack(it) {
 
 async function mDiscover(n) {
   n.append(h('div', { class: 'sp-greet' }, t('discoverMusic')));
-  if (!plug().aurral) { n.append(h('div', { class: 'nf-empty' }, t('aurralOff'))); return; }
+  if (!aurralOn()) { n.append(h('div', { class: 'nf-empty' }, t('aurralOff'))); return; }
   const [ed, dis] = await Promise.all([aget('/api/discover/editorial').catch(() => null), aget('/api/discover').catch(() => null)]);
   const ptile = p => tile({ name: p.name, sub: (p.trackCount ? p.trackCount + ' ' + t('songsN') + ' · ' : '') + (p.curator || ''), img: extImg(p.artworkUrl), href: '#/c/music/disc/' + p.id });
   (ed && ed.forYou && ed.forYou.length) && n.append(shelf(t('forYou'), ed.forYou.map(ptile)));
@@ -55,7 +55,7 @@ async function mExtAlbum(n, id, q) {
 }
 /* artist page: releases the library does not have yet */
 async function aurralArtistExtras(n, ar) {
-  if (!plug().aurral) return;
+  if (!aurralOn()) return;
   const mb = (ar.ProviderIds || {}).MusicBrainzArtist; if (!mb) return;
   try {
     const [a, lib] = await Promise.all([aget('/api/artists/' + mb), loadLibrary()]);

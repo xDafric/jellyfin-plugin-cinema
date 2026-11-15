@@ -1,0 +1,34 @@
+/* ===== v9: fixes ===== */
+.nf-card { min-width: 0; }
+select option { background: #1c1c20; color: #fff; }
+.dc-bar select { color-scheme: dark; appearance: none; -webkit-appearance: none; padding-right: 34px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; }
+
+/* native dialogs (metadata editor etc.): never show the old page behind them */
+html.cx-nativecmd #reactRoot > *:not(.MuiDialog-root):not(.MuiPopover-root), html.cx-nativecmd .skinBody, html.cx-nativecmd .page { visibility: hidden !important; }
+html.cx-nativecmd .dialogContainer, html.cx-nativecmd dialog, html.cx-nativecmd .MuiDialog-root, html.cx-nativecmd .MuiPopover-root { visibility: visible !important; }
+html.cx-nativecmd body { background: #0d0d0f !important; }
+
+/* preferences menu rows: single clean surface */
+html.cx-ready .listItem-border .listItem, html.cx-ready .listItem-border .listItem:hover { background: transparent !important; border-radius: inherit !important; }
+html.cx-ready a.listItem-border { transition: background .2s, transform .2s, box-shadow .2s; }
+html.cx-ready a.listItem-border:hover { background: #26262c !important; transform: translateX(4px); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+html.cx-ready a.listItem-border:active { transform: translateX(2px) scale(.995); }
+html.cx-ready .listItem-border:hover .listItemIcon { background: rgba(255,255,255,.18) !important; transform: scale(1.06); }
+html.cx-ready .listItem-border .listItemIcon { transition: background .2s, transform .2s; }
+
+/* mobile */
+.m-only { display: none !important; }
+@media (max-width: 800px) {
+  .m-only { display: flex !important; }
+  #cx-nf, .sp-scroll, .sp-liblist { scrollbar-width: none; -ms-overflow-style: none; }
+  #cx-nf::-webkit-scrollbar, .sp-scroll::-webkit-scrollbar, .sp-liblist::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .nf-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nf-grid .nf-card, .nf-grid .nf-card.poster { width: 100%; }
+  .req-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nf-grid .nf-card .title { font-size: 11.5px; }
+  .nf-hero { margin-left: 12px; margin-right: 12px; }
+  .nf-card.poster { width: 30vw; } .nf-card { width: 52vw; }
+  .cx-tabs { left: 14px; right: 14px; height: 58px; }
+  .nf-pop { max-height: 70vh; overflow-y: auto; }
+}

@@ -4,10 +4,9 @@ namespace Jellyfin.Plugin.Cinema;
 
 public class PluginConfiguration : BasePluginConfiguration
 {
-    /// <summary>Base URL of Seerr / Jellyseerr / Overseerr, e.g. http://seerr:5055 .</summary>
+    // ---- connections (keys stay on the server) ----
     public string SeerrUrl { get; set; } = string.Empty;
 
-    /// <summary>API key of an administrator in Seerr (Settings, General).</summary>
     public string SeerrApiKey { get; set; } = string.Empty;
 
     public string RadarrUrl { get; set; } = string.Empty;
@@ -22,9 +21,68 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public string AurralApiKey { get; set; } = string.Empty;
 
-    /// <summary>Inject the Cinema UI script into the web client's index.html through File Transformation.</summary>
+    // ---- loading ----
     public bool InjectEarly { get; set; } = true;
 
-    /// <summary>Allow every signed-in user to see Radarr/Sonarr download progress and the calendar.</summary>
     public bool ShareQueue { get; set; } = true;
+
+    // ---- features (server wide switches; a disabled feature is hidden for every user) ----
+    public bool FeatHero { get; set; } = true;
+
+    public bool FeatPeek { get; set; } = true;
+
+    public bool FeatDiscover { get; set; } = true;
+
+    public bool FeatWatchlist { get; set; } = true;
+
+    public bool FeatRequests { get; set; } = true;
+
+    public bool FeatCalendar { get; set; } = true;
+
+    public bool FeatMusic { get; set; } = true;
+
+    public bool FeatMusicDiscovery { get; set; } = true;
+
+    public bool FeatOwnPlayer { get; set; } = true;
+
+    public bool FeatMediaInfo { get; set; } = true;
+
+    public bool FeatRatings { get; set; } = true;
+
+    public bool FeatSeerrSimilar { get; set; } = true;
+
+    public bool FeatInfiniteScroll { get; set; } = true;
+
+    public bool FeatPluginMenus { get; set; } = true;
+
+    public bool FeatItemMenu { get; set; } = true;
+
+    // ---- defaults for every user (users can override unless AllowUserOverrides is off) ----
+    public bool AllowUserOverrides { get; set; } = true;
+
+    public string AccentColor { get; set; } = "#e50914";
+
+    public string BrandText { get; set; } = string.Empty;
+
+    public int HeroItems { get; set; } = 8;
+
+    public int HeroIntervalSeconds { get; set; } = 11;
+
+    public int PeekDelayMs { get; set; } = 320;
+
+    public string CardSize { get; set; } = "m";
+
+    public bool SeerrWatchlistSync { get; set; }
+
+    public bool PlayerAutoNext { get; set; } = true;
+
+    public bool PlayerAutoSkipIntro { get; set; }
+
+    public string PlayerQuality { get; set; } = "auto";
+
+    /// <summary>Comma separated navigation entries to hide, e.g. "calendar,requests".</summary>
+    public string HiddenNav { get; set; } = string.Empty;
+
+    /// <summary>JSON array of default home sections, e.g. [{"id":"continue","on":true}]. Empty = built-in order.</summary>
+    public string DefaultSections { get; set; } = string.Empty;
 }

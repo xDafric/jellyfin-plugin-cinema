@@ -16,23 +16,34 @@ async function toggleWatch(it) {
 async function toggleFav(it) { const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData = Object.assign(ud(it), { IsFavorite: on }); return on; }
 async function togglePlayed(it) { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData = Object.assign(ud(it), { Played: on }); toast(on ? t('markedWatched') : t('markedUnwatched')); return on; }
 
-/* per-user settings (synced through Jellyfin DisplayPreferences) */
-const CFG_DEF = { nativePlayer: false, hero: true, peek: true, seerrWatchlistSync: false, sections: null, accent: '#e50914', infinite: true };
-let CFG = Object.assign({}, CFG_DEF);
-const cfg = k => CFG[k];
+/* settings: server defaults (plugin) overridden per user (Jellyfin DisplayPreferences, synced across devices) */
+const CFG_DEF = { nativePlayer: false, hero: true, peek: true, seerrWatchlistSync: false, sections: null, accent: '#e50914', infinite: true, cardSize: 'm', heroItems: 8, heroInterval: 11, peekDelay: 320 };
+let CFGU = {};
+const feat = k => !(C.status && C.status.features) || C.status.features[k] !== false;
+const SRV = { accent: 'accent', seerrWatchlistSync: 'seerrWatchlistSync', pl_autoNext: 'pl_autoNext', pl_autoSkip: 'pl_autoSkip', pl_quality: 'pl_quality', cardSize: 'cardSize', heroItems: 'heroItems', heroInterval: 'heroInterval', peekDelay: 'peekDelay' };
+function cfg(k) {
+  const d = (C.status && C.status.defaults) || {}; const allow = d.allowUserOverrides !== false; const u = allow ? CFGU[k] : undefined;
+  if (k === 'hero') return feat('hero') && u !== false; if (k === 'peek') return feat('peek') && u !== false; if (k === 'infinite') return feat('infiniteScroll') && u !== false;
+  if (u !== undefined) return u;
+  if (k === 'sections') { try { const j = d.sections && JSON.parse(d.sections); if (j && j.length) return j; } catch (e) { } return null; }
+  if (SRV[k] !== undefined && d[SRV[k]] !== undefined && d[SRV[k]] !== '') return d[SRV[k]];
+  return CFG_DEF[k];
+}
+const userSet = k => CFGU[k] !== undefined;
 async function loadCfg() {
-  try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); const raw = (dp.CustomPrefs || {}).cfg; if (raw) CFG = Object.assign({}, CFG_DEF, JSON.parse(raw)); } catch (e) { }
+  try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); const raw = (dp.CustomPrefs || {}).cfg; if (raw) CFGU = JSON.parse(raw) || {}; } catch (e) { }
   applyCfg();
 }
 async function saveCfg(patch) {
-  Object.assign(CFG, patch); applyCfg();
-  try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); dp.CustomPrefs = Object.assign(dp.CustomPrefs || {}, { cfg: JSON.stringify(CFG) }); await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }), data: JSON.stringify(dp), contentType: 'application/json' }); } catch (e) { console.warn('[cinema] save cfg failed', e); }
+  Object.keys(patch).forEach(k => { if (patch[k] === undefined || patch[k] === null) delete CFGU[k]; else CFGU[k] = patch[k]; }); applyCfg();
+  try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); dp.CustomPrefs = Object.assign(dp.CustomPrefs || {}, { cfg: JSON.stringify(CFGU) }); await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }), data: JSON.stringify(dp), contentType: 'application/json' }); } catch (e) { console.warn('[cinema] save cfg failed', e); }
 }
-function applyCfg() { const r = document.documentElement; r.style.setProperty('--accent-nf', CFG.accent || '#e50914'); }
+function applyCfg() { const r = document.documentElement; r.style.setProperty('--accent-nf', cfg('accent') || '#e50914'); r.style.setProperty('--cs', { s: .88, m: 1, l: 1.16 }[cfg('cardSize')] || 1); }
 
 /* ---------- peek popover (replaces card hover) ---------- */
 const PEEK = { el: null, t: 0, hideT: 0, cur: null };
-function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); getUI().append(PEEK.el); } return PEEK.el; }
+function scrollHost() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }
+function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); PEEK.el.addEventListener('wheel', e => { const sh = scrollHost(); if (sh) sh.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' }); hidePeek(); }, { passive: true }); getUI().append(PEEK.el); } return PEEK.el; }
 function hidePeek(delay) { clearTimeout(PEEK.t); clearTimeout(PEEK.hideT); PEEK.hideT = setTimeout(() => { if (PEEK.el) PEEK.el.classList.remove('show'); PEEK.cur = null; }, delay || 0); }
 function showPeek(anchor, d) {
   const el = peekEl(); const r = anchor.getBoundingClientRect();
@@ -53,8 +64,8 @@ function showPeek(anchor, d) {
   PEEK.cur = anchor;
 }
 function attachPeek(el, anchor, getDesc) {
-  if (!matchMedia('(hover:hover) and (pointer:fine)').matches || cfg('peek') === false) return;
-  el.addEventListener('pointerenter', () => { clearTimeout(PEEK.hideT); clearTimeout(PEEK.t); PEEK.t = setTimeout(() => showPeek(anchor, getDesc()), PEEK.cur ? 60 : 320); });
+  if (!matchMedia('(hover:hover) and (pointer:fine)').matches || !cfg('peek')) return;
+  el.addEventListener('pointerenter', () => { clearTimeout(PEEK.hideT); clearTimeout(PEEK.t); PEEK.t = setTimeout(() => showPeek(anchor, getDesc()), PEEK.cur ? 60 : (+cfg('peekDelay') || 320)); });
   el.addEventListener('pointerleave', () => { clearTimeout(PEEK.t); hidePeek(160); });
   el.addEventListener('click', () => hidePeek());
 }
@@ -75,6 +86,7 @@ function libDesc(it, poster) {
 /* ---------- item ⋯ menu: everything Jellyfin can do with an item ---------- */
 let ME = null; const me = async () => ME || (ME = await ApiClient.getCurrentUser());
 async function itemMenu(e, it) {
+  if (!feat('itemMenu')) return;
   e.preventDefault && e.preventDefault(); e.stopPropagation && e.stopPropagation();
   const r = (e.currentTarget || e.target).getBoundingClientRect(); const user = await me(); const admin = user.Policy && user.Policy.IsAdministrator;
   const canDel = admin || (user.Policy && user.Policy.EnableContentDeletion);
@@ -92,6 +104,7 @@ async function itemMenu(e, it) {
     ent.push({ icon: 'search', label: t('identify'), fn: () => nativeCommand(it.Id, ['identify']) });
     ent.push({ icon: 'refresh', label: t('refreshMeta'), fn: () => nativeCommand(it.Id, ['refresh']) });
     ent.push({ icon: 'info', label: t('openNative'), fn: () => nativeCommand(it.Id, null) });
+    ent.push({ icon: 'more', label: t('moreActions'), fn: () => nativeCommand(it.Id, '__menu') });
   }
   if (canDel) { ent.push('-'); ent.push({ icon: 'close', label: t('delete'), fn: () => nativeCommand(it.Id, ['delete']) }); }
   openMenu(Math.min(r.left, innerWidth - 260), r.bottom + 6, ent);
@@ -99,12 +112,14 @@ async function itemMenu(e, it) {
 /* run a command of Jellyfin's own item menu (metadata editor, image editor, identify, ...) */
 function nativeCommand(id, cmds) {
   hidePeek(); closeMenu();
+  document.documentElement.classList.add('cx-nativecmd');
   C.allowNative = true; COVER.show(); location.hash = '#/details?id=' + id;
   let tries = 0;
   const iv = setInterval(() => {
     tries++;
     const page = $('#itemDetailPage:not(.hide)'); const more = page && $('.btnMoreCommands:not(.hide)', page);
     if (!cmds) { if (page && page.querySelector('.detailPageContent, .detailPagePrimaryContainer')) { clearInterval(iv); COVER.hide(); } }
+    else if (more && cmds === '__menu') { clearInterval(iv); more.click(); setTimeout(() => { COVER.hide(); watchDialogClose(); }, 400); }
     else if (more) {
       clearInterval(iv); more.click(); let n = 0;
       const iv2 = setInterval(() => {
@@ -122,7 +137,7 @@ function watchDialogClose() {
   let seen = false, gone = 0;
   const iv = setInterval(() => {
     const open = $('dialog[open], .dialogContainer .dialog, .formDialog');
-    if (open) { seen = true; gone = 0; } else if (seen && ++gone >= 3) { clearInterval(iv); C.allowNative = false; if (/^#\/details/.test(location.hash)) history.back(); }
-    if (!seen && ++gone > 40) clearInterval(iv);
+    if (open) { seen = true; gone = 0; } else if (seen && ++gone >= 3) { clearInterval(iv); C.allowNative = false; document.documentElement.classList.remove('cx-nativecmd'); if (/^#\/details/.test(location.hash)) history.back(); }
+    if (!seen && ++gone > 40) { clearInterval(iv); document.documentElement.classList.remove('cx-nativecmd'); }
   }, 400);
 }

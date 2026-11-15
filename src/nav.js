@@ -60,13 +60,15 @@ const skinLabel = () => t('pskin') + ': ' + (skinOn() ? t('on') : t('off'));
 function getUI() { let u = document.getElementById('cx-ui'); if (!u) { u = h('div', { id: 'cx-ui' }); document.body.append(u); } return u; }
 
 /* ---------- persistent top bar ---------- */
+const NAVFEAT = { discover: 'discover', watchlist: 'watchlist', requests: 'requests', calendar: 'calendar', music: 'music' };
+const navOn = k => { const hid = (((C.status && C.status.defaults && C.status.defaults.hiddenNav) || '') + '').split(',').map(x => x.trim()); if (hid.includes(k)) return false; return !NAVFEAT[k] || feat(NAVFEAT[k]); };
 function buildTop() {
   const uiRoot = getUI();
   const L_ = (k, label, href, cls) => h('a', { 'data-k': k, href: typeof href === 'function' ? '#' : href, class: cls || '', onclick: typeof href === 'function' ? (e => { e.preventDefault(); go(href()); }) : null }, label);
   const links = h('div', { class: 'nf-links' },
     L_('home', t('home'), '#/home'), L_('movies', t('movies'), '#/c/movies'), L_('shows', t('shows'), '#/c/shows'),
-    L_('watchlist', 'Watchlist', '#/c/watchlist'), L_('discover', t('discover'), '#/c/discover'),
-    L_('requests', t('requests'), '#/c/requests', 'opt'), L_('calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'opt'), L_('music', t('music'), '#/c/music'));
+    navOn('watchlist') ? L_('watchlist', 'Watchlist', '#/c/watchlist') : null, navOn('discover') ? L_('discover', t('discover'), '#/c/discover') : null,
+    navOn('requests') ? L_('requests', t('requests'), '#/c/requests', 'opt') : null, navOn('calendar') ? L_('calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'opt') : null, navOn('music') ? L_('music', t('music'), '#/c/music') : null);
   const more = h('div', { class: 'nf-menu-wrap nf-more' });
   const mkPop = items_ => h('div', { class: 'nf-pop hide' }, items_.map(([k, label, href, cls, ico]) => h('a', { 'data-cx': 1, 'data-k': k, class: cls || '', href: typeof href === 'function' ? '#' : href, onclick: e => { if (typeof href === 'function') { e.preventDefault(); go(href()); } } }, ico ? ic(ico, 'ic-s') : null, label)));
   const moreItems = [['requests', t('requests'), '#/c/requests', 'm-opt', 'plus'], ['calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'm-opt', 'cal'], ['favorites', t('mylist'), '#/c/list', '', 'list'], ['bookmarks', t('bookmarks'), () => tabHref('bookmarks'), '', 'star'], ['live', 'Live TV', '#/livetv', '', 'tv'], ['games', 'Games', '#/games', '', 'film']];
@@ -77,17 +79,24 @@ function buildTop() {
   let sT; sInput.addEventListener('input', () => { clearTimeout(sT); sT = setTimeout(() => { const v = sInput.value.trim(); if (v) go('#/c/search/' + encodeURIComponent(v)); else if (/search/.test(location.hash)) go('#/home'); }, 350); });
   sInput.addEventListener('blur', () => { if (!sInput.value) sWrap.classList.remove('open'); });
   const av = h('div', { class: 'nf-avatar' }, 'U');
-  const popUser = mkPop([['settings', t('settings') + ' (Cinema)', '#/c/settings', '', 'edit'], ['prefs', t('prefs'), '#/mypreferencesmenu', '', 'user'], ['dash', t('dash'), '#/dashboard', '', 'info']]);
-  const skinBtn = h('button', { 'data-cx': 1, onclick: e => { e.stopPropagation(); setSkin(!skinOn()); skinBtn.textContent = skinLabel(); } }, skinLabel());
-  popUser.append(skinBtn);
-  popUser.append(h('button', { 'data-cx': 1, onclick: () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } } }, t('logout')));
-  const plugSlot = h('div', { class: 'plug-slot' }); popUser.prepend(plugSlot);
+  const umItem = (iconNode, label, href, fn, cls) => h('a', { 'data-cx': 1, class: 'um-item ' + (cls || ''), href: href || '#', onclick: e => { if (!href || href === '#') e.preventDefault(); closePops(); fn && fn(e); } }, h('span', { class: 'um-ic' }, iconNode), h('span', { class: 'um-l' }, label), ic('right', 'um-ch'));
+  const umAv = h('div', { class: 'um-av' }, 'U'), umName = h('div', { class: 'um-name' }, '');
+  const mobileItems = [['discover', t('discover'), '#/c/discover', 'star'], ['watchlist', 'Watchlist', '#/c/watchlist', 'plus'], ['favorites', t('mylist'), '#/c/list', 'list'], ['requests', t('requests'), '#/c/requests', 'queue'], ['calendar', t('calendar'), (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'cal'], ['live', 'Live TV', '#/livetv', 'tv']].map(([k, label, href, i]) => umItem(ic(i, 'ic-s'), label, href, null, 'm-only'));
+  const skinSw = h('button', { class: 'set-switch' + (skinOn() ? ' on' : ''), 'aria-label': t('pskin'), onclick: e => { e.stopPropagation(); setSkin(!skinOn()); skinSw.classList.toggle('on', skinOn()); } }, h('i'));
+  const plugSlot = h('div', { class: 'um-sec plug-slot', 'data-cx': 1 });
+  const popUser = h('div', { class: 'nf-pop nf-user hide' },
+    h('div', { class: 'um-head', 'data-cx': 1 }, umAv, h('div', {}, umName, h('span', {}, 'Cinema'))),
+    h('div', { class: 'um-sec m-only', 'data-cx': 1 }, mobileItems),
+    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('edit', 'ic-s'), t('settings') + ' · Cinema', '#/c/settings'), umItem(ic('user', 'ic-s'), t('prefs'), '#/mypreferencesmenu'), umItem(ic('info', 'ic-s'), t('dash'), '#/dashboard')),
+    plugSlot,
+    h('div', { class: 'um-sec', 'data-cx': 1 }, h('div', { class: 'um-row', 'data-cx': 1 }, h('span', {}, t('pskin')), skinSw)),
+    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('close', 'ic-s'), t('logout'), '#', () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } }, 'um-danger')));
   async function fillPlugins() {
+    if (!feat('pluginMenus')) return;
     const list = (Date.now() - HARV.at < 60000 && HARV.items.length) ? HARV.items : await harvestMenus();
     plugSlot.replaceChildren(); if (!list.length) return;
-    plugSlot.append(h('div', { class: 'pop-h', 'data-cx': 1 }, t('pluginsH')));
-    list.forEach(i => plugSlot.append(h('a', { 'data-cx': 1, href: i.href || '#', onclick: e => { if (i.href) return; e.preventDefault(); closePops(); if (i.el) i.el.click(); else clickNativeMenu(i.label); } }, i.icon ? h('span', { class: 'mi material-icons' }, i.icon) : ic('list', 'ic-s'), i.label)));
-    plugSlot.append(h('div', { class: 'pop-sep', 'data-cx': 1 }));
+    plugSlot.append(h('div', { class: 'um-h', 'data-cx': 1 }, t('pluginsH')));
+    list.forEach(i => plugSlot.append(umItem(i.icon ? h('span', { class: 'material-icons' }, i.icon) : ic('list', 'ic-s'), i.label, i.href || '#', e => { if (!i.href) { if (i.el) i.el.click(); else clickNativeMenu(i.label); } })));
   }
   const menu = h('div', { class: 'nf-menu-wrap' }, h('button', { 'aria-label': 'Account', onclick: e => { e.stopPropagation(); closePops(popUser); const open = popUser.classList.toggle('hide') === false; if (open) fillPlugins(); } }, av), popUser);
   function closePops(except) { $$('.nf-pop').forEach(p => { if (p !== except) p.classList.add('hide'); }); }
@@ -95,12 +104,10 @@ function buildTop() {
   links.append(more);
   const top = h('div', { id: 'cx-top', class: 'nf-nav' }, h('a', { class: 'nf-logo', href: '#/home' }, BRAND.toUpperCase()), links, h('div', { class: 'nf-spacer' }), sWrap, menu);
   const tabs = h('div', { class: 'cx-tabs hide' },
-    ...[['home', '#/home', 'home', t('home')], ['movies', '#/c/movies', 'film', t('movies')], ['shows', '#/c/shows', 'tv', t('shows')], ['music', '#/c/music', 'note', t('music')]].map(([k, href, i, label]) => h('a', { href, 'data-k': k }, ic(i), label)),
-    h('a', { 'data-k': 'discover', href: '#/c/discover' }, ic('star'), t('discover')),
-    h('button', { onclick: e => { e.stopPropagation(); closePops(popMore2); popMore2.classList.toggle('hide'); } }, ic('more'), t('more')));
+    ...[['home', '#/home', 'home', t('home')], ['movies', '#/c/movies', 'film', t('movies')], ['shows', '#/c/shows', 'tv', t('shows')], ['music', '#/c/music', 'note', t('music')]].filter(x => x[0] !== 'music' || navOn('music')).map(([k, href, i, label]) => h('a', { href, 'data-k': k }, ic(i), label)));
   uiRoot.append(top, tabs);
   C.top = top; C.tabs = tabs; C.sInput = sInput;
-  ApiClient.getCurrentUser().then(u => { av.textContent = (u.Name || 'U')[0].toUpperCase(); }).catch(() => { });
+  ApiClient.getCurrentUser().then(u => { const ini = (u.Name || 'U')[0].toUpperCase(); av.textContent = ini; umAv.textContent = ini; umName.textContent = u.Name || ''; }).catch(() => { });
   window.addEventListener('scroll', e => { const tg = e.target; const st = tg === document || tg === window ? (document.scrollingElement || document.documentElement).scrollTop : tg.scrollTop; if (tg === document || tg === window || (tg.id === 'cx-nf')) top.classList.toggle('solid', st > 40); }, { capture: true, passive: true });
 }
 

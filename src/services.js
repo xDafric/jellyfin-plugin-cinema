@@ -1,5 +1,6 @@
 /* ---------- Cinema plugin services: Seerr modal, Radarr/Sonarr queue + calendar, Aurral music ---------- */
 const plug = () => C.status || {};
+const aurralOn = () => !!(C.status && C.status.aurral) && feat('musicDiscovery');
 const usePluginSeerr = () => !!plug().seerr;
 const cget = (path, params) => api('Cinema' + path, params);
 async function cpost(path, body) { return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema' + path), data: JSON.stringify(body || {}), contentType: 'application/json', dataType: 'json' }); }
@@ -91,7 +92,7 @@ async function requestAurral(o, kind) {
   return apost('/api/library/artists', Object.assign({}, o, { mbid, artistName: aName(o) }));
 }
 async function aurralSearchShelves(node, q) {
-  if (!plug().aurral) return;
+  if (!aurralOn()) return;
   try {
     const [ar, al] = await Promise.all([aget('/api/search', { q, scope: 'artist', limit: 10 }).catch(() => null), aget('/api/search', { q, scope: 'album', limit: 10 }).catch(() => null)]);
     let a = aList(ar); const b = aList(al);
@@ -101,7 +102,7 @@ async function aurralSearchShelves(node, q) {
   } catch (e) { }
 }
 async function aurralDiscoverShelves(node) {
-  if (!plug().aurral) return;
+  if (!aurralOn()) return;
   try {
     const r = await aget('/api/discover');
     const lists = [['recommendations', t('discoverMusic')], ['globalTop', t('globalTopArtists')]];

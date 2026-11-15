@@ -5,78 +5,239 @@
     <title>Cinema</title>
 </head>
 <body>
-<div id="CinemaConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+<div id="CinemaConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
     <div data-role="content">
-        <div class="content-primary">
-            <h2>Cinema</h2>
-            <p>Connect the services the Cinema interface uses. Keys stay on the server and are never sent to browsers.</p>
-            <form id="CinemaConfigForm">
-                <h3>Seerr / Jellyseerr / Overseerr</h3>
-                <div class="inputContainer"><input is="emby-input" type="text" id="SeerrUrl" label="URL (e.g. http://seerr:5055)" /></div>
-                <div class="inputContainer"><input is="emby-input" type="password" id="SeerrApiKey" label="Administrator API key" /></div>
-                <button is="emby-button" type="button" class="raised" data-test="seerr">Test connection</button>
-
-                <h3>Radarr</h3>
-                <div class="inputContainer"><input is="emby-input" type="text" id="RadarrUrl" label="URL (e.g. http://radarr:7878)" /></div>
-                <div class="inputContainer"><input is="emby-input" type="password" id="RadarrApiKey" label="API key" /></div>
-                <button is="emby-button" type="button" class="raised" data-test="radarr">Test connection</button>
-
-                <h3>Sonarr</h3>
-                <div class="inputContainer"><input is="emby-input" type="text" id="SonarrUrl" label="URL (e.g. http://sonarr:8989)" /></div>
-                <div class="inputContainer"><input is="emby-input" type="password" id="SonarrApiKey" label="API key" /></div>
-                <button is="emby-button" type="button" class="raised" data-test="sonarr">Test connection</button>
-
-                <h3>Aurral (music requests and discovery)</h3>
-                <div class="inputContainer"><input is="emby-input" type="text" id="AurralUrl" label="URL (e.g. http://aurral:3001)" /></div>
-                <div class="inputContainer"><input is="emby-input" type="password" id="AurralApiKey" label="API key (Aurral, Settings, General, API access)" /></div>
-                <button is="emby-button" type="button" class="raised" data-test="aurral">Test connection</button>
-
-                <h3>Options</h3>
-                <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="InjectEarly" /><span>Load the Cinema interface before the page renders</span></label>
-                <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="ShareQueue" /><span>Let every user see download progress and the release calendar</span></label>
-
-                <div style="margin-top:1.5em">
-                    <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+        <div class="content-primary" style="max-width:1100px">
+            <style>
+                .cin { font-family: "Inter", system-ui, sans-serif; color: #ececf0; }
+                .cin * { box-sizing: border-box; }
+                .cin-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 22px; }
+                .cin-head h2 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+                .cin-head small { color: #8d8d95; font-size: 13px; }
+                .cin-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+                .cin-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.07); font-size: 13px; font-weight: 600; }
+                .cin-chip i { width: 9px; height: 9px; border-radius: 50%; background: #5a5a62; } .cin-chip.ok i { background: #34c759; box-shadow: 0 0 0 4px rgba(52,199,89,.18); } .cin-chip.bad i { background: #ff453a; }
+                .cin-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 26px; align-items: start; }
+                .cin-nav { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 4px; }
+                .cin-nav button { all: unset; box-sizing: border-box; cursor: pointer; padding: 12px 16px; border-radius: 14px; font-size: 14.5px; font-weight: 500; color: #c9c9d0; transition: background .18s, color .18s; }
+                .cin-nav button:hover { background: rgba(255,255,255,.07); color: #fff; }
+                .cin-nav button.on { background: #fff; color: #000; font-weight: 600; }
+                .cin-panel { display: none; } .cin-panel.on { display: block; animation: cinfade .25s both; }
+                @keyframes cinfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+                .cin-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 22px; padding: 22px 24px; margin-bottom: 18px; }
+                .cin-card h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; } .cin-card > p { margin: 0 0 16px; color: #8d8d95; font-size: 13.5px; line-height: 1.5; }
+                .cin-field { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+                .cin-field label { display: block; font-size: 12px; color: #9a9aa2; margin-bottom: 5px; font-weight: 600; }
+                .cin input[type=text], .cin input[type=password], .cin input[type=number], .cin select, .cin textarea { width: 100%; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 14px; outline: 0; }
+                .cin input:focus, .cin select:focus { border-color: rgba(255,255,255,.45); }
+                .cin select option { background: #1c1c20; }
+                .cin-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 0; border-top: 1px solid rgba(255,255,255,.06); }
+                .cin-row:first-of-type { border-top: 0; }
+                .cin-row b { display: block; font-size: 14.5px; font-weight: 600; } .cin-row span { display: block; color: #8d8d95; font-size: 12.5px; margin-top: 3px; max-width: 520px; line-height: 1.4; }
+                .cin-sw { position: relative; width: 48px; height: 28px; border-radius: 999px; background: #3a3a40; flex: none; cursor: pointer; transition: background .2s; border: 0; padding: 0; }
+                .cin-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+                .cin-sw.on { background: #34c759; } .cin-sw.on::after { transform: translateX(20px); }
+                .cin-btn { all: unset; box-sizing: border-box; cursor: pointer; padding: 10px 18px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 13.5px; font-weight: 600; transition: background .18s; display: inline-block; }
+                .cin-btn:hover { background: rgba(255,255,255,.2); } .cin-btn.pri { background: #fff; color: #000; } .cin-btn.pri:hover { background: #e4e4e8; }
+                .cin-test { display: flex; align-items: center; gap: 12px; margin-top: 4px; } .cin-test span { font-size: 13px; color: #9a9aa2; }
+                .cin-secs { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+                .cin-sec { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-radius: 14px; background: rgba(255,255,255,.05); font-size: 14px; font-weight: 500; }
+                .cin-sec.off b { opacity: .45; } .cin-sec div { display: flex; align-items: center; gap: 6px; }
+                .cin-sec .cin-mini { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.08); display: grid; place-items: center; font-size: 13px; } .cin-sec .cin-mini:hover { background: rgba(255,255,255,.18); }
+                .cin-bar { position: sticky; bottom: 0; margin-top: 10px; padding: 14px 0; display: flex; align-items: center; gap: 14px; background: linear-gradient(to top, #101013 60%, transparent); }
+                .cin-bar span { color: #8d8d95; font-size: 13px; }
+                .cin-colors { display: flex; align-items: center; gap: 10px; } .cin-colors button { all: unset; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; } .cin-colors button.on { border-color: #fff; }
+                .cin-colors input[type=color] { width: 40px; height: 30px; padding: 0; border: 0; background: none; }
+                .cin pre { background: rgba(0,0,0,.4); border-radius: 12px; padding: 12px; font-size: 12px; overflow: auto; max-height: 240px; }
+                @media (max-width: 800px) { .cin-layout { grid-template-columns: 1fr; } .cin-nav { position: static; flex-direction: row; overflow-x: auto; } .cin-field { grid-template-columns: 1fr; } }
+            </style>
+            <div class="cin" id="CinRoot">
+                <div class="cin-head">
+                    <div><h2>Cinema</h2><small id="CinVersion">Server settings</small></div>
+                    <div class="cin-chips" id="CinChips"></div>
                 </div>
-                <p id="CinemaTestResult" style="margin-top:1em"></p>
-            </form>
+                <div class="cin-layout">
+                    <div class="cin-nav" id="CinNav">
+                        <button data-tab="conn" class="on">Connections</button>
+                        <button data-tab="feat">Features</button>
+                        <button data-tab="look">Appearance</button>
+                        <button data-tab="home">Home</button>
+                        <button data-tab="player">Player</button>
+                        <button data-tab="adv">Advanced</button>
+                    </div>
+                    <div>
+                        <!-- connections -->
+                        <div class="cin-panel on" data-panel="conn">
+                            <div class="cin-card"><h3>Seerr</h3><p>Jellyseerr or Overseerr. Needs an administrator API key (Seerr, Settings, General). Requests are made as the signed-in Jellyfin user.</p>
+                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="SeerrUrl" placeholder="http://seerr:5055"></div><div><label>API key</label><input type="password" data-k="SeerrApiKey"></div></div>
+                                <div class="cin-test"><button class="cin-btn" data-test="seerr">Test connection</button><span data-res="seerr"></span></div></div>
+                            <div class="cin-card"><h3>Radarr</h3><p>Used for download progress and the release calendar.</p>
+                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="RadarrUrl" placeholder="http://radarr:7878"></div><div><label>API key</label><input type="password" data-k="RadarrApiKey"></div></div>
+                                <div class="cin-test"><button class="cin-btn" data-test="radarr">Test connection</button><span data-res="radarr"></span></div></div>
+                            <div class="cin-card"><h3>Sonarr</h3><p>Used for download progress and the release calendar.</p>
+                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="SonarrUrl" placeholder="http://sonarr:8989"></div><div><label>API key</label><input type="password" data-k="SonarrApiKey"></div></div>
+                                <div class="cin-test"><button class="cin-btn" data-test="sonarr">Test connection</button><span data-res="sonarr"></span></div></div>
+                            <div class="cin-card"><h3>Aurral</h3><p>Music discovery and requests. API key: Aurral, Settings, General, API access.</p>
+                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="AurralUrl" placeholder="http://aurral:3001"></div><div><label>API key</label><input type="password" data-k="AurralApiKey"></div></div>
+                                <div class="cin-test"><button class="cin-btn" data-test="aurral">Test connection</button><span data-res="aurral"></span></div></div>
+                        </div>
+                        <!-- features -->
+                        <div class="cin-panel" data-panel="feat">
+                            <div class="cin-card"><h3>Browsing</h3><p>Turn features off for every user. A disabled feature disappears from the interface.</p>
+                                <div data-feats="Hero|Billboard on the home page|Large rotating banner at the top.,Peek|Hover preview cards|Preview card when hovering a poster.,InfiniteScroll|Infinite scroll|Load more rows and grids while scrolling.,ItemMenu|Item menu|The three-dot menu with metadata, image and watched actions.,MediaInfo|Media info panel|File, video, audio and subtitle details on detail pages.,Ratings|Rotten Tomatoes and IMDb scores|Needs Seerr.,SeerrSimilar|Similar titles from Seerr|Shows titles you do not own yet."></div></div>
+                            <div class="cin-card"><h3>Pages</h3><p>Entire sections of the interface.</p>
+                                <div data-feats="Discover|Discover|Seerr recommendations with filters and search.,Watchlist|Watchlist|Your saved titles.,Requests|Requests and downloads|Seerr requests with download progress.,Calendar|Release calendar|Needs Radarr or Sonarr.,Music|Music app|The Spotify style music interface.,MusicDiscovery|Music discovery|Aurral discovery, track previews and requests.,PluginMenus|Plugin entries in the account menu|Shows entries other plugins add to Jellyfin's menu."></div></div>
+                            <div class="cin-card"><h3>Player</h3><p>The built-in video player.</p>
+                                <div data-feats="OwnPlayer|Cinema video player|Turn off to use Jellyfin's own player everywhere."></div></div>
+                        </div>
+                        <!-- appearance -->
+                        <div class="cin-panel" data-panel="look">
+                            <div class="cin-card"><h3>Branding</h3><p>Defaults for every user. Users can change them in their own settings unless you lock them below.</p>
+                                <div class="cin-row"><div><b>Accent color</b><span>Logo, progress bars and highlights.</span></div><div class="cin-colors" id="CinColors"></div></div>
+                                <div class="cin-row"><div><b>Logo text</b><span>Leave empty to use the server name.</span></div><input type="text" data-k="BrandText" style="width:240px" placeholder="Server name"></div>
+                                <div class="cin-row"><div><b>Card size</b><span>Posters and thumbnails.</span></div><select data-k="CardSize" style="width:160px"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
+                                <div class="cin-row"><div><b>Billboard titles</b><span>How many titles rotate.</span></div><input type="number" min="1" max="20" data-k="HeroItems" style="width:110px"></div>
+                                <div class="cin-row"><div><b>Billboard speed (seconds)</b><span>Time before the next title.</span></div><input type="number" min="3" max="60" data-k="HeroIntervalSeconds" style="width:110px"></div>
+                                <div class="cin-row"><div><b>Preview delay (ms)</b><span>Hover time before the preview card opens.</span></div><input type="number" min="0" max="2000" step="20" data-k="PeekDelayMs" style="width:110px"></div>
+                                <div class="cin-row"><div><b>Hidden navigation entries</b><span>Comma separated: watchlist, discover, requests, calendar, music.</span></div><input type="text" data-k="HiddenNav" style="width:260px" placeholder="calendar,requests"></div>
+                                <div class="cin-row"><div><b>Allow users to change settings</b><span>When off, every user gets exactly these defaults.</span></div><button class="cin-sw" data-sw="AllowUserOverrides"></button></div></div>
+                        </div>
+                        <!-- home -->
+                        <div class="cin-panel" data-panel="home">
+                            <div class="cin-card"><h3>Default home rows</h3><p>Order and visibility for users who have not made their own layout.</p>
+                                <div class="cin-secs" id="CinSecs"></div>
+                                <div style="margin-top:14px;display:flex;gap:10px"><button class="cin-btn" id="CinSecsReset">Use built-in default</button></div></div>
+                        </div>
+                        <!-- player -->
+                        <div class="cin-panel" data-panel="player">
+                            <div class="cin-card"><h3>Player defaults</h3><p>Starting values for every user.</p>
+                                <div class="cin-row"><div><b>Play next episode automatically</b></div><button class="cin-sw" data-sw="PlayerAutoNext"></button></div>
+                                <div class="cin-row"><div><b>Skip intros automatically</b><span>Needs intro detection on the server.</span></div><button class="cin-sw" data-sw="PlayerAutoSkipIntro"></button></div>
+                                <div class="cin-row"><div><b>Default quality</b></div><select data-k="PlayerQuality" style="width:200px"><option value="auto">Auto (original)</option><option value="20">1080p high</option><option value="8">1080p</option><option value="4">720p</option><option value="1.5">480p</option></select></div>
+                                <div class="cin-row"><div><b>Add to Seerr watchlist</b><span>Mirror watchlist additions to Seerr by default.</span></div><button class="cin-sw" data-sw="SeerrWatchlistSync"></button></div></div>
+                        </div>
+                        <!-- advanced -->
+                        <div class="cin-panel" data-panel="adv">
+                            <div class="cin-card"><h3>Loading</h3><p>How the interface reaches the browser.</p>
+                                <div class="cin-row"><div><b>Load before the page renders</b><span>Cinema adds its script to the web page itself. Turn off only for troubleshooting.</span></div><button class="cin-sw" data-sw="InjectEarly"></button></div>
+                                <div class="cin-row"><div><b>Share download progress with all users</b><span>When off, only administrators see the queue and calendar.</span></div><button class="cin-sw" data-sw="ShareQueue"></button></div></div>
+                            <div class="cin-card"><h3>Maintenance</h3><p>Interface updates can be pushed without a restart. Reset returns to the script built into this plugin version.</p>
+                                <button class="cin-btn" id="CinResetUi">Restore built-in interface script</button> <span id="CinMaint" style="margin-left:10px;color:#9a9aa2;font-size:13px"></span></div>
+                            <div class="cin-card"><h3>Diagnostics</h3><p>Connection and feature state as seen by the server.</p><button class="cin-btn" id="CinDiag">Show</button><pre id="CinDiagOut" style="display:none"></pre></div>
+                        </div>
+                        <div class="cin-bar"><button class="cin-btn pri" id="CinSave">Save settings</button><span id="CinSaved"></span></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script type="text/javascript">
         (function () {
             var pluginId = '8f3b6a1e-5d2c-4c7a-9e41-3b7d0c1a2f64';
-            var fields = ['SeerrUrl', 'SeerrApiKey', 'RadarrUrl', 'RadarrApiKey', 'SonarrUrl', 'SonarrApiKey', 'AurralUrl', 'AurralApiKey'];
-            var checks = ['InjectEarly', 'ShareQueue'];
             var page = document.querySelector('#CinemaConfigPage');
+            var cfg = {};
+            var SECTIONS = [['continue', 'Continue watching'], ['nextup', 'Next up'], ['newMovies', 'Recently added movies'], ['newShows', 'Recently added shows'], ['top', 'Top rated'], ['watchlist', 'Watchlist'], ['favs', 'My List'], ['random', 'Picked for you'], ['genres', 'Random genre rows'], ['because', 'Because you watched'], ['seerrTrending', 'Seerr trending'], ['seerrMovies', 'Seerr popular movies'], ['seerrRec', 'Seerr recommendations']];
+            var DEFAULT_ON = ['continue', 'nextup', 'newMovies', 'newShows', 'top', 'watchlist', 'favs', 'random', 'genres'];
+            var secs = [];
+            var COLORS = ['#e50914', '#ff6a3d', '#f5b301', '#34c759', '#0a84ff', '#8b5cf6', '#ff2d92', '#ffffff'];
 
-            page.addEventListener('pageshow', function () {
+            function $$(s, r) { return Array.prototype.slice.call((r || page).querySelectorAll(s)); }
+            function buildFeats() {
+                $$('[data-feats]').forEach(function (host) {
+                    host.innerHTML = '';
+                    host.getAttribute('data-feats').split(',').forEach(function (spec) {
+                        var p = spec.split('|'); var key = 'Feat' + p[0];
+                        var row = document.createElement('div'); row.className = 'cin-row';
+                        row.innerHTML = '<div><b>' + p[1] + '</b><span>' + (p[2] || '') + '</span></div>';
+                        var b = document.createElement('button'); b.className = 'cin-sw'; b.setAttribute('data-sw', key); row.appendChild(b); host.appendChild(row);
+                    });
+                });
+            }
+            function bindSwitches() { $$('[data-sw]').forEach(function (b) { b.onclick = function () { b.classList.toggle('on'); }; }); }
+            function drawColors() {
+                var host = page.querySelector('#CinColors'); host.innerHTML = '';
+                COLORS.forEach(function (c) { var b = document.createElement('button'); b.style.background = c; if ((cfg.AccentColor || '').toLowerCase() === c) b.className = 'on'; b.onclick = function () { cfg.AccentColor = c; drawColors(); }; host.appendChild(b); });
+                var inp = document.createElement('input'); inp.type = 'color'; inp.value = cfg.AccentColor || '#e50914'; inp.onchange = function () { cfg.AccentColor = inp.value; drawColors(); }; host.appendChild(inp);
+            }
+            function parseSecs() {
+                var def = DEFAULT_ON.map(function (id) { return { id: id, on: true }; });
+                try { var j = JSON.parse(cfg.DefaultSections || ''); if (j && j.length) return j; } catch (e) { }
+                return def;
+            }
+            function drawSecs() {
+                var host = page.querySelector('#CinSecs'); host.innerHTML = '';
+                var name = function (id) { var f = SECTIONS.filter(function (s) { return s[0] === id; })[0]; return f ? f[1] : id; };
+                secs.forEach(function (s, i) {
+                    var row = document.createElement('div'); row.className = 'cin-sec' + (s.on === false ? ' off' : '');
+                    row.innerHTML = '<b>' + name(s.id) + '</b>';
+                    var ctl = document.createElement('div');
+                    var mk = function (txt, fn) { var b = document.createElement('button'); b.className = 'cin-mini'; b.textContent = txt; b.onclick = fn; ctl.appendChild(b); };
+                    mk('↑', function () { if (i) { var t = secs[i - 1]; secs[i - 1] = secs[i]; secs[i] = t; drawSecs(); } });
+                    mk('↓', function () { if (i < secs.length - 1) { var t = secs[i + 1]; secs[i + 1] = secs[i]; secs[i] = t; drawSecs(); } });
+                    var sw = document.createElement('button'); sw.className = 'cin-sw' + (s.on === false ? '' : ' on'); sw.onclick = function () { s.on = s.on === false; drawSecs(); }; ctl.appendChild(sw);
+                    row.appendChild(ctl); host.appendChild(row);
+                });
+                var missing = SECTIONS.filter(function (s) { return !secs.some(function (x) { return x.id === s[0]; }); });
+                if (missing.length) {
+                    var sel = document.createElement('select'); sel.style.cssText = 'width:240px;margin-top:8px';
+                    sel.innerHTML = '<option value="">Add a row...</option>' + missing.map(function (m) { return '<option value="' + m[0] + '">' + m[1] + '</option>'; }).join('');
+                    sel.onchange = function () { if (sel.value) { secs.push({ id: sel.value, on: true }); drawSecs(); } };
+                    host.appendChild(sel);
+                }
+            }
+            function load() {
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(pluginId).then(function (c) {
-                    fields.forEach(function (f) { page.querySelector('#' + f).value = c[f] || ''; });
-                    checks.forEach(function (f) { page.querySelector('#' + f).checked = c[f] !== false; });
-                    Dashboard.hideLoadingMsg();
+                    cfg = c;
+                    $$('[data-k]').forEach(function (el) { var v = c[el.getAttribute('data-k')]; el.value = v == null ? '' : v; });
+                    $$('[data-sw]').forEach(function (b) { b.classList.toggle('on', !!c[b.getAttribute('data-sw')]); });
+                    secs = parseSecs(); drawColors(); drawSecs(); chips(); Dashboard.hideLoadingMsg();
                 });
-            });
-
-            page.querySelector('#CinemaConfigForm').addEventListener('submit', function (e) {
-                e.preventDefault();
+            }
+            function chips() {
+                var host = page.querySelector('#CinChips'); host.innerHTML = '';
+                ['seerr', 'radarr', 'sonarr', 'aurral'].forEach(function (s) {
+                    var chip = document.createElement('span'); chip.className = 'cin-chip'; chip.innerHTML = '<i></i>' + s.charAt(0).toUpperCase() + s.slice(1); host.appendChild(chip);
+                    ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + s)).then(function (r) { chip.className = 'cin-chip ' + (r.ok ? 'ok' : (r.message === 'Not configured' ? '' : 'bad')); chip.title = r.message || ''; }).catch(function () { });
+                });
+                ApiClient.getJSON(ApiClient.getUrl('Cinema/status')).then(function (s) { page.querySelector('#CinVersion').textContent = 'Version ' + s.version + ' · Server settings'; }).catch(function () { });
+            }
+            function save() {
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(pluginId).then(function (c) {
-                    fields.forEach(function (f) { c[f] = page.querySelector('#' + f).value.trim(); });
-                    checks.forEach(function (f) { c[f] = page.querySelector('#' + f).checked; });
-                    ApiClient.updatePluginConfiguration(pluginId, c).then(Dashboard.processPluginConfigurationUpdateResult);
+                    $$('[data-k]').forEach(function (el) { var k = el.getAttribute('data-k'); var v = el.value; if (el.type === 'number') v = parseInt(v, 10) || 0; c[k] = typeof v === 'string' ? v.trim() : v; });
+                    $$('[data-sw]').forEach(function (b) { c[b.getAttribute('data-sw')] = b.classList.contains('on'); });
+                    c.AccentColor = cfg.AccentColor || c.AccentColor;
+                    c.DefaultSections = JSON.stringify(secs);
+                    ApiClient.updatePluginConfiguration(pluginId, c).then(function (r) { Dashboard.processPluginConfigurationUpdateResult(r); cfg = c; page.querySelector('#CinSaved').textContent = 'Saved. Users see changes after a page reload.'; chips(); });
                 });
+            }
+            page.addEventListener('pageshow', function () { buildFeats(); bindSwitches(); load(); setTimeout(bindSwitches, 50); });
+            page.querySelector('#CinNav').addEventListener('click', function (e) {
+                var b = e.target.closest('button'); if (!b) return; var tab = b.getAttribute('data-tab');
+                $$('#CinNav button').forEach(function (x) { x.classList.toggle('on', x === b); });
+                $$('.cin-panel').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-panel') === tab); });
             });
-
-            page.querySelectorAll('[data-test]').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var out = page.querySelector('#CinemaTestResult');
-                    out.textContent = 'Testing ' + btn.dataset.test + ' (save first if you changed the fields)...';
-                    ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + btn.dataset.test)).then(function (r) {
-                        out.textContent = btn.dataset.test + ': ' + (r.ok ? 'connected' : 'failed') + (r.message ? ' (' + r.message + ')' : '');
-                    }).catch(function () { out.textContent = btn.dataset.test + ': request failed'; });
-                });
+            page.querySelector('#CinSave').onclick = save;
+            page.querySelector('#CinSecsReset').onclick = function () { secs = DEFAULT_ON.map(function (id) { return { id: id, on: true }; }); drawSecs(); };
+            $$('[data-test]').forEach(function (btn) {
+                btn.onclick = function () {
+                    var s = btn.getAttribute('data-test'); var out = page.querySelector('[data-res="' + s + '"]'); out.textContent = 'Saving and testing...';
+                    ApiClient.getPluginConfiguration(pluginId).then(function (c) {
+                        $$('[data-k]').forEach(function (el) { c[el.getAttribute('data-k')] = el.value.trim ? el.value.trim() : el.value; });
+                        ApiClient.updatePluginConfiguration(pluginId, c).then(function () {
+                            ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + s)).then(function (r) { out.textContent = (r.ok ? 'Connected' : 'Failed') + (r.message ? ' (' + r.message + ')' : ''); out.style.color = r.ok ? '#34c759' : '#ff453a'; chips(); });
+                        });
+                    });
+                };
             });
+            page.querySelector('#CinResetUi').onclick = function () {
+                ApiClient.ajax({ type: 'DELETE', url: ApiClient.getUrl('Cinema/admin/ui') }).then(function () { page.querySelector('#CinMaint').textContent = 'Restored. Reload the web page.'; });
+            };
+            page.querySelector('#CinDiag').onclick = function () {
+                var pre = page.querySelector('#CinDiagOut'); pre.style.display = 'block';
+                ApiClient.getJSON(ApiClient.getUrl('Cinema/status')).then(function (s) { pre.textContent = JSON.stringify(s, null, 2); });
+            };
         })();
     </script>
 </div>

@@ -96,15 +96,33 @@ public class CinemaController : ControllerBase
 
     [HttpGet("status")]
     [Authorize]
-    public IActionResult Status() => Ok(new
+    public IActionResult Status()
     {
-        version = typeof(Plugin).Assembly.GetName().Version?.ToString(),
-        seerr = !string.IsNullOrWhiteSpace(Cfg.SeerrUrl) && !string.IsNullOrWhiteSpace(Cfg.SeerrApiKey),
-        radarr = !string.IsNullOrWhiteSpace(Cfg.RadarrUrl) && !string.IsNullOrWhiteSpace(Cfg.RadarrApiKey),
-        sonarr = !string.IsNullOrWhiteSpace(Cfg.SonarrUrl) && !string.IsNullOrWhiteSpace(Cfg.SonarrApiKey),
-        aurral = !string.IsNullOrWhiteSpace(Cfg.AurralUrl) && !string.IsNullOrWhiteSpace(Cfg.AurralApiKey),
-        admin = IsAdmin
-    });
+        var c = Cfg;
+        return Ok(new
+        {
+            version = typeof(Plugin).Assembly.GetName().Version?.ToString(),
+            seerr = !string.IsNullOrWhiteSpace(c.SeerrUrl) && !string.IsNullOrWhiteSpace(c.SeerrApiKey),
+            radarr = !string.IsNullOrWhiteSpace(c.RadarrUrl) && !string.IsNullOrWhiteSpace(c.RadarrApiKey),
+            sonarr = !string.IsNullOrWhiteSpace(c.SonarrUrl) && !string.IsNullOrWhiteSpace(c.SonarrApiKey),
+            aurral = !string.IsNullOrWhiteSpace(c.AurralUrl) && !string.IsNullOrWhiteSpace(c.AurralApiKey),
+            admin = IsAdmin,
+            features = new
+            {
+                hero = c.FeatHero, peek = c.FeatPeek, discover = c.FeatDiscover, watchlist = c.FeatWatchlist, requests = c.FeatRequests,
+                calendar = c.FeatCalendar, music = c.FeatMusic, musicDiscovery = c.FeatMusicDiscovery, ownPlayer = c.FeatOwnPlayer,
+                mediaInfo = c.FeatMediaInfo, ratings = c.FeatRatings, seerrSimilar = c.FeatSeerrSimilar, infiniteScroll = c.FeatInfiniteScroll,
+                pluginMenus = c.FeatPluginMenus, itemMenu = c.FeatItemMenu
+            },
+            defaults = new
+            {
+                allowUserOverrides = c.AllowUserOverrides, accent = c.AccentColor, brand = c.BrandText, heroItems = c.HeroItems,
+                heroInterval = c.HeroIntervalSeconds, peekDelay = c.PeekDelayMs, cardSize = c.CardSize, seerrWatchlistSync = c.SeerrWatchlistSync,
+                pl_autoNext = c.PlayerAutoNext, pl_autoSkip = c.PlayerAutoSkipIntro, pl_quality = c.PlayerQuality,
+                hiddenNav = c.HiddenNav, sections = c.DefaultSections
+            }
+        });
+    }
 
     [HttpGet("test/{service}")]
     [Authorize]

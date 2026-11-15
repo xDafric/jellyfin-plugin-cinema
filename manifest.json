@@ -1,29 +1,37 @@
 [
-{
-    "guid":  "8f3b6a1e-5d2c-4c7a-9e41-3b7d0c1a2f64",
-    "name":  "Cinema",
-    "description":  "Netflix and Spotify style interface with built-in Seerr, Radarr, Sonarr and Aurral support.",
-    "overview":  "A modern replacement front end: Netflix-style home, Spotify-style music, watchlist, Seerr requests and discovery, download progress, release calendar and music requests through Aurral.",
-    "owner":  "Dafric",
-    "category":  "General",
-    "imageUrl":  "",
-    "versions":  [
-                     {
-                         "version":  "1.0.2.0",
-                         "changelog":  "Own video player, no File Transformation needed, Discover filters and infinite scroll, media info and ratings, music discovery with not-owned tracks, plugin menu entries, UI polish.",
-                         "targetAbi":  "12.4.0.0",
-                         "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.2.0.zip",
-                         "checksum":  "cfb10da7d8819bddbe44a68130f1b007",
-                         "timestamp":  "2026-11-15T18:00:00Z"
-                     },
-                     {
-                         "version":  "1.0.1.0",
-                         "changelog":  "Brand name fix, Aurral discovery shelves, modal cleanup, no-restart interface updates.",
-                         "targetAbi":  "12.4.0.0",
-                         "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.1.0.zip",
-                         "checksum":  "8d13bcb63d8134b8249f6b75443e7e0e",
-                         "timestamp":  "2026-11-15T13:00:00Z"
-                     }
-                 ]
-}
+    {
+        "guid":  "8f3b6a1e-5d2c-4c7a-9e41-3b7d0c1a2f64",
+        "name":  "Cinema",
+        "description":  "Netflix and Spotify style interface with built-in Seerr, Radarr, Sonarr and Aurral support.",
+        "overview":  "A modern replacement front end: Netflix-style home, Spotify-style music, watchlist, Seerr requests and discovery, download progress, release calendar and music requests through Aurral.",
+        "owner":  "Dafric",
+        "category":  "General",
+        "imageUrl":  "",
+        "versions":  [
+                         {
+                             "version":  "1.0.3.0",
+                             "changelog":  "Player v2 (subtitle renderer, skip intro, chapters, quality, settings), server config page and feature switches, new account menu, richer user settings, endless home, mobile polish, fixes.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.3.0.zip",
+                             "checksum":  "4067063caf064889fafa452e608c98ff",
+                             "timestamp":  "2026-11-16T12:00:00Z"
+                         },
+                         {
+                             "version":  "1.0.2.0",
+                             "changelog":  "Own video player, no File Transformation needed, Discover filters and infinite scroll, media info and ratings, music discovery with not-owned tracks, plugin menu entries, UI polish.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.2.0.zip",
+                             "checksum":  "cfb10da7d8819bddbe44a68130f1b007",
+                             "timestamp":  "2026-11-15T18:00:00Z"
+                         },
+                         {
+                             "version":  "1.0.1.0",
+                             "changelog":  "Brand name fix, Aurral discovery shelves, modal cleanup, no-restart interface updates.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.1.0.zip",
+                             "checksum":  "8d13bcb63d8134b8249f6b75443e7e0e",
+                             "timestamp":  "2026-11-15T13:00:00Z"
+                         }
+                     ]
+    }
 ]

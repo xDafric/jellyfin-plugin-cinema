@@ -33,7 +33,7 @@ async function seerrSimilarRow(it, body) {
     const [lm, rm, a, b] = await Promise.all([libMap(), reqMap(), seerrGet('/' + mt + '/' + tm + '/recommendations', { page: 1 }).catch(() => ({})), seerrGet('/' + mt + '/' + tm + '/similar', { page: 1 }).catch(() => ({}))]);
     const seen = new Set(); const list = [].concat(a.results || [], b.results || []).filter(x => { if (seen.has(x.id)) return false; seen.add(x.id); return true; }).map(x => Object.assign(x, { mediaType: mt })).filter(x => dStatus(x, lm, rm).k !== 'own');
     if (!list.length) return;
-    const sec = h('section', { class: 'nf-sect', style: 'margin-left:-4%;margin-right:-4%' }); sec.append(row(t('similarNew'), list, 'poster', { make: x => dCard(x, lm, rm) })); body.append(sec);
+    const sec = h('section', { class: 'nf-sect', style: 'margin-left:calc(-1 * var(--pad));margin-right:calc(-1 * var(--pad))' }); sec.append(row(t('similarNew'), list, 'poster', { make: x => dCard(x, lm, rm) })); body.append(sec);
   } catch (e) { }
 }
 

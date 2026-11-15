@@ -18,7 +18,7 @@ const SEC = {
   library: { label: p => p.title || 'Library', custom: true, run: p => items({ ParentId: p.param, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster' }
 };
 const DEFAULT_SECTIONS = ['continue', 'nextup', 'newMovies', 'newShows', 'top', 'watchlist', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
-const sectionsCfg = () => (CFG.sections && CFG.sections.length ? CFG.sections : DEFAULT_SECTIONS);
+const sectionsCfg = () => { const c = cfg('sections'); return c && c.length ? c : DEFAULT_SECTIONS; };
 
 async function homeView2(page) {
   if (cfg('hero') !== false) { const hero = await heroFor('Movie,Series').catch(() => []); if (hero.length) page.append(heroEl(hero)); else page.append(h('div', { style: 'height:90px' })); } else page.append(h('div', { style: 'height:90px' }));
@@ -35,9 +35,10 @@ async function homeView2(page) {
     lazyRow(rows, title, () => d.run(s), d.kind || 'poster', d.href ? { href: d.href } : undefined);
   };
   first.forEach(render);
+  if (!rest.length && cfg('infinite') !== false) endlessRows(rows, page);
   if (rest.length) {
-    const sentinel = h('div', { style: 'height:2px' }); rows.append(sentinel); let idx = 0;
-    const next = () => { const s = rest[idx++]; if (s) { render(s); rows.append(sentinel); } if (idx >= rest.length) io.disconnect(); };
+    const sentinel = h('div', { style: 'height:2px' }); page.append(sentinel); let idx = 0;
+    const next = () => { const s = rest[idx++]; if (s) render(s); if (idx >= rest.length) { io.disconnect(); sentinel.remove(); if (cfg('infinite') !== false) endlessRows(rows, page); } };
     const io = new IntersectionObserver(es => { if (es[0].isIntersecting) next(); }, { root: C.nf.el, rootMargin: '600px' });
     if (cfg('infinite') === false) rest.forEach(render); else io.observe(sentinel);
   }
@@ -58,45 +59,91 @@ function seerrRecRow(container) {
   })().catch(() => ph.remove());
 }
 
-/* ---------- settings page ---------- */
+/* ---------- settings page (per user, synced) ---------- */
+const SET_TABS = [['general', 'setGeneral', 'gear'], ['home', 'setHome', 'home'], ['player', 'setPlayer', 'play'], ['look', 'setLook', 'star'], ['services', 'setServices', 'queue'], ['adv', 'setAdv', 'info']];
 async function settingsView(page) {
-  const wrap = h('div', { class: 'nf-page-pad', style: 'max-width:980px' }, h('h1', {}, t('settings'))); page.append(wrap);
-  const card_ = (title, ...kids) => h('section', { class: 'set-card' }, h('h3', {}, title), kids);
-  const toggle = (label, key, hint) => { const on = cfg(key) !== false && !!cfg(key) || (cfg(key) === true); const b = h('button', { class: 'set-switch' + (cfg(key) ? ' on' : ''), role: 'switch', onclick: () => { const v = !cfg(key); saveCfg({ [key]: v }); b.classList.toggle('on', v); } }, h('i')); return h('div', { class: 'set-row' }, h('div', {}, h('b', {}, label), hint ? h('span', {}, hint) : null), b); };
-  wrap.append(card_(t('general'),
-    toggle(t('setHero'), 'hero', t('setHeroHint')), toggle(t('setPeek'), 'peek', t('setPeekHint')), toggle(t('setInfinite'), 'infinite', t('setInfiniteHint')),
-    toggle(t('setSeerrWl'), 'seerrWatchlistSync', t('setSeerrWlHint')), toggle(t('setNative'), 'nativePlayer', t('setNativeHint'))));
-  const acc = h('input', { type: 'color', value: cfg('accent') || '#e50914', onchange: e => saveCfg({ accent: e.target.value }) });
-  wrap.append(card_(t('appearance'), h('div', { class: 'set-row' }, h('div', {}, h('b', {}, t('accent')), h('span', {}, t('accentHint'))), acc)));
-  /* home sections editor */
-  const list = h('div', { class: 'set-list' });
-  let secs = sectionsCfg().map(s => Object.assign({}, s));
-  const persist = () => { saveCfg({ sections: secs }); };
-  const names = s => SEC[s.id] ? (SEC[s.id].custom ? SEC[s.id].label(s) + ' · ' + t('custom') : SEC[s.id].label(s)) : s.id;
+  const user = await me(); const admin = user.Policy && user.Policy.IsAdministrator;
+  const wrap = h('div', { class: 'nf-page-pad set-wrap' }, h('h1', {}, t('settings'))); page.append(wrap);
+  const layout = h('div', { class: 'set-layout' }); const nav = h('div', { class: 'set-nav' }); const body = h('div', { class: 'set-body' }); layout.append(nav, body); wrap.append(layout);
+  let cur = (location.hash.match(/tab=(\w+)/) || [])[1] || 'general';
+  const locked = (featKey) => featKey && !feat(featKey);
+  const card_ = (title, ...kids) => h('section', { class: 'set-card' }, title ? h('h3', {}, title) : null, kids);
+  const resetBtn = key => userSet(key) ? h('button', { class: 'set-reset', title: t('resetDefault'), onclick: async e => { await saveCfg({ [key]: null }); draw(); } }, ic('refresh', 'ic-s')) : null;
+  const row = (label, hint, ctrl, key, lockedBy) => h('div', { class: 'set-row' + (lockedBy ? ' locked' : '') }, h('div', {}, h('b', {}, label), hint ? h('span', {}, lockedBy ? t('lockedBy') : hint) : null), h('div', { class: 'set-ctl' }, key ? resetBtn(key) : null, ctrl));
+  const sw = (key, def, onset) => { const b = h('button', { class: 'set-switch' + (cfg(key) ? ' on' : ''), role: 'switch', onclick: async () => { const v = !cfg(key); b.classList.toggle('on', v); await saveCfg({ [key]: v }); onset && onset(v); } }, h('i')); return b; };
+  const toggle = (label, key, hint, featKey) => row(label, hint, sw(key), key, locked(featKey));
+  const seg = (opts, key, cb) => h('div', { class: 'pl-seg set-seg' }, opts.map(([v, l]) => h('button', { class: String(cfg(key)) === String(v) ? 'on' : '', onclick: async e => { $$('button', e.currentTarget.parentElement).forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on'); await saveCfg({ [key]: typeof v === 'string' && /^\d+$/.test(v) ? +v : v }); cb && cb(v); } }, l)));
+  function sectionsEditor() {
+    const list = h('div', { class: 'set-list' }); let secs = sectionsCfg().map(s => Object.assign({}, s)); const persist = () => saveCfg({ sections: secs });
+    const names = s => SEC[s.id] ? (SEC[s.id].custom ? SEC[s.id].label(s) + ' · ' + t('custom') : SEC[s.id].label(s)) : s.id;
+    function draw_() {
+      list.replaceChildren(...secs.map((s, i) => h('div', { class: 'set-sec' + (s.on === false ? ' off' : '') }, h('b', {}, names(s)), h('div', { class: 'set-sec-a' },
+        h('button', { 'aria-label': 'Up', onclick: () => { if (i) { [secs[i - 1], secs[i]] = [secs[i], secs[i - 1]]; persist(); draw_(); } } }, ic('down', 'rot180')),
+        h('button', { 'aria-label': 'Down', onclick: () => { if (i < secs.length - 1) { [secs[i + 1], secs[i]] = [secs[i], secs[i + 1]]; persist(); draw_(); } } }, ic('down')),
+        h('button', { class: 'set-switch' + (s.on === false ? '' : ' on'), onclick: () => { s.on = s.on === false; persist(); draw_(); } }, h('i')),
+        SEC[s.id] && SEC[s.id].custom ? h('button', { 'aria-label': 'Remove', onclick: () => { secs.splice(i, 1); persist(); draw_(); } }, ic('close')) : null))));
+    }
+    draw_();
+    const types = [['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')]];
+    const typeSel = h('select', {}, types.filter(([k]) => !secs.some(s => s.id === k && !SEC[k].custom)).map(([k, l]) => h('option', { value: k }, l)));
+    const valSel = h('select', {});
+    async function fillVals() { valSel.replaceChildren(); valSel.style.display = ''; const k = typeSel.value;
+      if (k === 'genre') { const g = await api('Genres', { userId: uid(), IncludeItemTypes: 'Movie,Series', SortBy: 'SortName' }); g.Items.forEach(x => valSel.append(h('option', { value: x.Name }, x.Name))); }
+      else if (k === 'collection') { const g = await items({ IncludeItemTypes: 'BoxSet', SortBy: 'SortName', Limit: 200 }); g.Items.forEach(x => valSel.append(h('option', { value: x.Id, 'data-t': x.Name }, x.Name))); }
+      else if (k === 'library') { const v = await api('Users/' + uid() + '/Views'); v.Items.forEach(x => valSel.append(h('option', { value: x.Id, 'data-t': x.Name }, x.Name))); }
+      else valSel.style.display = 'none'; }
+    typeSel.addEventListener('change', fillVals); fillVals();
+    const addBtn = h('button', { class: 'btn white', style: 'height:40px', onclick: () => { const k = typeSel.value; const o = valSel.selectedOptions[0]; secs.push(SEC[k].custom ? { id: k, on: true, param: valSel.value, title: o && o.dataset.t } : { id: k, on: true }); persist(); draw_(); } }, ic('plus'), t('add'));
+    const resetB = h('button', { class: 'btn grey', style: 'height:40px', onclick: () => { secs = DEFAULT_SECTIONS.map(s => Object.assign({}, s)); saveCfg({ sections: null }); draw_(); } }, t('reset'));
+    return h('div', {}, list, h('div', { class: 'set-add' }, typeSel, valSel, addBtn, resetB));
+  }
+  const S = {
+    general: () => [card_(t('setGeneral'),
+      toggle(t('setHero'), 'hero', t('setHeroHint'), 'hero'), toggle(t('setPeek'), 'peek', t('setPeekHint'), 'peek'),
+      row(t('setPeekDelay'), t('setPeekDelayHint'), seg([[180, t('fast')], [320, t('normal')], [520, t('slow')]], 'peekDelay'), 'peekDelay', locked('peek')),
+      toggle(t('setInfinite'), 'infinite', t('setInfiniteHint'), 'infiniteScroll'))],
+    home: () => [card_(t('setHero'),
+      row(t('setHeroItems'), t('setHeroItemsHint'), seg([[4, '4'], [6, '6'], [8, '8'], [12, '12']], 'heroItems'), 'heroItems', locked('hero')),
+      row(t('setHeroInterval'), t('setHeroIntervalHint'), seg([[6, '6 s'], [11, '11 s'], [16, '16 s'], [30, '30 s']], 'heroInterval'), 'heroInterval', locked('hero'))),
+      card_(t('homeSections'), h('p', { class: 'set-hint' }, t('homeSectionsHint')), sectionsEditor())],
+    player: () => [card_(t('setPlayer'),
+      toggle(t('setNative'), 'nativePlayer', t('setNativeHint'), 'ownPlayer'),
+      toggle(t('plAutoNext'), 'pl_autoNext', t('plAutoNextHint'), 'ownPlayer'), toggle(t('plAutoSkip'), 'pl_autoSkip', t('plAutoSkipHint'), 'ownPlayer'),
+      row(t('plQuality'), t('plQualityHint'), seg([['auto', t('plAuto')], ['20', '1080p+'], ['8', '1080p'], ['4', '720p'], ['1.5', '480p']], 'pl_quality'), 'pl_quality', locked('ownPlayer')),
+      toggle(t('plRemember'), 'pl_rememberVol', '', 'ownPlayer')),
+      card_(t('plTab_subs'),
+        row(t('plSubSize'), '', seg([['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']], 'pl_subSize'), 'pl_subSize'),
+        row(t('plSubPos'), '', seg([[4, t('plLow')], [9, t('plMid')], [16, t('plHigh')]], 'pl_subPos'), 'pl_subPos'),
+        row(t('plSubBg'), '', seg([['shadow', t('plShadow')], ['box', t('plBox')], ['none', t('plNone')]], 'pl_subBg'), 'pl_subBg'),
+        row(t('plSubColor'), '', seg([['#ffffff', t('plWhite')], ['#ffe14d', t('plYellow')], ['#7dffb1', t('plGreen')]], 'pl_subColor'), 'pl_subColor'),
+        toggle(t('plSubBold'), 'pl_subBold', ''), row(t('plSubFont'), '', seg([['sans', 'Sans'], ['serif', 'Serif'], ['mono', 'Mono']], 'pl_subFont'), 'pl_subFont'))],
+    look: () => {
+      const acc = h('input', { type: 'color', value: cfg('accent') || '#e50914', onchange: async e => { await saveCfg({ accent: e.target.value }); draw(); } });
+      const swatches = h('div', { class: 'set-sw' }, ['#e50914', '#ff6a3d', '#f5b301', '#34c759', '#0a84ff', '#8b5cf6', '#ff2d92', '#ffffff'].map(c => h('button', { style: 'background:' + c, class: cfg('accent') === c ? 'on' : '', 'aria-label': c, onclick: async () => { await saveCfg({ accent: c }); draw(); } })));
+      return [card_(t('setLook'),
+        row(t('accent'), t('accentHint'), h('div', { style: 'display:flex;gap:10px;align-items:center' }, swatches, acc), 'accent'),
+        row(t('setCardSize'), t('setCardSizeHint'), seg([['s', t('small')], ['m', t('medium')], ['l', t('large')]], 'cardSize'), 'cardSize'),
+        row(t('pskin'), t('pskinHint'), (() => { const b = h('button', { class: 'set-switch' + (skinOn() ? ' on' : ''), onclick: () => { setSkin(!skinOn()); b.classList.toggle('on', skinOn()); } }, h('i')); return b; })()))];
+    },
+    services: () => {
+      const dot = (ok, name, hint) => h('div', { class: 'set-svc' }, h('i', { class: ok ? 'ok' : '' }), h('div', {}, h('b', {}, name), h('span', {}, ok ? t('connected') : t('notConnected'))), hint ? h('a', { class: 'sp-pillbtn dark', href: hint }, t('open')) : null);
+      const st = C.status || {};
+      return [card_(t('setServices'), dot(st.seerr, 'Seerr', '#/c/discover'), dot(st.radarr, 'Radarr', '#/c/calendar'), dot(st.sonarr, 'Sonarr', '#/c/calendar'), dot(st.aurral, 'Aurral', '#/c/music/discover'),
+        admin ? h('div', { style: 'margin-top:16px' }, h('a', { class: 'btn white', style: 'display:inline-flex', href: '#/configurationpage?name=Cinema' }, ic('gear'), t('serverSettings'))) : h('p', { class: 'set-hint' }, t('askAdmin'))),
+        card_(t('setWatchlist'), toggle(t('setSeerrWl'), 'seerrWatchlistSync', t('setSeerrWlHint'), 'watchlist'))];
+    },
+    adv: () => [card_(t('setAdv'),
+      row(t('exportSet'), t('exportSetHint'), h('div', { style: 'display:flex;gap:8px' }, h('button', { class: 'btn grey', style: 'height:38px', onclick: () => { navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(CFGU)); toast('✓ ' + t('copied')); } }, t('copy')), h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { const raw = prompt(t('pasteSet')); if (!raw) return; try { CFGU = {}; await saveCfg(JSON.parse(raw)); draw(); toast('✓'); } catch (e) { toast('⚠ JSON'); } } }, t('impt')))),
+      row(t('resetAll'), t('resetAllHint'), h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { if (!confirm(t('resetAllHint'))) return; CFGU = {}; await saveCfg({}); draw(); toast('✓'); } }, t('reset'))),
+      row(t('clearCache'), t('clearCacheHint'), h('button', { class: 'btn grey', style: 'height:38px', onclick: () => { resetSeerrCache(); resetMyTracks && resetMyTracks(); C.libCache = null; toast('✓'); } }, t('clear'))),
+      row(t('killSwitch'), t('killSwitchHint'), h('code', {}, 'cinemaUI.off()'))),
+      card_(t('about'), h('div', { class: 'set-about' }, h('div', {}, 'Cinema ', h('b', {}, (C.status && C.status.version) || ''), ' · ', h('a', { href: 'https://github.com/xDafric/jellyfin-plugin-cinema', target: '_blank', rel: 'noopener' }, 'GitHub')), h('div', { class: 'mi-pills' }, Object.entries((C.status && C.status.features) || {}).map(([k, v]) => h('i', { style: v ? '' : 'opacity:.4;text-decoration:line-through' }, k)))))]
+  };
   function draw() {
-    list.replaceChildren(...secs.map((s, i) => h('div', { class: 'set-sec' + (s.on === false ? ' off' : '') },
-      h('b', {}, names(s)),
-      h('div', { class: 'set-sec-a' },
-        h('button', { 'aria-label': 'Up', onclick: () => { if (i) { [secs[i - 1], secs[i]] = [secs[i], secs[i - 1]]; persist(); draw(); } } }, ic('down', 'rot180')),
-        h('button', { 'aria-label': 'Down', onclick: () => { if (i < secs.length - 1) { [secs[i + 1], secs[i]] = [secs[i], secs[i + 1]]; persist(); draw(); } } }, ic('down')),
-        h('button', { class: 'set-switch' + (s.on === false ? '' : ' on'), onclick: () => { s.on = s.on === false; persist(); draw(); } }, h('i')),
-        SEC[s.id] && SEC[s.id].custom ? h('button', { 'aria-label': 'Remove', onclick: () => { secs.splice(i, 1); persist(); draw(); } }, ic('close')) : null))));
+    nav.replaceChildren(...SET_TABS.map(([k, label, icon]) => h('button', { class: k === cur ? 'on' : '', onclick: () => { cur = k; draw(); } }, ic(icon, 'ic-s'), t(label))));
+    body.replaceChildren(...S[cur]());
   }
   draw();
-  const typeSel = h('select', {}, [['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')]].filter(([k]) => !secs.some(s => s.id === k && !SEC[k].custom)).map(([k, l]) => h('option', { value: k }, l)));
-  const valSel = h('select', {});
-  async function fillVals() {
-    valSel.replaceChildren(); valSel.style.display = '';
-    const k = typeSel.value;
-    if (k === 'genre') { const g = await api('Genres', { userId: uid(), IncludeItemTypes: 'Movie,Series', SortBy: 'SortName' }); g.Items.forEach(x => valSel.append(h('option', { value: x.Name }, x.Name))); }
-    else if (k === 'collection') { const g = await items({ IncludeItemTypes: 'BoxSet', SortBy: 'SortName', Limit: 200 }); g.Items.forEach(x => valSel.append(h('option', { value: x.Id, 'data-t': x.Name }, x.Name))); }
-    else if (k === 'library') { const v = await api('Users/' + uid() + '/Views'); v.Items.forEach(x => valSel.append(h('option', { value: x.Id, 'data-t': x.Name }, x.Name))); }
-    else valSel.style.display = 'none';
-  }
-  typeSel.addEventListener('change', fillVals); fillVals();
-  const addBtn = h('button', { class: 'btn white', style: 'height:40px', onclick: () => { const k = typeSel.value; const o = valSel.selectedOptions[0]; const s = SEC[k].custom ? { id: k, on: true, param: valSel.value, title: o && o.dataset.t } : { id: k, on: true }; secs.push(s); persist(); draw(); } }, ic('plus'), t('add'));
-  const resetBtn = h('button', { class: 'btn grey', style: 'height:40px', onclick: () => { secs = DEFAULT_SECTIONS.map(s => Object.assign({}, s)); persist(); draw(); } }, t('reset'));
-  wrap.append(card_(t('homeSections'), h('p', { class: 'set-hint' }, t('homeSectionsHint')), list, h('div', { class: 'set-add' }, typeSel, valSel, addBtn, resetBtn)));
 }
 
 /* ---------- requests page (Seerr) with download progress ---------- */
@@ -129,4 +176,25 @@ async function requestsView(page) {
     });
   }
   load();
+}
+
+/* endless tail of the home page: all genres, then decades, then more picks */
+async function endlessRows(rows, page) {
+  const sentinel = h('div', { style: 'height:2px' }); page.append(sentinel);
+  let queue = [];
+  try { const g = await api('Genres', { userId: uid(), IncludeItemTypes: 'Movie,Series', SortBy: 'SortName' }); queue = shuffleArr(g.Items.map(x => ({ kind: 'genre', name: x.Name }))); } catch (e) { }
+  [2020, 2010, 2000, 1990, 1980, 1970].forEach(d => queue.push({ kind: 'decade', from: d }));
+  queue.push({ kind: 'rated' }, { kind: 'unwatched' }, { kind: 'recentShows' });
+  const used = new Set(rows.querySelectorAll('.nf-row h2') ? [...rows.querySelectorAll('.nf-row h2')].map(x => x.textContent.replace(/ ›$/, '')) : []);
+  const next = () => {
+    const q = queue.shift(); if (!q) { io.disconnect(); sentinel.remove(); return; }
+    if (q.kind === 'genre') { if (used.has(q.name)) return next(); lazyRow(rows, q.name, () => items({ IncludeItemTypes: 'Movie,Series', Genres: q.name, SortBy: 'Random', Limit: 24 }), 'poster'); }
+    else if (q.kind === 'decade') { const years = Array.from({ length: 10 }, (_, i) => q.from + i).join(','); lazyRow(rows, t('fromDecade') + ' ' + q.from + 's', () => items({ IncludeItemTypes: 'Movie', Years: years, SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24 }), 'poster'); }
+    else if (q.kind === 'rated') lazyRow(rows, t('top'), () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24, StartIndex: 20 }), 'poster');
+    else if (q.kind === 'unwatched') lazyRow(rows, t('unwatched'), () => items({ IncludeItemTypes: 'Movie', Filters: 'IsUnplayed', SortBy: 'Random', Limit: 24 }), 'poster');
+    else if (q.kind === 'recentShows') lazyRow(rows, t('newShows'), () => items({ IncludeItemTypes: 'Series', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24, StartIndex: 12 }), 'poster');
+    setTimeout(() => { if (sentinel.isConnected && sentinel.getBoundingClientRect().top < innerHeight + 900) next(); }, 1200);
+  };
+  const io = new IntersectionObserver(es => { if (es[0].isIntersecting) next(); }, { root: C.nf.el, rootMargin: '900px' });
+  io.observe(sentinel);
 }
