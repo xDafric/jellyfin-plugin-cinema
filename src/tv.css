@@ -1,0 +1,29 @@
+/* ===== TV mode (remote control, 10-foot UI) ===== */
+html.cx-tv * { -webkit-tap-highlight-color: transparent; }
+html.cx-tv .tvf-on { outline: none; }
+/* performance on TV hardware: no blur, no heavy shadows */
+html.cx-tv *, html.cx-tv *::before, html.cx-tv *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+html.cx-tv .nf-peek, html.cx-tv .nf-scrollbtn, html.cx-tv .nf-arrow { display: none !important; }
+html.cx-tv ::-webkit-scrollbar { display: none; }
+html.cx-tv .cx-tabs { display: none !important; }
+/* focus ring */
+html.cx-tv .nf-card.tvf-on, html.cx-tv .nf-card.tvf-on-within { z-index: 5; }
+html.cx-tv a.tvf-on, html.cx-tv button.tvf-on, html.cx-tv [data-tvf].tvf-on, html.cx-tv [tabindex].tvf-on { outline: 4px solid #fff; outline-offset: 4px; border-radius: 14px; }
+html.cx-tv .nf-card.tvf-on, html.cx-tv .nf-card [tabindex].tvf-on { outline: 5px solid #fff; outline-offset: 5px; border-radius: 20px; transform: scale(1.06); transition: transform .18s ease; }
+html.cx-tv .nf-card.tvf-on .im, html.cx-tv .nf-card.tvf-on { box-shadow: none; }
+html.cx-tv .btn.tvf-on { transform: scale(1.07); outline: 4px solid #fff; outline-offset: 4px; border-radius: 999px; }
+html.cx-tv .btn.round.tvf-on { border-radius: 50%; }
+html.cx-tv .nf-person.tvf-on .pi { outline: 5px solid #fff; outline-offset: 5px; border-radius: 50%; }
+html.cx-tv .nf-person.tvf-on { outline: none; }
+html.cx-tv #cx-top a.tvf-on, html.cx-tv #cx-top button.tvf-on { outline: 3px solid #fff; border-radius: 999px; background: rgba(255,255,255,.18); }
+html.cx-tv .sp-row.tvf-on, html.cx-tv .sp-li.tvf-on, html.cx-tv .sp-navlink.tvf-on, html.cx-tv .sp-chip.tvf-on, html.cx-tv .sp-quick > *.tvf-on { background: rgba(255,255,255,.16) !important; outline: 3px solid #fff; outline-offset: -3px; border-radius: 12px; }
+html.cx-tv .sp-card.tvf-on, html.cx-tv .sp-top1.tvf-on { outline: 4px solid #fff; outline-offset: 4px; }
+html.cx-tv .nf-chip.tvf-on, html.cx-tv .cxd-chip.tvf-on, html.cx-tv .cxd-opt.tvf-on, html.cx-tv .cxd-res.tvf-on { outline: 3px solid #fff; background: rgba(255,255,255,.2); }
+html.cx-tv input.tvf-on, html.cx-tv select.tvf-on, html.cx-tv textarea.tvf-on { outline: 4px solid #fff; outline-offset: 2px; }
+html.cx-tv .set-switch.tvf-on { outline: 4px solid #fff; outline-offset: 3px; }
+/* sizes for a TV that reports ~960x540 CSS px: bigger touch-free targets and text */
+html.cx-tv { --pad: 56px; }
+html.cx-tv .nf-card { width: calc(23vw * var(--cs, 1)); } html.cx-tv .nf-card.poster { width: calc(13.5vw * var(--cs, 1)); }
+html.cx-tv .nf-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px 20px; } html.cx-tv .nf-grid .nf-card, html.cx-tv .nf-grid .nf-card.poster { width: 100%; }
+html.cx-tv .nf-hero { height: 70vh; margin-top: 96px; }
+html.cx-tv .nf-hero-btns .btn, html.cx-tv .nf-btns .btn { height: 54px; font-size: 18px; }

@@ -126,6 +126,7 @@ async function playVideo(it, opts) {
       const ch = await items({ ParentId: it.Id, Limit: 1, SortBy: 'SortName' }); if (ch.Items[0]) id = ch.Items[0].Id;
     }
   } catch (e) { }
+  if (window.CinemaTV) { try { const full = await getItem(id); COVER.hide(); CinemaTV.play(id, opts.startTicks != null ? opts.startTicks : (ud(full).PlaybackPositionTicks || 0)); } catch (e) { COVER.hide(); toast('⚠ ' + (e.message || 'error')); } return; }
   if (playerMode() === 'native') { playNative(id); return; }
   try { const full = await getItem(id); COVER.hide(); await openPlayer(full, opts.startTicks); } catch (e) { console.warn('[cinema] player', e); COVER.hide(); playNative(id); }
 }
@@ -175,7 +176,7 @@ function heroEl(list) {
       h('div', { class: 'nf-hero-btns' }, h('button', { class: 'btn white', onclick: () => (it._primary ? it._primary.fn() : playVideo(it)) }, ic(it._primary ? it._primary.icon : 'play'), it._primary ? it._primary.label : t('play')), h('button', { class: 'btn grey', onclick: () => (it._secondary ? it._secondary.fn() : go(itemHash(it))) }, ic(it._secondary ? it._secondary.icon : 'info'), it._secondary ? it._secondary.label : t('info'))));
   }
   function set(i) { cur = i; slides.forEach((s, k) => s.classList.toggle('on', k === i)); $$('i', dots).forEach((d, k) => d.classList.toggle('on', k === i)); body.style.opacity = 0; setTimeout(() => { fill(list[i]); body.style.opacity = 1; }, 250); }
-  function restart() { clearInterval(timer); if (list.length > 1) timer = setInterval(() => { if (!hero.isConnected || root.style.display === 'none' || document.hidden || C.mode !== 'nf') return; set((cur + 1) % list.length); }, (+cfg('heroInterval') || 11) * 1000); }
+  function restart() { clearInterval(timer); if (list.length > 1) timer = setInterval(() => { if (!hero.isConnected || root.style.display === 'none' || document.hidden || C.mode !== 'nf' || (typeof TVM !== 'undefined' && TVM && hero.contains(document.activeElement))) return; set((cur + 1) % list.length); }, (+cfg('heroInterval') || 11) * 1000); }
   body.style.transition = 'opacity .25s';
   hero.append(...slides, body, dots); fill(list[0]); restart();
   hero.addEventListener('remove', () => clearInterval(timer));

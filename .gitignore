@@ -7,3 +7,10 @@ INSTALL.md
 *.user
 .vs/
 icon-options.html
+
+# Android TV app
+tv/.gradle/
+tv/build/
+tv/app/build/
+tv/local.properties
+tv/cinema-tv.keystore

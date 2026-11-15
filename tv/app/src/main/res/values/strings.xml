@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect">Connect</string>
+    <string name="connecting">Connecting…</string>
+    <string name="no_server">No Jellyfin server found at this address.</string>
+    <string name="server_hint">Enter your Jellyfin server address, or pick a server found on your network.</string>
+    <string name="qc_hint">Open Jellyfin on your phone or computer → Settings → Quick Connect and enter this code:</string>
+    <string name="qc_off">Quick Connect is not enabled on this server. Use your password instead.</string>
+    <string name="use_password">Use password</string>
+    <string name="change_server">Change server</string>
+    <string name="sign_in">Sign in</string>
+    <string name="back">Back</string>
+    <string name="bad_login">Wrong user name or password.</string>
+    <string name="audio">Audio</string>
+    <string name="subtitles">Subtitles</string>
+    <string name="off">Off</string>
+    <string name="next_episode">Next episode</string>
+    <string name="skip_intro">Skip intro</string>
+    <string name="play_failed">Playback failed</string>
+    <string name="none_available">Nothing to choose</string>
+</resources>
