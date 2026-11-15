@@ -82,6 +82,8 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        val media = when (keyCode) { KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> "playpause"; KeyEvent.KEYCODE_MEDIA_PLAY -> "play"; KeyEvent.KEYCODE_MEDIA_PAUSE -> "pause"; KeyEvent.KEYCODE_MEDIA_NEXT -> "next"; KeyEvent.KEYCODE_MEDIA_PREVIOUS -> "prev"; else -> null }
+        if (media != null) { web.evaluateJavascript("window.cxTvMedia&&window.cxTvMedia('$media')", null); return true }
         if (keyCode == KeyEvent.KEYCODE_MENU) { web.evaluateJavascript("window.cxTvMenu&&window.cxTvMenu()", null); return true }
         return super.onKeyDown(keyCode, event)
     }

@@ -1,56 +1,51 @@
 /* ===== TV mode (remote control, 10-foot UI) ===== */
 html.cx-tv * { -webkit-tap-highlight-color: transparent; }
 html.cx-tv .tvf-on { outline: none; }
-/* performance on TV hardware: no blur, no heavy shadows */
 html.cx-tv *, html.cx-tv *::before, html.cx-tv *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 html.cx-tv .nf-peek, html.cx-tv .nf-scrollbtn, html.cx-tv .nf-arrow { display: none !important; }
 html.cx-tv ::-webkit-scrollbar { display: none; }
 html.cx-tv .cx-tabs { display: none !important; }
-/* focus ring */
-html.cx-tv .nf-card.tvf-on, html.cx-tv .nf-card.tvf-on-within { z-index: 5; }
-html.cx-tv a.tvf-on, html.cx-tv button.tvf-on, html.cx-tv [data-tvf].tvf-on, html.cx-tv [tabindex].tvf-on { outline: 4px solid #fff; outline-offset: 4px; border-radius: 14px; }
-html.cx-tv .nf-card.tvf-on, html.cx-tv .nf-card [tabindex].tvf-on { outline: 5px solid #fff; outline-offset: 5px; border-radius: 20px; transform: scale(1.06); transition: transform .18s ease; }
-html.cx-tv .nf-card.tvf-on .im, html.cx-tv .nf-card.tvf-on { box-shadow: none; }
-html.cx-tv .btn.tvf-on { transform: scale(1.07); outline: 4px solid #fff; outline-offset: 4px; border-radius: 999px; }
-html.cx-tv .btn.round.tvf-on { border-radius: 50%; }
-html.cx-tv .nf-person.tvf-on .pi { outline: 5px solid #fff; outline-offset: 5px; border-radius: 50%; }
-html.cx-tv .nf-person.tvf-on { outline: none; }
-html.cx-tv #cx-top a.tvf-on, html.cx-tv #cx-top button.tvf-on { outline: 3px solid #fff; border-radius: 999px; background: rgba(255,255,255,.18); }
-html.cx-tv .sp-row.tvf-on, html.cx-tv .sp-li.tvf-on, html.cx-tv .sp-navlink.tvf-on, html.cx-tv .sp-chip.tvf-on, html.cx-tv .sp-quick > *.tvf-on { background: rgba(255,255,255,.16) !important; outline: 3px solid #fff; outline-offset: -3px; border-radius: 12px; }
-html.cx-tv .sp-card.tvf-on, html.cx-tv .sp-top1.tvf-on { outline: 4px solid #fff; outline-offset: 4px; }
-html.cx-tv .nf-chip.tvf-on, html.cx-tv .cxd-chip.tvf-on, html.cx-tv .cxd-opt.tvf-on, html.cx-tv .cxd-res.tvf-on { outline: 3px solid #fff; background: rgba(255,255,255,.2); }
-html.cx-tv input.tvf-on, html.cx-tv select.tvf-on, html.cx-tv textarea.tvf-on { outline: 4px solid #fff; outline-offset: 2px; }
-html.cx-tv .set-switch.tvf-on { outline: 4px solid #fff; outline-offset: 3px; }
-/* sizes for a TV that reports ~960x540 CSS px: bigger touch-free targets and text */
+html.cx-tv #cx-nf, html.cx-tv .sp-scroll { scroll-behavior: auto !important; }
 html.cx-tv { --pad: 56px; }
-html.cx-tv .nf-card { width: calc(23vw * var(--cs, 1)); } html.cx-tv .nf-card.poster { width: calc(13.5vw * var(--cs, 1)); }
-html.cx-tv .nf-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px 20px; } html.cx-tv .nf-grid .nf-card, html.cx-tv .nf-grid .nf-card.poster { width: 100%; }
-html.cx-tv .nf-hero { height: 70vh; margin-top: 96px; }
-html.cx-tv .nf-hero-btns .btn, html.cx-tv .nf-btns .btn { height: 54px; font-size: 18px; }
 
-/* ---- TV layout cleanup ---- */
+/* ambient colour wash behind the page */
+html.cx-tv #cx-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .7s ease, background .7s ease; }
+html.cx-tv #cx-nf { background: transparent; }
+
+/* ---- focus: a white ring (box-shadow, takes no space) + a soft glow in the poster colour ---- */
+html.cx-tv .nf-card .im, html.cx-tv .nf-person .pi { transition: transform .16s ease, box-shadow .25s ease; transform: none !important; will-change: auto; }
+html.cx-tv .nf-card.tvf-on { z-index: 6; }
+html.cx-tv .nf-card.tvf-on .im { transform: scale(1.05) !important; box-shadow: 0 0 0 4px #fff, 0 0 44px 8px var(--glow, rgba(255,255,255,.22)); }
+html.cx-tv .nf-person.tvf-on .pi { transform: scale(1.06) !important; box-shadow: 0 0 0 4px #fff, 0 0 36px 6px var(--glow, rgba(255,255,255,.2)); }
+html.cx-tv .btn { transition: transform .15s ease, box-shadow .2s ease; }
+html.cx-tv .btn.tvf-on { transform: scale(1.07); box-shadow: 0 0 0 3px #fff, 0 10px 28px rgba(0,0,0,.5); position: relative; z-index: 4; }
+html.cx-tv #cx-top a.tvf-on, html.cx-tv #cx-top button.tvf-on { box-shadow: 0 0 0 3px #fff; background: rgba(255,255,255,.18); color: #fff; border-radius: 999px; }
+html.cx-tv #cx-top a.tvf-on.on { background: #fff; color: #000; }
+html.cx-tv .sp-row.tvf-on { background: rgba(255,255,255,.17) !important; box-shadow: inset 0 0 0 3px #fff; border-radius: 12px; }
+html.cx-tv .sp-li.tvf-on, html.cx-tv .sp-navlink.tvf-on, html.cx-tv .sp-chip.tvf-on { background: rgba(255,255,255,.17) !important; box-shadow: inset 0 0 0 3px #fff; border-radius: 12px; color: #fff; }
+html.cx-tv .sp-quick > .tvf-on { box-shadow: inset 0 0 0 3px #fff; background: rgba(255,255,255,.2) !important; }
+html.cx-tv .sp-card.tvf-on, html.cx-tv .sp-top1.tvf-on { box-shadow: 0 0 0 4px #fff, 0 0 40px 6px var(--glow, rgba(255,255,255,.2)); border-radius: 16px; transform: scale(1.03); z-index: 5; position: relative; }
+html.cx-tv .sp-row button.tvf-on, html.cx-tv .pl-btn.tvf-on { box-shadow: 0 0 0 3px #fff; border-radius: 50%; background: rgba(255,255,255,.2); }
+html.cx-tv .nf-chip.tvf-on, html.cx-tv .cxd-chip.tvf-on, html.cx-tv .cxd-opt.tvf-on, html.cx-tv .cxd-res.tvf-on, html.cx-tv .nf-ep.tvf-on { box-shadow: 0 0 0 3px #fff; background: rgba(255,255,255,.2); }
+html.cx-tv input.tvf-on, html.cx-tv select.tvf-on, html.cx-tv textarea.tvf-on { box-shadow: 0 0 0 3px #fff; }
+html.cx-tv .set-switch.tvf-on { box-shadow: 0 0 0 3px #fff; }
+
+/* ---- layout: calm spacing at rest ---- */
+html.cx-tv .nf-card { width: calc(23vw * var(--cs, 1)); } html.cx-tv .nf-card.poster { width: calc(13.5vw * var(--cs, 1)); }
+html.cx-tv .nf-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 26px 18px; } html.cx-tv .nf-grid .nf-card, html.cx-tv .nf-grid .nf-card.poster { width: 100%; }
+html.cx-tv .nf-hero { height: 70vh; margin-top: 96px; }
+html.cx-tv .nf-row { margin-bottom: 30px; }
+html.cx-tv .nf-row h2 { font-size: 22px; margin-bottom: 4px; }
+/* generous scroller padding so rings and glows are never clipped */
+html.cx-tv .nf-scroller { gap: 14px; padding: 34px var(--pad) 40px; margin: -22px 0 -28px; }
+html.cx-tv .nf-btns, html.cx-tv .nf-hero-btns { gap: 14px; padding: 10px 8px; margin-left: -8px; }
+html.cx-tv .nf-btns .btn, html.cx-tv .nf-hero-btns .btn { height: 54px; font-size: 18px; flex: none; min-width: 0; }
+html.cx-tv .nf-btns .btn.round { width: 54px; padding: 0; aspect-ratio: 1; }
+html.cx-tv .nf-cast { gap: 20px; padding: 30px var(--pad) 34px; margin: -18px calc(-1 * var(--pad)) -10px; }
+html.cx-tv .nf-person { width: 112px; }
+html.cx-tv .nf-person .pi { width: 112px; height: 112px; margin-bottom: 12px; }
+html.cx-tv .nf-person b { display: block; margin-top: 2px; }
+html.cx-tv .nf-sect h2, html.cx-tv .nf-dbody h2 { margin-bottom: 6px; }
 html.cx-tv .nf-card.more .im { display: grid; place-items: center; background: #1c1c21; border: 2px dashed rgba(255,255,255,.22); }
 html.cx-tv .nf-card.more .mr { display: flex; flex-direction: column; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; color: #e6e6ea; } html.cx-tv .nf-card.more svg { width: 40px; height: 40px; }
-html.cx-tv .nf-row { margin-bottom: 38px; }
-html.cx-tv .nf-row h2 { font-size: 22px; margin-bottom: 2px; }
-html.cx-tv .nf-scroller { gap: 22px; padding: 24px var(--pad) 30px; margin: -12px 0 -12px; }
-html.cx-tv .nf-card.tvf-on { outline: none !important; transform: none !important; z-index: 5; }
-html.cx-tv .nf-card .im { transition: transform .15s ease; }
-html.cx-tv .nf-card.tvf-on .im { outline: 4px solid #fff; outline-offset: 3px; transform: scale(1.02) !important; }
-html.cx-tv .nf-card.poster.tvf-on .im { transform: scale(1.02) !important; }
-html.cx-tv .nf-card .im { transform: none !important; will-change: auto; }
-html.cx-tv #cx-top a.tvf-on, html.cx-tv #cx-top button.tvf-on { outline: 3px solid #fff; outline-offset: 3px; background: rgba(255,255,255,.2); color: #fff; }
-html.cx-tv #cx-top a.tvf-on.on { background: #fff; color: #000; }
-html.cx-tv .nf-hero .btn.tvf-on, html.cx-tv .nf-btns .btn.tvf-on { outline: 4px solid #fff; outline-offset: 4px; }
-
-/* detail buttons + cast: room for the focus ring */
-html.cx-tv .nf-btns, html.cx-tv .nf-hero-btns { gap: 26px; padding: 8px 6px; margin-left: -6px; }
-html.cx-tv .nf-btns .btn, html.cx-tv .nf-hero-btns .btn { flex: none; min-width: 0; }
-html.cx-tv .nf-btns .btn.round { width: 54px; height: 54px; padding: 0; flex: none; aspect-ratio: 1; }
-html.cx-tv .nf-btns .btn.tvf-on, html.cx-tv .nf-hero-btns .btn.tvf-on { outline: 4px solid #fff; outline-offset: 3px; transform: none; }
-html.cx-tv .nf-cast { gap: 30px; padding: 22px var(--pad) 26px; margin: -14px calc(-1 * var(--pad)) 0; }
-html.cx-tv .nf-person { width: 112px; }
-html.cx-tv .nf-person .pi { width: 112px; height: 112px; margin-bottom: 14px; }
-html.cx-tv .nf-person.tvf-on .pi { outline: 4px solid #fff; outline-offset: 4px; transform: none; }
-html.cx-tv .nf-person b { display: block; margin-top: 2px; }
-html.cx-tv .nf-sect h2, html.cx-tv .nf-dbody h2 { margin-bottom: 8px; }
+html.cx-tv #cx-top { background: rgba(17,17,19,.97) !important; }

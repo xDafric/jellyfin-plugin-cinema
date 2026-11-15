@@ -11,6 +11,7 @@ function tvInit() {
     const els = [rootEl, ...rootEl.querySelectorAll('*')];
     for (const e of els) {
       if (e.nodeType !== 1 || e.dataset.tvs || e.closest('#cx-lite, .cx-nframe, svg')) continue; e.dataset.tvs = '1';
+      if (e.matches && e.matches('.sp-row')) { e.setAttribute('tabindex', '0'); e.dataset.tvf = '1'; continue; }
       if (isFocusable(e) || e.tagName === 'svg') continue;
       if (e.parentElement && e.parentElement.closest('[data-tvf], a[href], button')) continue;
       const cs = getComputedStyle(e); if (cs.cursor === 'pointer') { e.setAttribute('tabindex', '0'); e.dataset.tvf = '1'; }
@@ -23,9 +24,14 @@ function tvInit() {
   const visible = e => { const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4) return false; const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return false; return r.bottom > -2000 && r.top < innerHeight + 2400; };
   /* the topmost modal layer limits where focus may go */
   const layer = () => { const q = ['.cxd-bg.show', '.sp-modal-bg', '.nf-pop', '.sp-ctx', '#cx-menu', '.sr-modal'].map(s => [...document.querySelectorAll(s)].filter(visible).pop()).filter(Boolean); const bgEl = q.find(e => e.matches('.cxd-bg, .sp-modal-bg')); return bgEl || q[0] || null; };
-  const cands = () => { const L = layer(); const scope = L || document; return [...scope.querySelectorAll(SEL)].filter(e => !e.closest('[inert], .hide, #cx-lite, .cx-nframe, h2') && !e.matches('.nf-logo, .nf-logo *') && visible(e) && !(e.tagName === 'INPUT' && e.type === 'file')); };
+  const cands = () => { const L = layer(); const scope = L || document; return [...scope.querySelectorAll(SEL)].filter(e => !e.closest('[inert], .hide, #cx-lite, .cx-nframe, h2') && !e.matches('.nf-logo, .nf-logo *') && !(e.matches('a') && e.closest('.sp-row')) && !e.matches('.sp-row button.pl, .sp-hbtn') && visible(e) && !(e.tagName === 'INPUT' && e.type === 'file')); };
   const ctr = r => ({ x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 });
   function pick(dir, cur, list) {
+    /* the fixed top bar is always on screen, so it looks "near" - only go there when nothing else is above */
+    if (dir === 'up' && !cur.closest('#cx-top')) { const body_ = list.filter(e => !e.closest('#cx-top')); const r_ = pick_(dir, cur, body_); if (r_) return r_; }
+    return pick_(dir, cur, list);
+  }
+  function pick_(dir, cur, list) {
     const a = cur.getBoundingClientRect(), ac = ctr(a); let best = null, bs = 1e12;
     for (const e of list) {
       if (e === cur || cur.contains(e)) continue; const b = e.getBoundingClientRect(), bc = ctr(b); let main, cross, overlap;
@@ -39,22 +45,38 @@ function tvInit() {
     }
     return best;
   }
-  let lastOn = null; const mark = e => { if (lastOn && lastOn !== e) lastOn.classList.remove('tvf-on'); lastOn = e; e.classList.add('tvf-on'); };
+  let lastOn = null; const mark = e => { if (lastOn && lastOn !== e) lastOn.classList.remove('tvf-on'); lastOn = e; e.classList.add('tvf-on'); if (window.tvGlow) setTimeout(() => window.tvGlow(e), 60); };
   document.addEventListener('focusin', e => mark(e.target), true); document.addEventListener('focusout', e => { e.target.classList && e.target.classList.remove('tvf-on'); }, true);
+  /* own scroll animation: short, cancelable, always ends where it should (CSS smooth scrolling lags on TV hardware) */
+  const ANIM = new WeakMap();
+  function glide(host, prop, target, ms) {
+    ms = ms || 230; const max = prop === 'top' ? host.scrollHeight - host.clientHeight : host.scrollWidth - host.clientWidth; target = Math.max(0, Math.min(max, target));
+    const key = prop === 'top' ? 'scrollTop' : 'scrollLeft'; let st = ANIM.get(host); if (!st) { st = {}; ANIM.set(host, st); }
+    const o = st[prop]; if (o) cancelAnimationFrame(o.id); const from = host[key]; const t0 = performance.now(); const rec = { target, id: 0 }; st[prop] = rec;
+    if (Math.abs(target - from) < 2) { host[key] = target; return; }
+    const step = now => { const k = Math.min(1, (now - t0) / ms); const ease = 1 - Math.pow(1 - k, 3); host[key] = from + (target - from) * ease; if (k < 1) rec.id = requestAnimationFrame(step); else st[prop] = null; };
+    rec.id = requestAnimationFrame(step);
+  }
+  const pendingTop = host => { const s = ANIM.get(host); return s && s.top ? s.top.target : host.scrollTop; };
+  const pendingLeft = host => { const s = ANIM.get(host); return s && s.left ? s.left.target : host.scrollLeft; };
   function focusEl(e, dir) {
     e.focus({ preventScroll: true }); mark(e); remember(e);
     const r = e.getBoundingClientRect(); const horiz = dir === 'left' || dir === 'right';
     const sc = e.closest('.nf-scroller, .sp-shelf, .nf-cast, .nf-row-scroll');
-    if (horiz && sc) { sc.scrollTo({ left: sc.scrollLeft + r.left - (sc.getBoundingClientRect().left + 80), behavior: 'smooth' }); }
-    else if (!horiz) { const host = scrollHost(); const top = r.top + r.height / 2 - innerHeight * .58; const inBand = r.top > 90 && r.bottom < innerHeight - 40; if (e.closest('#cx-top')) host.scrollTo({ top: 0, behavior: 'smooth' }); else if (!inBand) host.scrollBy({ top, behavior: 'smooth' }); if (sc) sc.scrollTo({ left: 0, behavior: 'smooth' }); }
-    else e.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (horiz && sc) { const curL = sc.scrollLeft, pendL = pendingLeft(sc); glide(sc, 'left', pendL + (r.left - (pendL - curL) - sc.getBoundingClientRect().left) - 80); }
+    else if (!horiz) {
+      const host = scrollHost(); const cur = host.scrollTop, pend = pendingTop(host); const top = r.top - (pend - cur); const bottom = r.bottom - (pend - cur);
+      const inBand = top > 100 && bottom < innerHeight - 50;
+      if (e.closest('#cx-top')) glide(host, 'top', 0); else if (!inBand) glide(host, 'top', pend + (top + r.height / 2 - innerHeight * .55));
+      if (sc) glide(sc, 'left', 0);
+    } else e.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   function scrollHost_() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }
   function scrollHost() { return scrollHost_(); }
   const DIRS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
   document.addEventListener('keydown', e => {
     const dir = DIRS[e.key];
-    if (e.key === 'Enter' && document.activeElement && document.activeElement.dataset.tvf) { e.preventDefault(); document.activeElement.click(); return; }
+    if (e.key === 'Enter' && document.activeElement && document.activeElement.dataset.tvf) { e.preventDefault(); const ae0 = document.activeElement; const pl = ae0.matches('.sp-row') && ae0.querySelector('button.pl'); (pl || ae0).click(); return; }
     if (!dir) return;
     const ae = document.activeElement; const typing = ae && (ae.tagName === 'INPUT' && /text|search|url|email|password|number/.test(ae.type) || ae.tagName === 'TEXTAREA');
     if (typing && (dir === 'left' || dir === 'right')) return;
@@ -73,9 +95,9 @@ function tvInit() {
       const ae = document.activeElement; const ok = ae && ae !== document.body && ae.isConnected && visible(ae);
       if (ok && ae.closest('#cx-top')) return;
       const list = cands(); const m = TVSTATE.restore;
-      if (m && Date.now() < m.until && list.length > m.i) { const e = list[m.i]; if (e && e !== ae) { e.focus({ preventScroll: true }); mark(e); try { scrollHost().scrollTo({ top: m.st }); } catch (x) { } } if (list.length > m.i + 4) TVSTATE.restore = null; return; }
+      if (m && Date.now() < m.until && list.length > m.i) { const e = list[m.i]; if (e && e !== ae) { e.focus({ preventScroll: true }); mark(e); try { scrollHost().scrollTop = m.st; } catch (x) { } } if (list.length > m.i + 4) TVSTATE.restore = null; return; }
       if (ok) return;
-      const f = tvPreferred(list); if (f) { f.focus({ preventScroll: true }); mark(f); if (f.closest('.nf-hero, .nf-dinfo, #cx-top')) { try { scrollHost().scrollTo({ top: 0 }); } catch (x) { } } }
+      const f = tvPreferred(list); if (f) { f.focus({ preventScroll: true }); mark(f); if (f.closest('.nf-hero, .nf-dinfo, #cx-top')) { try { scrollHost().scrollTop = 0; } catch (x) { } } }
     }, 450);
   }
   const TVSTATE = { restore: null };
@@ -90,4 +112,24 @@ function tvInit() {
   };
   window.cxTvResume = () => { try { refreshView(); } catch (e) { } };
   window.cxTvMenu = () => { const u = document.querySelector('#cx-top .nf-avatar'); u && u.click(); };
+
+  /* remote media keys control the music player */
+  window.cxTvMedia = k => { try { if (k === 'playpause') toggle(); else if (k === 'play') { if (P.audio.paused) toggle(); } else if (k === 'pause') { if (!P.audio.paused) toggle(); } else if (k === 'next') next(); else if (k === 'prev') prev(); } catch (e) { } };
+  document.addEventListener('keydown', e => { const m = { MediaPlayPause: 'playpause', MediaPlay: 'play', MediaPause: 'pause', MediaTrackNext: 'next', MediaTrackPrevious: 'prev' }[e.key]; if (m && !document.querySelector('.cxd-bg.show')) { e.preventDefault(); window.cxTvMedia(m); } }, true);
+
+  /* colour glow around the focused poster (and a soft ambient wash behind the page) */
+  let glowEl = null; const gcache = {};
+  const ensureGlow = () => { if (glowEl && glowEl.isConnected) return glowEl; const r = document.getElementById('cx'); if (!r) return null; glowEl = document.createElement('div'); glowEl.id = 'cx-glow'; r.insertBefore(glowEl, r.firstChild); return glowEl; };
+  const imgUrlOf = e => { const cand = [e, ...e.querySelectorAll('.bgi, .pi, .cv, .im, [style*="background-image"]')]; for (const c of cand) { const bgi = getComputedStyle(c).backgroundImage; const m = bgi && bgi.match(/url\(["']?(.*?)["']?\)/); if (m && !/gradient/.test(m[1])) return m[1]; } return null; };
+  const boost = c => { const mx = Math.max(...c); const f = mx < 150 ? 150 / Math.max(mx, 30) : 1; return c.map(v => Math.min(255, Math.round(v * f))); };
+  let glowSeq = 0;
+  window.tvGlow = async e => {
+    const seq = ++glowSeq; const g = ensureGlow(); if (!e || !e.isConnected || e.closest('#cx-top')) { if (g) g.style.opacity = 0; return; }
+    const u0 = imgUrlOf(e); if (!u0) { if (g) g.style.opacity = 0; return; }
+    const u = u0.replace(/maxWidth=\d+/, 'maxWidth=48').replace(/(\?|&)fillWidth=\d+/, '$1fillWidth=48'); let col = gcache[u];
+    if (!col) { try { col = boost(await dominant(u)); gcache[u] = col; } catch (x) { return; } }
+    if (seq !== glowSeq || document.activeElement !== e) return;
+    const rgb_ = col.join(','); e.style.setProperty('--glow', 'rgba(' + rgb_ + ',.6)');
+    if (g) { const r = e.getBoundingClientRect(); g.style.background = 'radial-gradient(ellipse 55% 60% at ' + Math.round((r.left + r.width / 2) / innerWidth * 100) + '% ' + Math.round((r.top + r.height / 2) / innerHeight * 100) + '%, rgba(' + rgb_ + ',.34), rgba(' + rgb_ + ',.12) 45%, transparent 75%)'; g.style.opacity = 1; }
+  };
 }
