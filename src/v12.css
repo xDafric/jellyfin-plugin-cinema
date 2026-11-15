@@ -1,0 +1,30 @@
+/* ===== v12: Lucide icons, player + layout fixes ===== */
+:is(#cx, #cx-ui) svg.lu { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+:is(#cx, #cx-ui) svg.lu.lu-fill { fill: currentColor; }
+:is(#cx, #cx-ui) svg.lu * { stroke-width: inherit; }
+:is(#cx, #cx-ui) .ic-s svg.lu { stroke-width: 2.2; }
+:is(#cx, #cx-ui) svg.lu path, :is(#cx, #cx-ui) svg.lu polygon, :is(#cx, #cx-ui) svg.lu line, :is(#cx, #cx-ui) svg.lu polyline, :is(#cx, #cx-ui) svg.lu rect, :is(#cx, #cx-ui) svg.lu circle { stroke: currentColor; stroke-width: inherit; }
+:is(#cx, #cx-ui) svg.lu.lu-fill path, :is(#cx, #cx-ui) svg.lu.lu-fill polygon, :is(#cx, #cx-ui) svg.lu.lu-fill rect { fill: currentColor; }
+#cx-player svg.lu { fill: none; stroke: currentColor; stroke-width: 1.8; } #cx-player svg.lu.lu-fill { fill: currentColor; }
+#cx-player svg.lu path, #cx-player svg.lu polygon, #cx-player svg.lu line, #cx-player svg.lu polyline, #cx-player svg.lu rect, #cx-player svg.lu circle { stroke: currentColor; stroke-width: inherit; }
+#cx-player svg.lu.lu-fill path, #cx-player svg.lu.lu-fill polygon, #cx-player svg.lu.lu-fill rect { fill: currentColor; }
+#cx-player svg.lu text { fill: currentColor; stroke: none; }
+.pl-row .pl-pp svg { width: 26px; height: 26px; stroke-width: 2; }
+.pl-skip svg { width: 32px; height: 32px; stroke-width: 1.6; }
+
+/* seek knob follows instantly */
+.pl-seek b { transition: opacity .15s, transform .15s !important; }
+.pl-seek i, .pl-seek em { transition: none !important; }
+.pl-bubble span { width: auto !important; text-align: center !important; }
+
+/* sections inside detail pages keep the page padding */
+.nf-sect .nf-row h2 { margin: 0 var(--pad) 12px; }
+.nf-sect .nf-scroller { padding-left: var(--pad); padding-right: var(--pad); }
+
+/* cast photos: keep heads in frame */
+.nf-person .pi { background-position: center 18%; background-size: cover; }
+.nf-dposter { background-position: center top; }
+
+/* native menu entries list */
+.sp-menu .mi { font-family: "Material Icons"; font-size: 18px; width: 18px; opacity: .7; }
+html.cx-harvest .actionSheet, html.cx-harvest .dialogContainer, html.cx-harvest .dialogBackdrop, html.cx-harvest .dialogBackdropOpened, html.cx-harvest dialog { opacity: 0 !important; pointer-events: none !important; transition: none !important; }

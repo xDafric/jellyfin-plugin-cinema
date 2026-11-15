@@ -355,8 +355,8 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
 .pl-btn.big { background: #fff; color: #000; border-radius: 50%; width: 36px; height: 36px; }
 .pl-btn.big:hover { transform: scale(1.06); background: #fff; color: #000; }
 .pl-btn.big svg { width: 22px; height: 22px; }
-.pl-seek { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 11px; color: #a7a7a7; font-variant-numeric: tabular-nums; }
-.pl-seek span { width: 40px; } .pl-seek span:first-child { text-align: right; }
+.mp-seek { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 11px; color: #a7a7a7; font-variant-numeric: tabular-nums; }
+.mp-seek span { width: 40px; } .mp-seek span:first-child { text-align: right; }
 .bar { position: relative; flex: 1; height: 12px; display: flex; align-items: center; cursor: pointer; touch-action: none; }
 .bar::before { content: ""; position: absolute; left: 0; right: 0; height: 4px; border-radius: 2px; background: #4d4d4d; }
 .bar i { position: absolute; left: 0; height: 4px; border-radius: 2px; background: #fff; pointer-events: none; }
@@ -390,7 +390,7 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
 .sp-full .meta { display: flex; align-items: center; justify-content: space-between; max-width: 420px; width: 100%; margin: 0 auto 10px; gap: 12px; }
 .sp-full .meta .tn { font-size: 22px; font-weight: 800; } .sp-full .meta .ta { color: #cfcfcf; margin-top: 4px; }
 .sp-full .seekwrap { max-width: 420px; width: 100%; margin: 6px auto; }
-.sp-full .seekwrap .pl-seek { margin-top: 2px; } .sp-full .seekwrap .bar::before { background: #ffffff44; }
+.sp-full .seekwrap .mp-seek { margin-top: 2px; } .sp-full .seekwrap .bar::before { background: #ffffff44; }
 .sp-full .ctr { display: flex; justify-content: space-between; align-items: center; max-width: 420px; width: 100%; margin: 10px auto; }
 .sp-full .ctr .pl-btn svg { width: 28px; height: 28px; } .sp-full .ctr .pl-btn.big { width: 64px; height: 64px; } .sp-full .ctr .pl-btn.big svg { width: 34px; height: 34px; }
 

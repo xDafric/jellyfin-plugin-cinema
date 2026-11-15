@@ -104,7 +104,7 @@ async function itemMenu(e, it) {
     ent.push({ icon: 'search', label: t('identify'), fn: () => nativeCommand(it.Id, ['identify']) });
     ent.push({ icon: 'refresh', label: t('refreshMeta'), fn: () => nativeCommand(it.Id, ['refresh']) });
     ent.push({ icon: 'info', label: t('openNative'), fn: () => nativeCommand(it.Id, null) });
-    ent.push({ icon: 'more', label: t('moreActions'), fn: () => nativeCommand(it.Id, '__menu') });
+    ent.push({ icon: 'more', label: t('moreActions'), fn: () => showNativeActions(it, Math.min(r.left, innerWidth - 280), r.bottom + 6) });
   }
   if (canDel) { ent.push('-'); ent.push({ icon: 'close', label: t('delete'), fn: () => nativeCommand(it.Id, ['delete']) }); }
   openMenu(Math.min(r.left, innerWidth - 260), r.bottom + 6, ent);
@@ -112,7 +112,7 @@ async function itemMenu(e, it) {
 /* run a command of Jellyfin's own item menu (metadata editor, image editor, identify, ...) */
 function nativeCommand(id, cmds) {
   hidePeek(); closeMenu();
-  document.documentElement.classList.add('cx-nativecmd');
+  document.documentElement.classList.add('cx-nativecmd'); C.returnHash = location.hash || '#/home';
   C.allowNative = true; COVER.show(); location.hash = '#/details?id=' + id;
   let tries = 0;
   const iv = setInterval(() => {
@@ -137,7 +137,33 @@ function watchDialogClose() {
   let seen = false, gone = 0;
   const iv = setInterval(() => {
     const open = $('dialog[open], .dialogContainer .dialog, .formDialog');
-    if (open) { seen = true; gone = 0; } else if (seen && ++gone >= 3) { clearInterval(iv); C.allowNative = false; document.documentElement.classList.remove('cx-nativecmd'); if (/^#\/details/.test(location.hash)) history.back(); }
+    if (open) { seen = true; gone = 0; } else if (seen && ++gone >= 3) { clearInterval(iv); C.allowNative = false; document.documentElement.classList.remove('cx-nativecmd'); if (/^#\/details/.test(location.hash)) location.replace(location.pathname + location.search + (C.returnHash || '#/home')); }
     if (!seen && ++gone > 40) { clearInterval(iv); document.documentElement.classList.remove('cx-nativecmd'); }
   }, 400);
+}
+
+/* Jellyfin's own item actions (collections, playlists, download, share and everything other plugins add), listed in my menu */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const DUP_ACTIONS = /^(play|resume|playfromstart|edit|editmetadata|editimages|identify|refresh|delete|markplayed|markunplayed|addtofavorites|removefromfavorites)$/i;
+async function harvestItemMenu(id) {
+  const H = document.documentElement; const back = location.hash || '#/home'; H.classList.add('cx-harvest', 'cx-nativecmd'); COVER.show(); C.allowNative = true; location.hash = '#/details?id=' + id;
+  const out = [];
+  try {
+    let more = null;
+    for (let i = 0; i < 80 && !more; i++) { await sleep(120); const page = $('#itemDetailPage:not(.hide)'); more = page && $('.btnMoreCommands:not(.hide)', page); }
+    if (more) {
+      more.click(); let sheet = null;
+      for (let i = 0; i < 30 && !(sheet && $$('button[data-id]', sheet).length); i++) { await sleep(100); sheet = $('.actionSheet, .dialog.actionsheet'); }
+      if (sheet) $$('button[data-id]', sheet).forEach(b => { const id_ = b.dataset.id; if (DUP_ACTIONS.test(id_)) return; const label = ((b.querySelector('.listItemBodyText, .actionSheetItemText') || b).textContent || '').trim().replace(/\s+/g, ' '); const mi = (b.querySelector('.material-icons, .actionsheetMenuItemIcon') || {}).textContent; if (label) out.push({ id: id_, label, mi: mi && mi.length < 40 ? mi.trim() : '' }); });
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); const bd = $('.dialogBackdrop, .dialogBackdropOpened'); if (bd) bd.click(); for (let i = 0; i < 15 && $('.actionSheet, .dialog.actionsheet'); i++) await sleep(100); await sleep(300);
+    }
+  } catch (e) { console.warn('[cinema] harvest item menu', e); }
+  C.allowNative = false; location.replace(location.pathname + location.search + back); await sleep(500);
+  H.classList.remove('cx-harvest', 'cx-nativecmd'); COVER.hide();
+  return out;
+}
+async function showNativeActions(it, x, y) {
+  const list = await harvestItemMenu(it.Id);
+  if (!list.length) { toast(t('cmdNA')); return; }
+  openMenu(x, y, list.map(e => ({ mi: e.mi, label: e.label, fn: () => nativeCommand(it.Id, [e.id]) })));
 }

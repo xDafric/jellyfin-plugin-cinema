@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.0.4.0",
+                             "changelog":  "Lucide icons everywhere, player settings and seek fixes, music bar fix, item menu lists native and plugin actions, layout fixes.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.4.0.zip",
+                             "checksum":  "21ed366725c9c87a6d2283bba4d7c604",
+                             "timestamp":  "2026-11-16T18:00:00Z"
+                         },
+                         {
                              "version":  "1.0.3.0",
                              "changelog":  "Player v2 (subtitle renderer, skip intro, chapters, quality, settings), server config page and feature switches, new account menu, richer user settings, endless home, mobile polish, fixes.",
                              "targetAbi":  "12.4.0.0",
