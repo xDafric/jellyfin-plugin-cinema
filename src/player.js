@@ -235,7 +235,7 @@ function buildPlayerUI(it) {
     h('div', { class: 'pl-stats' }),
     h('div', { class: 'pl-bigctl' }, h('button', { 'aria-label': '-10', onclick: () => skip(-10) }, skipIcon(-1)), h('button', { class: 'pl-bigpp', 'aria-label': 'Play / Pause', onclick: () => togglePlay() }, pic('play')), h('button', { 'aria-label': '+10', onclick: () => skip(10) }, skipIcon(1))),
     h('div', { class: 'pl-center' }, h('div', { class: 'pl-spin' }), h('div', { class: 'pl-status' })),
-    h('div', { class: 'pl-flash' }),
+    h('div', { class: 'pl-flash' }), h('div', { class: 'pl-stack' }), h('div', { class: 'pl-gest' }),
     h('div', { class: 'pl-err' }, h('b', {}, t('plFail')), h('p', { class: 'pl-errmsg' }), h('div', { class: 'nf-btns', style: 'justify-content:center' },
       h('button', { class: 'btn white', onclick: () => { const p = ticks() || (ud(PL.item).PlaybackPositionTicks || 0); startStream(p); } }, t('plRetryBtn')),
       h('button', { class: 'btn grey', onclick: () => { const p = ticks() || (ud(PL.item).PlaybackPositionTicks || 0); startStream(p, { forceTranscode: true }); } }, t('plTranscode')),
@@ -289,17 +289,46 @@ function buildPlayerUI(it) {
   /* tap zones: single tap toggles controls, double tap seeks (touch) */
   const flash = (txt, side) => { const f = $('.pl-flash', el); f.textContent = txt; f.className = 'pl-flash show ' + (side || ''); clearTimeout(f._t); f._t = setTimeout(() => { f.className = 'pl-flash'; }, 600); };
   /* touch: tap = show/hide controls, double tap left/right = +-10 s, double tap middle = play/pause */
-  let tapStart = null, lastTap = 0, lastZone = '', prevIdle = false;
-  el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; tapStart = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+  /* touch: tap = controls, double tap + more taps = stacked skip, drag: left = brightness, right = volume, horizontal = scrub */
+  const stk = $('.pl-stack', el), gest = $('.pl-gest', el); let stack = { side: null, total: 0, base: 0, timer: 0 };
+  const showStack = () => { stk.className = 'pl-stack show ' + stack.side; stk.replaceChildren(skipIcon(stack.total > 0 ? 1 : -1), h('b', {}, (stack.total > 0 ? '+' : '') + stack.total + ' s')); };
+  function stackSkip(side) {
+    const d = side === 'r' ? 10 : -10; if (stack.side !== side) { stack = { side, total: 0, base: v.currentTime, timer: 0 }; }
+    stack.total += d; showStack(); clearTimeout(stack.timer);
+    stack.timer = setTimeout(() => { const dd = dur() || 1e9; v.currentTime = Math.max(0, Math.min(dd - 1, stack.base + stack.total)); stack = { side: null, total: 0, base: 0, timer: 0 }; stk.className = 'pl-stack'; }, 650);
+  }
+  PL.bri = PL.bri || 1; const applyBri = () => { v.style.filter = PL.bri === 1 ? '' : 'brightness(' + PL.bri + ')'; }; applyBri();
+  const showGest = (icon, frac, txt) => { gest.className = 'pl-gest show'; gest.replaceChildren(h('div', { class: 'gi' }, icon), frac == null ? null : h('div', { class: 'gb' }, h('i', { style: 'width:' + Math.round(frac * 100) + '%' })), txt ? h('b', {}, txt) : null); clearTimeout(gest._t); };
+  const hideGest = () => { clearTimeout(gest._t); gest._t = setTimeout(() => { gest.className = 'pl-gest'; }, 450); };
+  let ts = null, lastTap = 0, lastZone = '', prevIdle = false;
+  const onCtl = t_ => t_.closest && t_.closest('button, a, input, .pl-seek, .pl-settings, .pl-menu, .pl-skipseg, .pl-nextcard, .pl-err');
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return; const r = el.getBoundingClientRect();
+    ts = { x: e.clientX, y: e.clientY, t: Date.now(), mode: null, ctl: !!onCtl(e.target), zone: (e.clientX - r.left) / r.width, vy: (e.clientY - r.top) / r.height, vol: v.volume, bri: PL.bri, time: v.currentTime, h: r.height, w: r.width };
+  });
+  el.addEventListener('pointermove', e => {
+    if (!ts || e.pointerType === 'mouse' || ts.ctl) return; const dx = e.clientX - ts.x, dy = e.clientY - ts.y;
+    if (!ts.mode) {
+      if (Math.abs(dx) < 16 && Math.abs(dy) < 16) return;
+      if (stack.side || ts.vy < .12 || ts.vy > .8) { ts.mode = 'none'; return; }
+      ts.mode = Math.abs(dy) > Math.abs(dx) ? (ts.zone > .5 ? 'vol' : 'bri') : 'seek'; closeMenus();
+    }
+    if (ts.mode === 'vol') { const nv = Math.max(0, Math.min(1, ts.vol - dy / (ts.h * .55))); v.muted = false; v.volume = nv; showGest(pic(nv === 0 ? 'mute' : 'vol'), nv, Math.round(nv * 100) + '%'); }
+    else if (ts.mode === 'bri') { PL.bri = Math.max(.25, Math.min(1.6, ts.bri - dy / (ts.h * .55))); applyBri(); showGest(luSvg('sun'), (PL.bri - .25) / 1.35, Math.round(PL.bri * 100) + '%'); }
+    else if (ts.mode === 'seek') { const d_ = dur(); const nt = Math.max(0, Math.min(d_, ts.time + dx / ts.w * Math.min(d_ || 600, 240))); ts.target = nt; showGest(null, d_ ? nt / d_ : 0, fmtT(nt) + ' (' + (nt - ts.time >= 0 ? '+' : '−') + Math.abs(Math.round(nt - ts.time)) + ' s)'); }
+  });
+  el.addEventListener('pointercancel', () => { ts = null; hideGest(); });
   el.addEventListener('pointerup', e => {
-    if (e.pointerType === 'mouse' || !tapStart) return; const s0 = tapStart; tapStart = null;
+    if (e.pointerType === 'mouse' || !ts) return; const s0 = ts; ts = null;
+    if (s0.mode && s0.mode !== 'none') { if (s0.mode === 'seek' && s0.target != null) { v.currentTime = s0.target; report('Progress', { EventName: 'timeupdate' }); } hideGest(); wake(); return; }
     if (Math.abs(e.clientX - s0.x) > 14 || Math.abs(e.clientY - s0.y) > 14 || Date.now() - s0.t > 500) return;
-    if (e.target.closest && e.target.closest('button, a, input, .pl-seek, .pl-settings, .pl-menu, .pl-skipseg, .pl-nextcard, .pl-err')) { if (!el.classList.contains('idle')) wake(); return; }
+    if (s0.ctl) { if (!el.classList.contains('idle')) wake(); return; }
     if ($('.pl-menu.open, .pl-settings.open', el)) { closeMenus(); $('.pl-settings', el).classList.remove('open'); wake(); return; }
-    const now = Date.now(); const r = el.getBoundingClientRect(); const z = (e.clientX - r.left) / r.width; const zone = z < .34 ? 'l' : z > .66 ? 'r' : 'c';
+    const now = Date.now(); const zone = s0.zone < .34 ? 'l' : s0.zone > .66 ? 'r' : 'c';
+    if (stack.side && zone !== 'c' && (zone === 'r' ? 'r' : 'l') === stack.side) { stackSkip(stack.side); lastTap = 0; return; }
     if (now - lastTap < 300 && zone === lastZone) {
-      lastTap = 0; if (zone === 'l') { skip(-10); flash('-10 s', 'l'); } else if (zone === 'r') { skip(10); flash('+10 s', 'r'); } else togglePlay();
-      if (prevIdle && zone !== 'c') { el.classList.add('idle'); clearTimeout(PL.idleT); } else wake(); return;
+      lastTap = 0; if (zone === 'c') { togglePlay(); wake(); } else { stackSkip(zone); if (prevIdle) { el.classList.add('idle'); clearTimeout(PL.idleT); } }
+      return;
     }
     lastTap = now; lastZone = zone; prevIdle = el.classList.contains('idle');
     if (prevIdle) wake(); else { clearTimeout(PL.idleT); el.classList.add('idle'); }

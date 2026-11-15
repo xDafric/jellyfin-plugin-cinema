@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.0.10.0",
+                             "changelog":  "Player gestures: stackable double tap skipping, brightness, volume and scrub by dragging.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.0.10.0.zip",
+                             "checksum":  "84524cd394ccbb442298b2a3e34c7dcf",
+                             "timestamp":  "2026-11-22T12:00:00Z"
+                         },
+                         {
                              "version":  "1.0.9.0",
                              "changelog":  "Own editors for images, metadata, identify, refresh and delete (no more native frame), Android app fullscreen, phone safe areas.",
                              "targetAbi":  "12.4.0.0",
