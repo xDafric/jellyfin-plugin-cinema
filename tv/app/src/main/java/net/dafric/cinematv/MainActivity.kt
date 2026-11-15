@@ -64,7 +64,8 @@ class MainActivity : Activity() {
   localStorage.setItem('jellyfin_credentials',JSON.stringify({Servers:[{ManualAddress:${q(store.url)},manualAddressOnly:true,Id:${q(store.serverId)},Name:${q(store.serverName)},LastConnectionMode:2,DateLastAccessed:Date.now(),UserId:${q(store.userId)},AccessToken:tok}]}));
  }
  localStorage.setItem('cx-tv','1');localStorage.setItem('_deviceId2',${q(store.deviceId)});
-}catch(e){}})();"""
+}catch(e){}})();
+(function(){var W='width=1280';var fix=function(){var m=document.querySelector('meta[name=viewport]');if(m){if(m.content!==W)m.content=W;}else if(document.head){m=document.createElement('meta');m.name='viewport';m.content=W;document.head.appendChild(m);}};fix();var mo=new MutationObserver(fix);mo.observe(document,{childList:true,subtree:true});setTimeout(function(){mo.disconnect();fix();},6000);})();"""
         val origin = store.url.substringBefore("/", "").let { _ -> Regex("^(https?://[^/]+)").find(store.url)?.value ?: store.url }
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) WebViewCompat.addDocumentStartJavaScript(web, script, setOf(origin))
         else Log.w("CinemaWeb", "document start script not supported")

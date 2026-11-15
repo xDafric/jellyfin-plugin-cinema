@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.6.0",
+                             "changelog":  "TV: smaller UI scale, consistent row alignment, much faster key handling, fixes for focus jumping (web client re-centering), pane navigation in music.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.6.0.zip",
+                             "checksum":  "e65b1ce42dc0d13f7d311a6bccb69c60",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.5.0",
                              "changelog":  "TV: rows scroll instantly under a fixed focus slot (no delay).",
                              "targetAbi":  "12.4.0.0",

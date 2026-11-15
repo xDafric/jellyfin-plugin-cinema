@@ -31,7 +31,7 @@ html.cx-tv input.tvf-on, html.cx-tv select.tvf-on, html.cx-tv textarea.tvf-on { 
 html.cx-tv .set-switch.tvf-on { box-shadow: 0 0 0 3px #fff; }
 
 /* ---- layout: calm spacing at rest ---- */
-html.cx-tv .nf-card { width: calc(23vw * var(--cs, 1)); } html.cx-tv .nf-card.poster { width: calc(13.5vw * var(--cs, 1)); }
+html.cx-tv .nf-card { width: calc(19vw * var(--cs, 1)); } html.cx-tv .nf-card.poster { width: calc(11.4vw * var(--cs, 1)); }
 html.cx-tv .nf-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 26px 18px; } html.cx-tv .nf-grid .nf-card, html.cx-tv .nf-grid .nf-card.poster { width: 100%; }
 html.cx-tv .nf-hero { height: 70vh; margin-top: 96px; }
 html.cx-tv .nf-row { margin-bottom: 30px; }
@@ -49,3 +49,15 @@ html.cx-tv .nf-sect h2, html.cx-tv .nf-dbody h2 { margin-bottom: 6px; }
 html.cx-tv .nf-card.more .im { display: grid; place-items: center; background: #1c1c21; border: 2px dashed rgba(255,255,255,.22); }
 html.cx-tv .nf-card.more .mr { display: flex; flex-direction: column; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; color: #e6e6ea; } html.cx-tv .nf-card.more svg { width: 40px; height: 40px; }
 html.cx-tv #cx-top { background: rgba(17,17,19,.97) !important; }
+
+/* ---- smoothness + cheaper painting ---- */
+html.cx-tv .btn, html.cx-tv .nf-card .im, html.cx-tv .nf-person .pi, html.cx-tv #cx-top a, html.cx-tv #cx-top button { outline: 4px solid transparent; outline-offset: 0; transition: outline-color .14s ease, outline-offset .2s cubic-bezier(.2,.8,.2,1), transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background-color .15s ease; }
+html.cx-tv #cx-top a, html.cx-tv #cx-top button { outline-width: 3px; }
+html.cx-tv .nf-card.tvf-on .im { box-shadow: 0 0 30px 4px var(--glow, rgba(255,255,255,.2)); }
+html.cx-tv .nf-person.tvf-on .pi { box-shadow: 0 0 26px 4px var(--glow, rgba(255,255,255,.18)); }
+html.cx-tv .nf-row, html.cx-tv .nf-sect { animation: none !important; }
+html.cx-tv .nf-card .im, html.cx-tv .nf-person .pi { will-change: auto !important; }
+html.cx-tv #cx-glow { transition: opacity .6s ease; }
+html.cx-tv .nf-card .im .info, html.cx-tv .nf-card .im::after { transition: none; }
+html.cx-tv .nf-scroller, html.cx-tv .nf-cast, html.cx-tv .sp-shelf, html.cx-tv .nf-row-scroll, html.cx-tv #cx-nf { scroll-snap-type: none !important; }
+html.cx-tv .nf-row, html.cx-tv .nf-sect { content-visibility: visible !important; contain-intrinsic-size: none !important; }
