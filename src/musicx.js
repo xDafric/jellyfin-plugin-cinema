@@ -67,3 +67,48 @@ async function aurralArtistExtras(n, ar) {
     n.append(shelf(t('notInLib'), tiles));
   } catch (e) { console.warn('[cinema] artist extras', e); }
 }
+
+Object.assign(TX.en, { mdl: 'Downloads', mdlTitle: 'Download queue', mdlEmpty: 'Nothing is downloading right now.', mdlHint: 'Requested music shows up here while it is fetched.', popMissing: 'Popular · not in your library', songRequests: 'Songs you can request', reqSong: 'Request' });
+Object.assign(TX.de, { mdl: 'Downloads', mdlTitle: 'Download-Warteschlange', mdlEmpty: 'Gerade wird nichts heruntergeladen.', mdlHint: 'Angefragte Musik erscheint hier, solange sie geladen wird.', popMissing: 'Beliebt · nicht in deiner Bibliothek', songRequests: 'Songs zum Anfragen', reqSong: 'Anfragen' });
+/* Aurral / Lidarr download queue */
+async function mDownloads(n) {
+  n.append(h('div', { class: 'sp-greet' }, t('mdlTitle')));
+  if (!aurralOn()) { n.append(h('div', { class: 'nf-empty' }, t('aurralOff'))); return; }
+  async function load() {
+    let r; try { r = await aget('/api/library/downloads'); } catch (e) { r = []; }
+    const list = Array.isArray(r) ? r : (r.items || r.downloads || r.queue || r.records || []);
+    box.replaceChildren();
+    if (!list.length) { box.append(h('div', { class: 'nf-empty' }, h('div', {}, t('mdlEmpty')), h('small', { style: 'opacity:.6' }, t('mdlHint')))); return; }
+    list.forEach(x => {
+      const title = x.title || x.albumName || x.album || x.name || x.trackName || '?', artist = x.artistName || x.artist || '', st = String(x.status || x.state || '').replace(/_/g, ' ');
+      const pct = x.progress != null ? Math.round(x.progress > 1 ? x.progress : x.progress * 100) : x.percent != null ? Math.round(x.percent) : (x.size && x.sizeleft != null ? Math.round((1 - x.sizeleft / x.size) * 100) : null);
+      box.append(h('div', { class: 'dl-row' }, h('div', Object.assign({ class: 'cv' }, bg(extImg(x.image || x.artworkUrl) || caaImg(x.releaseGroupMbid || x.albumMbid)))), h('div', { class: 'tx' }, h('b', { class: 'ell' }, title), h('span', { class: 'ell' }, [artist, st].filter(Boolean).join(' · ')), pct != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.max(2, pct) + '%' })) : null), pct != null ? h('em', {}, pct + '%') : null));
+    });
+  }
+  const box = h('div', { class: 'dl-list' }); n.append(box); await load();
+  const iv = setInterval(() => { if (!box.isConnected) clearInterval(iv); else load(); }, 8000);
+}
+/* songs of an artist the library does not have: popularity comes from the release listen counts */
+async function aurralPopular(n, ar, popBox) {
+  if (!aurralOn()) return; const mb = (ar.ProviderIds || {}).MusicBrainzArtist; if (!mb) return;
+  try {
+    const a = await aget('/api/artists/' + mb); const rgs = (a['release-groups'] || []).filter(g => ['Album', 'Single', 'EP'].includes(g['primary-type']) && !(g['secondary-types'] || []).length).sort((x, y) => (y.listenCount || 0) - (x.listenCount || 0)).slice(0, 6);
+    const lists = await Promise.all(rgs.map(g => aget('/api/artists/release-group/' + g.id + '/tracks').then(tr => (tr || []).map((x, i) => Object.assign({ artistName: ar.Name, albumName: g.title, durationMs: x.length, releaseGroupMbid: g.id, _score: (g.listenCount || 1) / (1 + i * .6) }, x))).catch(() => [])));
+    const seen = new Set(); const flat = lists.flat().sort((x, y) => y._score - x._score).filter(x => { const k = norm(x.title || x.trackName || x.name); if (!k || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 10);
+    if (!flat.length) return;
+    const its = await toTrackItems(flat); if (!popBox.isConnected) return;
+    popBox.replaceChildren(trackList(its, { id: mb + '-pop', number: 'idx' })); $$('.sp-th', popBox).forEach(x => x.remove());
+  } catch (e) { console.warn('[cinema] popular', e); }
+}
+/* request single songs: look inside the matching releases for tracks whose name matches the search */
+async function aurralTrackSearch(node, q) {
+  if (!aurralOn() || q.length < 2) return;
+  const toks = norm(q).split(' ').filter(Boolean); if (!toks.length) return;
+  try {
+    const r = await aget('/api/search', { q, scope: 'album', limit: 6 }); const albums = aList(r).slice(0, 5);
+    const lists = await Promise.all(albums.map(o => aget('/api/artists/release-group/' + o.id + '/tracks').then(tr => (tr || []).map(x => Object.assign({ artistName: o.artistName || (o.artist && (o.artist.name || o.artist)) || ((o['artist-credit'] || [])[0] || {}).name || '', albumName: o.title || o.name, durationMs: x.length, releaseGroupMbid: o.id }, x))).catch(() => [])));
+    const seen = new Set(); const flat = lists.flat().filter(x => { const nm = norm(x.title || x.trackName || x.name), full = nm + ' ' + norm(x.artistName); if (!nm || seen.has(nm + '|' + norm(x.artistName))) return false; if (!toks.every(t_ => full.includes(t_))) return false; seen.add(nm + '|' + norm(x.artistName)); return true; });
+    const its = (await toTrackItems(flat)).filter(x => x._ext).slice(0, 8); if (!its.length) return;
+    const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.append(sec);
+  } catch (e) { console.warn('[cinema] track search', e); }
+}

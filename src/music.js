@@ -128,6 +128,21 @@ function buildPlayer() {
   const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { style: 'display:flex' }, h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleLyrics(); } }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleQueue(); } }, ic('queue')))), fcv,
     h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), fLike), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
   function openFull(on) { full.classList.toggle('open', on); full.style.transform = ''; }
+  /* Spotify style lyrics card inside the full-screen player */
+  const fLn = h('div', { class: 'ln' }); const fLyr = h('div', { class: 'f-lyr hide', onclick: () => { openFull(false); toggleLyrics(); } }, h('b', {}, t('lyrics')), fLn); full.append(fLyr);
+  let fLyrId = null, fLyrData = null;
+  function paintFLyr() {
+    if (!fLyrData || !fLyrData.length) { fLyr.classList.add('hide'); return; } fLyr.classList.remove('hide');
+    const now = P.audio.currentTime + .25; let idx = 0; const synced = fLyrData[0].t != null; if (synced) { for (let i = 0; i < fLyrData.length; i++) { if (fLyrData[i].t != null && fLyrData[i].t <= now) idx = i; else if (fLyrData[i].t != null) break; } }
+    fLn.replaceChildren(...fLyrData.slice(idx, idx + 4).map((l, k) => h('p', { class: k === 0 && synced ? 'on' : '' }, l.s)));
+  }
+  async function updFLyr() {
+    const it = cur(); if (!it) return;
+    if (it.Id !== fLyrId) { fLyrId = it.Id; fLyrData = null; fLyr.classList.add('hide'); try { const r = await api('Audio/' + it.Id + '/Lyrics'); if (fLyrId !== it.Id) return; fLyrData = (r.Lyrics || []).map(l => ({ t: l.Start != null ? l.Start / 1e7 : null, s: l.Text })).filter(l => l.s); } catch (e) { fLyrData = []; } }
+    paintFLyr();
+  }
+  P.audio.addEventListener('timeupdate', () => { if (full.classList.contains('open')) paintFLyr(); });
+  P.subs.push(updFLyr);
   let sy = null; full.addEventListener('touchstart', e => { if (e.target.closest('.bar, .seekwrap')) { sy = null; return; } sy = e.touches[0].clientY; full.style.transition = 'none'; }, { passive: true });
   full.addEventListener('touchmove', e => { if (sy == null) return; const dy = e.touches[0].clientY - sy; if (dy > 0) full.style.transform = 'translateY(' + dy + 'px)'; }, { passive: true });
   full.addEventListener('touchend', e => { if (sy == null) return; const dy = e.changedTouches[0].clientY - sy; sy = null; full.style.transition = ''; if (dy > 110) openFull(false); else full.style.transform = ''; });
@@ -175,8 +190,8 @@ function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueE
 function renderQueue() {
   if (!queueEl) return; const it = cur();
   const rowQ = (x, k) => h('div', { class: 'sp-qi' + (k === P.i ? ' playing' : ''), onclick: () => { P.i = k; loadCurrent(); } }, h('div', Object.assign({ class: 'cv' }, bg(trackImg(x, 100)))), h('div', {}, h('b', { class: 'ell' }, x.Name), h('span', { class: 'ell' }, artistText(x))));
-  queueEl.replaceChildren(h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, t('queue')), h('button', { class: 'pl-btn', onclick: toggleQueue }, ic('close'))),
-    it ? [h('h4', {}, t('nowPlaying')), rowQ(it, P.i)] : '', P.q.length > P.i + 1 ? [h('h4', {}, t('nextIn')), P.q.slice(P.i + 1, P.i + 101).map((x, k) => rowQ(x, P.i + 1 + k))] : '');
+  queueEl.replaceChildren(...[h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, t('queue')), h('button', { class: 'pl-btn', onclick: toggleQueue }, ic('close'))),
+    it ? [h('h4', {}, t('nowPlaying')), rowQ(it, P.i)] : null, P.q.length > P.i + 1 ? [h('h4', {}, t('nextIn')), P.q.slice(P.i + 1, P.i + 101).map((x, k) => rowQ(x, P.i + 1 + k))] : null].flat(3).filter(Boolean));
 }
 
 /* ---------- menus / modals ---------- */
@@ -276,14 +291,14 @@ function buildSP() {
   const chips = h('div', { class: 'sp-chips' }, ['playlists', 'albums', 'artists'].map(k => h('button', { class: 'sp-chip' + (k === libTab ? ' on' : ''), 'data-k': k, onclick: () => { libTab = k; $$('.sp-chip', chips).forEach(c => c.classList.toggle('on', c.dataset.k === k)); fillLib(); } }, t(k))));
   async function fillLib() {
     const lib = await loadLibrary(); const hash = location.hash; libList.replaceChildren();
-    const li = (o) => h('button', { class: 'sp-li' + (o.round ? ' round' : '') + (hash.includes(o.id) ? ' on' : ''), 'data-id': o.id, onclick: () => go(o.href) }, h('div', Object.assign({ class: 'art' + (o.cls ? ' ' + o.cls : '') }, bg(o.img)), o.img || o.cls ? (o.cls ? ic('heartOn') : null) : h('span', { class: 'cv-ph' }, ic(o.round ? 'user' : 'note'))), h('div', {}, h('div', { class: 'nm ell' }, o.name), h('div', { class: 'sb ell' }, o.sub)));
+    const li = (o) => h('button', { class: 'sp-li' + (o.round ? ' round' : '') + (hash.includes(o.id) ? ' on' : ''), 'data-id': o.id, onclick: () => go(o.href) }, h('div', Object.assign({ class: 'art' + (o.cls ? ' ' + o.cls : '') }, bg(o.img)), h('span', { class: 'li-play', role: 'button', 'aria-label': t('play'), onclick: e => { e.stopPropagation(); playLibItem(o); } }, ic('play')), o.img || o.cls ? (o.cls ? ic('heartOn') : null) : h('span', { class: 'cv-ph' }, ic(o.round ? 'user' : 'note'))), h('div', {}, h('div', { class: 'nm ell' }, o.name), h('div', { class: 'sb ell' }, o.sub)));
     if (libTab === 'playlists') { libList.append(li({ id: 'liked', name: t('liked'), sub: t('playlist'), href: '#/c/music/liked', cls: 'liked-art' })); lib.playlists.forEach(p => libList.append(li({ id: p.Id, name: p.Name, sub: t('playlist') + (p.ChildCount ? ' · ' + p.ChildCount : ''), img: imgUrl(p, 'Primary', 100), href: '#/c/music/playlist/' + p.Id }))); }
     if (libTab === 'albums') lib.albums.slice(0, 300).forEach(a => libList.append(li({ id: a.Id, name: a.Name, sub: [t('album1'), a.AlbumArtist].filter(Boolean).join(' · '), img: imgUrl(a, 'Primary', 100), href: '#/c/music/album/' + a.Id })));
     if (libTab === 'artists') lib.artists.slice(0, 300).forEach(a => libList.append(li({ id: a.Id, name: a.Name, sub: t('artist'), img: imgUrl(a, 'Primary', 100), round: true, href: '#/c/music/artist/' + a.Id })));
   }
   C.fillLib = fillLib;
   const side = h('div', { class: 'sp-side' },
-    h('div', { class: 'sp-card sp-top' }, h('a', { class: 'sp-navlink', href: '#/c/music', 'data-k': 'home' }, ic('home'), t('home')), h('a', { class: 'sp-navlink', href: '#/c/music/search', 'data-k': 'search' }, ic('search'), t('search')), h('a', { class: 'sp-navlink', href: '#/c/music/discover', 'data-k': 'discover' }, ic('star'), t('discoverShort')), h('a', { class: 'sp-navlink', href: '#/home' }, ic('film'), t('moviesTv'))),
+    h('div', { class: 'sp-card sp-top' }, h('a', { class: 'sp-navlink', href: '#/c/music', 'data-k': 'home' }, ic('home'), t('home')), h('a', { class: 'sp-navlink', href: '#/c/music/search', 'data-k': 'search' }, ic('search'), t('search')), h('a', { class: 'sp-navlink', href: '#/c/music/discover', 'data-k': 'discover' }, ic('star'), t('discoverShort')), aurralOn() ? h('a', { class: 'sp-navlink', href: '#/c/music/downloads', 'data-k': 'downloads' }, ic('download'), t('mdl')) : null, h('a', { class: 'sp-navlink', href: '#/home' }, ic('film'), t('moviesTv'))),
     h('div', { class: 'sp-card sp-lib' }, h('div', { class: 'sp-libhead' }, h('span', { style: 'display:flex;gap:10px;align-items:center' }, ic('lib'), t('library')), h('button', { 'aria-label': t('createPl'), onclick: () => promptName(t('createPl'), async n => { const r = await createPlaylist(n, []); go('#/c/music/playlist/' + r.Id); }) }, ic('plus'))), chips, libList));
   /* main */
   const scroll = h('div', { class: 'sp-scroll' });
@@ -309,7 +324,7 @@ function setHeader(opts) {
     const nm = (ME && ME.Name) || 'U';
     if (v0) hd.replaceChildren(h('button', { class: 'sp-hbtn', 'aria-label': 'Back', onclick: () => history.back() }, ic('left')));
     else hd.replaceChildren((() => { const a = h('a', { class: 'sp-avatar', href: '#/c/settings', 'aria-label': t('settings') }, nm[0].toUpperCase()); if (!ME) me().then(u => { a.textContent = (u.Name || 'U')[0].toUpperCase(); }); return a; })(),
-      h('div', { class: 'sp-chips' }, [['', t('all'), '#/c/music'], ['discover', t('discoverShort'), '#/c/music/discover'], ['library', t('library'), '#/c/music/library']].map(([k, l, hr]) => h('a', { class: 'sp-chip' + (v0 === k ? ' on' : ''), href: hr }, l))));
+      h('div', { class: 'sp-chips' }, [['', t('all'), '#/c/music'], ['discover', t('discoverShort'), '#/c/music/discover'], ['library', t('library'), '#/c/music/library']].concat(aurralOn() ? [['downloads', t('mdl'), '#/c/music/downloads']] : []).map(([k, l, hr]) => h('a', { class: 'sp-chip' + (v0 === k ? ' on' : ''), href: hr }, l))));
   } else hd.replaceChildren(h('button', { class: 'sp-hbtn', 'aria-label': 'Back', onclick: () => history.back() }, ic('left')), h('button', { class: 'sp-hbtn', 'aria-label': 'Forward', onclick: () => history.forward() }, ic('right')));
   if (opts.search) { const inp = h('input', { type: 'text', placeholder: t('searchMusic'), value: opts.q || '', autocomplete: 'off' }); let tm; inp.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => go('#/c/music/search' + (inp.value.trim() ? '/' + encodeURIComponent(inp.value.trim()) : '')), 350); }); hd.append(h('div', { class: 'sp-hsearch' }, ic('search'), inp)); setTimeout(() => { if (!opts.q) inp.focus(); }, 50); }
   hd.append(h('div', { style: 'flex:1' }));
@@ -320,7 +335,7 @@ C.renderMusic = async function (r) {
   if (!C.sp) buildSP();
   if (!C.libCache) loadLibrary().then(() => C.fillLib && C.fillLib());
   const sp = C.sp; let [, , view, id] = r.parts; if (view === 'home') view = undefined;
-  $$('.sp-navlink[data-k]', sp.side).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'discover' && view === 'discover')));
+  $$('.sp-navlink[data-k]', sp.side).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'discover' && view === 'discover') || (a.dataset.k === 'downloads' && view === 'downloads')));
   $$('a[data-k]', sp.tabs).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'lib' && (view === 'library'))));
   $$('.sp-li', sp.libList).forEach(l => l.classList.toggle('on', !!id && l.dataset.id === id || (view === 'liked' && l.dataset.id === 'liked')));
   C.scrollPos[C.lastKey] = sp.scroll.scrollTop; C.lastKey = r.raw;
@@ -339,8 +354,9 @@ C.renderMusic = async function (r) {
     else if (view === 'ext') await mExtAlbum(node, id, r.q);
     else if (view === 'mix') await mMix(node, decodeURIComponent(id));
     else if (view === 'library') await mLibrary(node);
+    else if (view === 'downloads') await mDownloads(node);
   } catch (e) { console.error('[cinema music]', e); node.append(h('div', { class: 'nf-empty' }, t('empty'))); }
-  try { if (view === 'search' && id) await aurralSearchShelves(node, decodeURIComponent(id)); else if (!view) await aurralDiscoverShelves(node); } catch (e) { }
+  try { if (view === 'search' && id) { await aurralSearchShelves(node, decodeURIComponent(id)); aurralTrackSearch(node, decodeURIComponent(id)); } else if (!view) await aurralDiscoverShelves(node); } catch (e) { }
   sp.content.replaceWith(node); sp.content = node;
   sp.scroll.scrollTop = C.scrollPos[r.raw] || 0;
   P.subs.forEach(f => f());
@@ -432,8 +448,9 @@ async function mArtist(n, id) {
   pageHead(n, { type: t('artist'), title: ar.Name, round: true, img: imgUrl(ar, 'Primary', 500), meta: [all.length + ' ' + t('songsN')] });
   const ctx = { id, number: 'idx' }; n.append(actionsBar(all, ctx));
   window.__artistNode = n; window.__artistItem = ar;
-  n.append(h('h2', { style: 'margin-top:8px' }, t('popularTracks')), trackList(top.slice(0, 5), { id: id + '-top', number: 'idx' }));
+  const popBox = h('div', {}, trackList(top.slice(0, 5), { id: id + '-top', number: 'idx' })); n.append(h('h2', { style: 'margin-top:8px' }, t('popularTracks')), popBox);
   $$('.sp-th', n).forEach(x => x.remove());
+  aurralPopular(n, ar, popBox);
   n.append(shelf(t('discography'), alb.map(albumTile)));
   await aurralArtistExtras(n, ar);
   if (ar.Overview) n.append(h('h2', {}, t('artist')), h('p', { style: 'color:#b3b3b3;line-height:1.6;max-width:780px' }, ar.Overview.replace(/<[^>]+>/g, '')));
@@ -479,3 +496,15 @@ P.audio.addEventListener('timeupdate', () => {
   const el = ps[idx]; if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
 });
 P.subs.push(() => { if (lyrEl && cur() && cur().Id !== lyrId) loadLyrics(cur()); });
+
+/* ---------- quick play from the library list ---------- */
+async function playLibItem(o) {
+  try {
+    let tr = [];
+    if (o.id === 'liked') tr = await tracksOf({ Filters: 'IsFavorite', SortBy: 'SortName', Limit: 500 });
+    else if (/playlist/.test(o.href)) tr = await tracksOf({ ParentId: o.id, SortBy: 'ParentIndexNumber,IndexNumber,SortName' });
+    else if (/album/.test(o.href)) tr = await tracksOf({ ParentId: o.id, SortBy: 'ParentIndexNumber,IndexNumber,SortName' });
+    else if (/artist/.test(o.href)) tr = await tracksOf({ ArtistIds: o.id, SortBy: 'PlayCount,SortName', SortOrder: 'Descending', Limit: 100 });
+    if (tr.length) playList(tr, 0, { ctx: { id: o.id } }); else toast(t('empty'));
+  } catch (e) { toast('⚠'); }
+}

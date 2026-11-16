@@ -165,7 +165,7 @@ function spotCard(it) {
   const meta = [it.ProductionYear, it.OfficialRating, it.CommunityRating ? '★ ' + it.CommunityRating.toFixed(1) : ''].filter(Boolean).join('  ·  ');
   const im = h('div', { class: 'im' }, h('div', Object.assign({ class: 'bgi' }, bg(bd))), h('div', { class: 'spot-info' }, logo ? h('img', { class: 'spot-logo', src: logo, alt: it.Name, loading: 'lazy' }) : h('b', {}, it.Name), meta ? h('small', {}, meta) : null));
   const el = h('div', { class: 'nf-card thumb spot', onclick: () => go(itemHash(it) || ('#/details?id=' + it.Id)), oncontextmenu: e => itemMenu(e, it) }, im);
-  attachPeek(el, im, () => libDesc(it, false)); return el;
+  return el;
 }
 /* async row: placeholder is inserted immediately to keep order, filled when data arrives */
 function lazyRow(container, title, fn, kind, opts) {

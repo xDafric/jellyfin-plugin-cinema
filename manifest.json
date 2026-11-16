@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.12.0",
+                             "changelog":  "Music: working queue, song requests in search, popular songs (incl. not owned) on artist pages, download queue page, quick play in the library, Spotify-style lyrics card and flatter mobile layout, sidebar and player polish; single hover on spotlight cards.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.12.0.zip",
+                             "checksum":  "3895ba18b9d4918e4cb741afa48c155f",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.11.0",
                              "changelog":  "Fixes the Seerr info dialog, cleaner Spotlight and Top 10 rows, faster home loading (rows load in the background, stock home requests skipped).",
                              "targetAbi":  "12.4.0.0",
