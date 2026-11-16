@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.25.0",
+                             "changelog":  "TV: the dots of the highlight banner are no longer selectable with the remote.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.25.0.zip",
+                             "checksum":  "f6b20ff682268a4f39ac836ca81e917d",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.24.0",
                              "changelog":  "TV: up and down always go to the nearest row, even a short one (no more skipped rows).",
                              "targetAbi":  "12.4.0.0",

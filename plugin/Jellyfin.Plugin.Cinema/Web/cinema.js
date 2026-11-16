@@ -2854,7 +2854,7 @@ function tvInit() {
     if (!rootEl.querySelectorAll) return;
     const els = [rootEl, ...rootEl.querySelectorAll('*')];
     for (const e of els) {
-      if (e.nodeType !== 1 || e.dataset.tvs || e.closest('#cx-lite, .cx-nframe, svg')) continue; e.dataset.tvs = '1';
+      if (e.nodeType !== 1 || e.dataset.tvs || e.closest('#cx-lite, .cx-nframe, svg, .nf-dots')) continue; e.dataset.tvs = '1';
       if (e.matches && e.matches('.sp-row')) { e.setAttribute('tabindex', '0'); e.dataset.tvf = '1'; continue; }
       if (isFocusable(e) || e.tagName === 'svg') continue;
       if (e.parentElement && e.parentElement.closest('[data-tvf], a[href], button')) continue;
@@ -2875,7 +2875,7 @@ function tvInit() {
   const layer = () => { const all = document.querySelectorAll(LAYER_SEL); for (let k = all.length - 1; k >= 0; k--) if (visible(all[k])) return all[k]; return null; };
   /* rectangles are measured once and kept (page coordinates), so a key press never forces a layout */
   let RC = null, rcDirty = true; const SCR = '.nf-scroller, .sp-shelf, .nf-cast, .nf-row-scroll';
-  const EXCL = e => !!e.closest('#cx-lite, .cx-nframe, h2') || e.matches('.nf-logo, .nf-logo *') || (e.matches('a') && !!e.closest('.sp-row')) || e.matches('.sp-row button.pl, .sp-hbtn') || (e.tagName === 'INPUT' && e.type === 'file');
+  const EXCL = e => !!e.closest('#cx-lite, .cx-nframe, h2, .nf-dots') || e.matches('.nf-logo, .nf-logo *') || (e.matches('a') && !!e.closest('.sp-row')) || e.matches('.sp-row button.pl, .sp-hbtn') || (e.tagName === 'INPUT' && e.type === 'file');
   function buildRects() {
     const H = scrollHost(); const st = H ? H.scrollTop : 0; const m = new Map(); m._an = new Map();
     const ov = document.documentElement.classList.contains('cx-on'); // our interface is showing: the stock page behind it must not take part
