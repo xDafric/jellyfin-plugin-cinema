@@ -170,7 +170,7 @@ class PlayerActivity : Activity() {
 
     private fun buildPlayer() {
         val dsf = DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true).setDefaultRequestProperties(mapOf("Authorization" to store.authHeader()))
-        player = ExoPlayer.Builder(this, DefaultRenderersFactory(this).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER))
+        player = ExoPlayer.Builder(this, DefaultRenderersFactory(this).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER).setEnableDecoderFallback(true))
             .setMediaSourceFactory(DefaultMediaSourceFactory(this).setDataSourceFactory(dsf))
             .setSeekBackIncrementMs(10_000).setSeekForwardIncrementMs(10_000).build()
         player.setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)

@@ -20,7 +20,7 @@ class MainActivity : Activity() {
     private var returning = false
 
     inner class Bridge {
-        @JavascriptInterface fun play(itemId: String, startTicks: Long) { runOnUiThread { returning = true; startActivity(Intent(this@MainActivity, PlayerActivity::class.java).putExtra("id", itemId).putExtra("ticks", startTicks)) } }
+        @JavascriptInterface fun play(itemId: String, startTicks: Long) { runOnUiThread { returning = true; web.evaluateJavascript("window.cxTvSleep&&window.cxTvSleep()", null); startActivity(Intent(this@MainActivity, PlayerActivity::class.java).putExtra("id", itemId).putExtra("ticks", startTicks)) } }
         @JavascriptInterface fun exit() { runOnUiThread { finish() } }
         @JavascriptInterface fun logout() { runOnUiThread { store.clearLogin(); web.clearCache(true); CookieManager.getInstance().removeAllCookies(null); WebStorage.getInstance().deleteAllData(); startActivity(Intent(this@MainActivity, LoginActivity::class.java)); finish() } }
         @JavascriptInterface fun version(): String = "1.0.0"

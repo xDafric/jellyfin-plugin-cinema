@@ -67,6 +67,7 @@ const shuffleArr = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) 
 const U = (id, type, w, tag, extra) => ApiClient.getUrl('Items/' + id + '/Images/' + type + (extra || ''), { maxWidth: w, tag, quality: 85 });
 function imgUrl(it, type, w) {
   type = type || 'Primary'; w = w || 400;
+  if (typeof TVM !== 'undefined' && TVM) w = Math.max(180, Math.round(w * (type === 'Backdrop' ? .66 : .6))); // TV: smaller pictures, less memory and decoding work
   if (type === 'Backdrop' && it._bd) return it._bd;
   if ((type === 'Primary' || type === 'Thumb') && it._img) return it._img;
   if (type === 'Backdrop') {

@@ -112,13 +112,19 @@ function tvInit() {
       if (RC && Math.abs(pendingTop(host) - RC._st) > 1200 && !focusEl._rb) { focusEl._rb = setTimeout(() => { focusEl._rb = 0; rcDirty = true; if (!layer()) buildRects(); }, 500); }
     } else e.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
+  /* rows far above / below the screen drop their pictures (memory); they come back when you get near */
+  let farT = 0;
+  const farRows = () => { clearTimeout(farT); farT = setTimeout(() => { const H = innerHeight; const rows = document.querySelectorAll('#cx .nf-row, #cx .nf-sect'); const rects = []; rows.forEach(r => rects.push(r.getBoundingClientRect())); rows.forEach((r, i) => { const rc = rects[i]; r.classList.toggle('cx-far', rc.bottom < -H * 1.6 || rc.top > H * 2.6); }); }, 700); };
+  document.addEventListener('scroll', e => { if (e.target && e.target.nodeType === 1 && e.target === scrollHost()) farRows(); }, true);
   function scrollHost_() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }
   function scrollHost() { return scrollHost_(); }
+  let keyAt = 0;
   const DIRS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
   document.addEventListener('keydown', e => {
     const dir = DIRS[e.key];
     if (e.key === 'Enter' && document.activeElement && document.activeElement.dataset.tvf) { e.preventDefault(); const ae0 = document.activeElement; const pl = ae0.matches('.sp-row') && ae0.querySelector('button.pl'); (pl || ae0).click(); return; }
     if (!dir) return;
+    { const now = performance.now(); if (e.repeat) { if (now - e.timeStamp > 90 || now - (keyAt || 0) < 130) { e.preventDefault(); e.stopPropagation(); return; } } keyAt = now; }
     TVSTATE.keyed = true; TVSTATE.userActive = true;
     const ae = document.activeElement; const typing = ae && (ae.tagName === 'INPUT' && /text|search|url|email|password|number/.test(ae.type) || ae.tagName === 'TEXTAREA');
     if (typing && (dir === 'left' || dir === 'right')) return;
@@ -163,7 +169,9 @@ function tvInit() {
     const h = location.hash; if (/^#\/(home)?$|^#\/c(\/home)?$|^#\/c\/music\/?$|^#\/c\/music\/home$/.test(h) || h === '') return false;
     history.back(); return true;
   };
-  window.cxTvResume = () => { try { refreshView(); } catch (e) { } };
+  /* the native player needs the TV's memory and video decoder: free what the page holds while it plays */
+  window.cxTvSleep = () => { document.documentElement.classList.add('cx-sleep'); try { C.nf.el.scrollTop = 0; } catch (e) { } };
+  window.cxTvResume = () => { document.documentElement.classList.remove('cx-sleep'); try { refreshView(); } catch (e) { } };
   window.cxTvMenu = () => { const u = document.querySelector('#cx-top .nf-avatar'); u && u.click(); };
 
   /* remote media keys control the music player */

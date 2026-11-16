@@ -46,7 +46,7 @@ async function homeView2(page) {
   };
   first.forEach(render);
   if (rest.length) rest.forEach((s_, i) => setTimeout(() => { if (rows.isConnected) render(s_); }, 350 + i * 220));
-  if (cfg('infinite') !== false) setTimeout(() => { if (rows.isConnected) endlessRows(rows, page); }, 350 + rest.length * 220);
+  if (cfg('infinite') !== false && !TVM) setTimeout(() => { if (rows.isConnected) endlessRows(rows, page); }, 350 + rest.length * 220); // a TV has little memory: no endless rows there
 }
 function seerrRow(container, title, path) {
   const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
