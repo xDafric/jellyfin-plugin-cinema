@@ -68,17 +68,24 @@ function tvInit() {
     }
     return best;
   }
-  let lastOn = null; const mark = e => { if (lastOn && lastOn !== e) lastOn.classList.remove('tvf-on'); lastOn = e; const rowSc = e.closest('.nf-scroller, .nf-cast'); if (rowSc) rowSc._tvLast = e; e.classList.add('tvf-on'); if (window.tvGlow) { clearTimeout(mark._t); mark._t = setTimeout(() => window.tvGlow(e), 150); } };
+  let lastOn = null; const mark = e => { if (lastOn && lastOn !== e) lastOn.classList.remove('tvf-on'); lastOn = e; const rowSc = e.closest('.nf-scroller, .nf-cast'); if (rowSc) rowSc._tvLast = e; e.classList.add('tvf-on'); if (window.tvGlow) { clearTimeout(mark._t); mark._t = setTimeout(() => window.tvGlow(e), 420); } };
   /* the stock web client scrolls any focused element to the centre of its row - stop that for our interface */
   ['focus', 'focusin'].forEach(t => window.addEventListener(t, e => { const el = e.target; if (el && el.closest && el.closest('#cx, #cx-ui')) { if (t === 'focusin') mark(el); e.stopImmediatePropagation(); } }, true)); document.addEventListener('focusout', e => { e.target.classList && e.target.classList.remove('tvf-on'); }, true);
   /* own scroll animation: short, cancelable, always ends where it should (CSS smooth scrolling lags on TV hardware) */
   const ANIM = new WeakMap();
   function glide(host, prop, target, ms) {
     ms = ms == null ? 230 : ms; const max = prop === 'top' ? host.scrollHeight - host.clientHeight : host.scrollWidth - host.clientWidth; target = Math.max(0, Math.min(max, target));
-    const key = prop === 'top' ? 'scrollTop' : 'scrollLeft'; let st = ANIM.get(host); if (!st) { st = {}; ANIM.set(host, st); }
-    const o = st[prop]; if (o) cancelAnimationFrame(o.id); const from = (prop === 'top' ? host._st : host._sl) != null ? (prop === 'top' ? host._st : host._sl) : host[key]; const t0 = performance.now(); const rec = { target, id: 0 }; st[prop] = rec;
-    if (ms === 0 || Math.abs(target - from) < 2) { host[key] = target; host[prop === 'top' ? '_st' : '_sl'] = target; return; }
-    const step = now => { const k = Math.min(1, (now - t0) / ms); const ease = 1 - Math.pow(1 - k, 3); host[key] = from + (target - from) * ease; host[prop === 'top' ? '_st' : '_sl'] = host[key]; if (k < 1) rec.id = requestAnimationFrame(step); else st[prop] = null; };
+    const key = prop === 'top' ? 'scrollTop' : 'scrollLeft', mem = prop === 'top' ? '_st' : '_sl'; let st = ANIM.get(host); if (!st) { st = {}; ANIM.set(host, st); }
+    let rec = st[prop];
+    if (ms === 0) { if (rec) { cancelAnimationFrame(rec.id); st[prop] = null; } host[key] = target; host[mem] = target; return; }
+    if (rec) { rec.target = target; return; } // already moving: just aim at the new target, the motion stays continuous
+    const from = host[mem] != null ? host[mem] : host[key]; if (Math.abs(target - from) < 1.5) { host[key] = target; host[mem] = target; return; }
+    const tau = ms / 3.4; rec = { target, pos: from, id: 0, last: performance.now() }; st[prop] = rec;
+    const step = now => {
+      const dt = Math.min(40, now - rec.last); rec.last = now; rec.pos += (rec.target - rec.pos) * (1 - Math.exp(-dt / tau));
+      if (Math.abs(rec.target - rec.pos) < .6) { host[key] = rec.target; host[mem] = rec.target; st[prop] = null; return; }
+      host[key] = rec.pos; host[mem] = rec.pos; rec.id = requestAnimationFrame(step);
+    };
     rec.id = requestAnimationFrame(step);
   }
   const pendingTop = host => { const s = ANIM.get(host); return s && s.top ? s.top.target : (host._st != null ? host._st : (host._st = host.scrollTop)); };

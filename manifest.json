@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.18.0",
+                             "changelog":  "TV: smoother, more stable vertical scrolling (continuous motion that stays stable with repeated key presses), colour glow updates after the scroll settles, Top 10 numbers back to the outlined design.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.18.0.zip",
+                             "checksum":  "2bc0fd4e936c3bd9b256d04a38379e5e",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.17.0",
                              "changelog":  "TV: remote navigation ignores the hidden stock page behind the interface (up and down got stuck), Top 10 numbers fit the TV layout. No card previews while scrolling, scroll-time hover work skipped.",
                              "targetAbi":  "12.4.0.0",
