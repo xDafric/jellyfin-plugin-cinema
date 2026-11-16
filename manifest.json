@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.29.0",
+                             "changelog":  "Letterboxd: import the whole export ZIP (watched.csv with everything marked as watched plus diary.csv) directly, clearer instructions.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.29.0.zip",
+                             "checksum":  "b7f077188ace28a72156830bf8a45b9a",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.28.0",
                              "changelog":  "Fix: the config page no longer freezes the old home rows (Top 10, Spotlight and genre tiles were hidden after saving the config); an old saved default is ignored.",
                              "targetAbi":  "12.4.0.0",
