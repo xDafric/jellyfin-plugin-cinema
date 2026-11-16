@@ -138,7 +138,14 @@ function buildPlayer() {
   const fb = { sh: h('button', { class: 'pl-btn', onclick: toggleShuffle }, ic('shuffle')), pv: h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), pp: h('button', { class: 'pl-btn big', onclick: toggle }, ic('play')), nx: h('button', { class: 'pl-btn', onclick: () => next() }, ic('next')), rp: h('button', { class: 'pl-btn', onclick: cycleRepeat }, ic('repeat')) };
   const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { class: 'tops' }, h('button', { class: 'pl-btn', onclick: () => toggleLyrics() }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => toggleQueue() }, ic('queue')))), fcv,
     h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), fLike), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
-  function openFull(on) { full.classList.toggle('open', on); full.style.transform = ''; }
+  /* the phone's back button / swipe closes the player (or the lyrics / queue layer on top of it) instead of leaving the music page */
+  BACK.closeFull = () => { full.classList.remove('open'); full.style.transform = ''; };
+  function openFull(on) {
+    const mobile = matchMedia('(max-width: 800px)').matches;
+    if (on && mobile && !BACK.full) { try { history.pushState({ cxFull: 1 }, '', location.href); BACK.full = true; } catch (e) { } }
+    full.classList.toggle('open', on); full.style.transform = '';
+    if (!on && BACK.full) { BACK.full = false; BACK.skip++; try { history.back(); } catch (e) { BACK.skip--; } }
+  }
   /* Spotify style lyrics card inside the full-screen player */
   const fLn = h('div', { class: 'ln' }); const fLyr = h('div', { class: 'f-lyr hide', onclick: () => toggleLyrics() }, h('b', {}, t('lyrics')), fLn); full.append(fLyr);
   let fLyrId = null, fLyrData = null;
@@ -197,8 +204,16 @@ function buildPlayer() {
 }
 let tickUI = () => { };
 let queueEl = null;
+const BACK = { full: false, panel: false, skip: 0, closeFull: null };
+window.addEventListener('popstate', () => {
+  if (BACK.skip > 0) { BACK.skip--; return; }
+  if (BACK.panel) { BACK.panel = false; if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; } return; }
+  if (BACK.full && BACK.closeFull) { BACK.full = false; BACK.closeFull(); }
+});
+const panelOpened = () => { if (matchMedia('(max-width: 800px)').matches && !BACK.panel) { try { history.pushState({ cxPanel: 1 }, '', location.href); BACK.panel = true; } catch (e) { } } };
+const panelClosed = () => { if (BACK.panel && !lyrEl && !queueEl) { BACK.panel = false; BACK.skip++; try { history.back(); } catch (e) { BACK.skip--; } } };
 const panelHost = () => matchMedia('(max-width: 800px)').matches ? root : $('.sp-main', root).parentElement;
-function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; return; } queueEl = h('div', { class: 'sp-queue' }); panelHost().append(queueEl); renderQueue(); }
+function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; panelClosed(); return; } queueEl = h('div', { class: 'sp-queue' }); panelHost().append(queueEl); renderQueue(); panelOpened(); }
 function renderQueue() {
   if (!queueEl) return; const it = cur();
   const rowQ = (x, k) => h('div', { class: 'sp-qi' + (k === P.i ? ' playing' : ''), onclick: () => { P.i = k; loadCurrent(); } }, h('div', Object.assign({ class: 'cv' }, bg(trackImg(x, 100)))), h('div', {}, h('b', { class: 'ell' }, x.Name), h('span', { class: 'ell' }, artistText(x))));
@@ -481,9 +496,9 @@ Object.assign(TX.en, { lyrics: 'Lyrics', noLyrics: 'No lyrics found for this son
 Object.assign(TX.de, { lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
 let lyrEl = null, lyrLines = null, lyrId = null, lyrAt = -1, lyrSynced = false;
 function toggleLyrics() {
-  if (lyrEl) { lyrEl.remove(); lyrEl = null; return; }
+  if (lyrEl) { lyrEl.remove(); lyrEl = null; panelClosed(); return; }
   if (queueEl) { queueEl.remove(); queueEl = null; }
-  lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); panelHost().append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics();
+  lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); panelHost().append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics(); panelOpened();
 }
 async function loadLyrics(it) {
   lyrId = it.Id; lyrLines = null; lyrAt = -1; drawLyrics(true);

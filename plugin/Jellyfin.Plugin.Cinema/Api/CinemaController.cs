@@ -475,6 +475,68 @@ public class CinemaController : ControllerBase
         return await Forward(Join(Cfg.AurralUrl, "/" + p), headers, ct).ConfigureAwait(false);
     }
 
+    // ---------------------------------------------------------------- song search (public catalogue, popularity ranked)
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime At, string Json)> SongCache = new();
+
+    /// <summary>Song lookup for requests. Only the typed search words leave the server (to Apple's public search API); results come back ranked by popularity.</summary>
+    [HttpGet("music/search")]
+    [Authorize]
+    public async Task<IActionResult> MusicSearch([FromQuery] string q, CancellationToken ct)
+    {
+        q = (q ?? string.Empty).Trim();
+        if (q.Length < 2 || q.Length > 120 || !Cfg.ExternalSongSearch)
+        {
+            return Content("[]", "application/json");
+        }
+
+        var key = q.ToLowerInvariant();
+        if (SongCache.TryGetValue(key, out var hit) && DateTime.UtcNow - hit.At < TimeSpan.FromMinutes(15))
+        {
+            return Content(hit.Json, "application/json");
+        }
+
+        try
+        {
+            var url = "https://itunes.apple.com/search?media=music&entity=song&limit=50&term=" + Uri.EscapeDataString(q);
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            using var resp = await Client().SendAsync(req, ct).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return StatusCode(502, new { error = "Song catalogue " + (int)resp.StatusCode });
+            }
+
+            var node = JsonNode.Parse(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
+            var list = new JsonArray();
+            foreach (var r in node?["results"]?.AsArray() ?? new JsonArray())
+            {
+                if (r is null || r["kind"]?.ToString() != "song")
+                {
+                    continue;
+                }
+
+                list.Add(new JsonObject
+                {
+                    ["title"] = r["trackName"]?.ToString(),
+                    ["artist"] = r["artistName"]?.ToString(),
+                    ["album"] = r["collectionName"]?.ToString(),
+                    ["length"] = r["trackTimeMillis"]?.DeepClone(),
+                    ["preview"] = r["previewUrl"]?.ToString(),
+                    ["image"] = r["artworkUrl100"]?.ToString()?.Replace("100x100", "300x300", StringComparison.Ordinal),
+                    ["id"] = r["trackId"]?.ToString()
+                });
+            }
+
+            var json = list.ToJsonString();
+            SongCache[key] = (DateTime.UtcNow, json);
+            return Content(json, "application/json");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, new { error = ex.Message });
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private HttpClient Client()

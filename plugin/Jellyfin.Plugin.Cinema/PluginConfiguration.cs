@@ -90,4 +90,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public string HiddenCodeHash { get; set; } = string.Empty;
 
     public string HiddenCodeSalt { get; set; } = string.Empty;
+
+    /// <summary>Song search for music requests uses a public catalogue (only the typed words are sent, by the server). Turn off to stay fully local.</summary>
+    public bool ExternalSongSearch { get; set; } = true;
 }

@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.15.0",
+                             "changelog":  "Better song search for music requests (popularity ranked public catalogue, switchable in the config), back button on phones closes the player or lyrics instead of leaving the music page.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.15.0.zip",
+                             "checksum":  "5133b9fcf5129b15ba113d3f2026cf2c",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.14.0",
                              "changelog":  "Music: better song search (artist + title), song requests fixed, mini player with heart and draggable timeline, Spotify-style phone player with slide transitions, list and lyrics alignment fixes.",
                              "targetAbi":  "12.4.0.0",

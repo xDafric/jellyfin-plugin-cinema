@@ -2118,8 +2118,9 @@ async function requestExtTrack(it) {
     if (!body.artistName || !body.trackName) throw new Error('artist / title missing');
     try { await apost('/api/library/downloads/track', body); }
     catch (e) { // fall back to requesting the release the song is on
-      const rg = body.releaseGroupMbid; if (!rg) throw e;
-      await requestAurral({ id: rg, title: body.albumName || body.trackName, artistName: body.artistName }, 'album');
+      const rg = body.releaseGroupMbid;
+      if (rg) await requestAurral({ id: rg, title: body.albumName || body.trackName, artistName: body.artistName }, 'album');
+      else { const r = await aget('/api/search', { q: body.artistName + ' ' + (body.albumName || body.trackName), scope: 'album', limit: 3 }); const al = aList(r)[0]; if (!al) throw e; await requestAurral(al, 'album'); }
     }
     toast('✓ ' + t('requested'));
   } catch (e) { toast('⚠ ' + ((e.responseJSON && (e.responseJSON.error || e.responseJSON.message)) || e.message || e.statusText || 'error')); }
@@ -2199,7 +2200,7 @@ async function aurralPopular(n, ar, popBox) {
   } catch (e) { console.warn('[cinema] popular', e); }
 }
 /* request single songs: finds the songs inside the artist's biggest releases (when the query names an artist) and inside matching albums */
-async function aurralTrackSearch(node, q) {
+async function aurralTrackSearchOld(node, q) {
   if (!aurralOn() || q.length < 2) return;
   const toks = norm(q).split(' ').filter(Boolean); if (!toks.length) return; const qset = new Set(toks);
   const artistOf = o => o.artistName || (o.artist && (o.artist.name || o.artist)) || ((o['artist-credit'] || [])[0] || {}).name || '';
@@ -2225,6 +2226,19 @@ async function aurralTrackSearch(node, q) {
     const its = (await toTrackItems(scored.slice(0, 14).map(o => o.x))).filter(x => x._ext).slice(0, 10); if (!its.length) return;
     const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.insertBefore(sec, node.firstChild);
   } catch (e) { console.warn('[cinema] track search', e); }
+}
+/* song search over a public catalogue (server side), popularity ranked */
+async function aurralTrackSearch(node, q) {
+  if (!aurralOn() || q.length < 2) return;
+  let list = null; try { list = await cget('/music/search', { q }); } catch (e) { list = null; }
+  if (!Array.isArray(list) || !list.length) return aurralTrackSearchOld(node, q);
+  try {
+    const BAD = /\b(karaoke|instrumental|tribute|8[- ]?bit|lullaby|made famous|in the style|backing track|midi)\b/i; const seen = new Set();
+    const flat = list.filter(x => { if (!x.title || !x.artist || BAD.test(x.title + ' ' + x.artist + ' ' + (x.album || ''))) return false; const k = norm(x.title) + '|' + norm(x.artist); if (seen.has(k)) return false; seen.add(k); return true; })
+      .map(x => ({ artistName: x.artist, trackName: x.title, title: x.title, albumName: x.album || '', durationMs: x.length, preview_url: x.preview, artworkUrl: x.image, id: x.id }));
+    const its = (await toTrackItems(flat.slice(0, 30))).filter(x => x._ext).slice(0, 10); if (!its.length) return;
+    const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.insertBefore(sec, node.firstChild);
+  } catch (e) { console.warn('[cinema] track search', e); aurralTrackSearchOld(node, q); }
 }
 Object.assign(TX.en, { recRediscover: 'Rediscover', recSimilar: 'Similar to', recSimilarNew: 'Similar artists you could add', recMore: 'Because you listen to' });
 Object.assign(TX.de, { recRediscover: 'Wiederentdecken', recSimilar: 'Ähnlich wie', recSimilarNew: 'Ähnliche Künstler zum Hinzufügen', recMore: 'Weil du hörst' });
@@ -2385,7 +2399,14 @@ function buildPlayer() {
   const fb = { sh: h('button', { class: 'pl-btn', onclick: toggleShuffle }, ic('shuffle')), pv: h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), pp: h('button', { class: 'pl-btn big', onclick: toggle }, ic('play')), nx: h('button', { class: 'pl-btn', onclick: () => next() }, ic('next')), rp: h('button', { class: 'pl-btn', onclick: cycleRepeat }, ic('repeat')) };
   const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { class: 'tops' }, h('button', { class: 'pl-btn', onclick: () => toggleLyrics() }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => toggleQueue() }, ic('queue')))), fcv,
     h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), fLike), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
-  function openFull(on) { full.classList.toggle('open', on); full.style.transform = ''; }
+  /* the phone's back button / swipe closes the player (or the lyrics / queue layer on top of it) instead of leaving the music page */
+  BACK.closeFull = () => { full.classList.remove('open'); full.style.transform = ''; };
+  function openFull(on) {
+    const mobile = matchMedia('(max-width: 800px)').matches;
+    if (on && mobile && !BACK.full) { try { history.pushState({ cxFull: 1 }, '', location.href); BACK.full = true; } catch (e) { } }
+    full.classList.toggle('open', on); full.style.transform = '';
+    if (!on && BACK.full) { BACK.full = false; BACK.skip++; try { history.back(); } catch (e) { BACK.skip--; } }
+  }
   /* Spotify style lyrics card inside the full-screen player */
   const fLn = h('div', { class: 'ln' }); const fLyr = h('div', { class: 'f-lyr hide', onclick: () => toggleLyrics() }, h('b', {}, t('lyrics')), fLn); full.append(fLyr);
   let fLyrId = null, fLyrData = null;
@@ -2444,8 +2465,16 @@ function buildPlayer() {
 }
 let tickUI = () => { };
 let queueEl = null;
+const BACK = { full: false, panel: false, skip: 0, closeFull: null };
+window.addEventListener('popstate', () => {
+  if (BACK.skip > 0) { BACK.skip--; return; }
+  if (BACK.panel) { BACK.panel = false; if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; } return; }
+  if (BACK.full && BACK.closeFull) { BACK.full = false; BACK.closeFull(); }
+});
+const panelOpened = () => { if (matchMedia('(max-width: 800px)').matches && !BACK.panel) { try { history.pushState({ cxPanel: 1 }, '', location.href); BACK.panel = true; } catch (e) { } } };
+const panelClosed = () => { if (BACK.panel && !lyrEl && !queueEl) { BACK.panel = false; BACK.skip++; try { history.back(); } catch (e) { BACK.skip--; } } };
 const panelHost = () => matchMedia('(max-width: 800px)').matches ? root : $('.sp-main', root).parentElement;
-function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; return; } queueEl = h('div', { class: 'sp-queue' }); panelHost().append(queueEl); renderQueue(); }
+function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; panelClosed(); return; } queueEl = h('div', { class: 'sp-queue' }); panelHost().append(queueEl); renderQueue(); panelOpened(); }
 function renderQueue() {
   if (!queueEl) return; const it = cur();
   const rowQ = (x, k) => h('div', { class: 'sp-qi' + (k === P.i ? ' playing' : ''), onclick: () => { P.i = k; loadCurrent(); } }, h('div', Object.assign({ class: 'cv' }, bg(trackImg(x, 100)))), h('div', {}, h('b', { class: 'ell' }, x.Name), h('span', { class: 'ell' }, artistText(x))));
@@ -2728,9 +2757,9 @@ Object.assign(TX.en, { lyrics: 'Lyrics', noLyrics: 'No lyrics found for this son
 Object.assign(TX.de, { lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
 let lyrEl = null, lyrLines = null, lyrId = null, lyrAt = -1, lyrSynced = false;
 function toggleLyrics() {
-  if (lyrEl) { lyrEl.remove(); lyrEl = null; return; }
+  if (lyrEl) { lyrEl.remove(); lyrEl = null; panelClosed(); return; }
   if (queueEl) { queueEl.remove(); queueEl = null; }
-  lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); panelHost().append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics();
+  lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); panelHost().append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics(); panelOpened();
 }
 async function loadLyrics(it) {
   lyrId = it.Id; lyrLines = null; lyrAt = -1; drawLyrics(true);

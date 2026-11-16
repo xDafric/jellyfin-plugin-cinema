@@ -22,8 +22,9 @@ async function requestExtTrack(it) {
     if (!body.artistName || !body.trackName) throw new Error('artist / title missing');
     try { await apost('/api/library/downloads/track', body); }
     catch (e) { // fall back to requesting the release the song is on
-      const rg = body.releaseGroupMbid; if (!rg) throw e;
-      await requestAurral({ id: rg, title: body.albumName || body.trackName, artistName: body.artistName }, 'album');
+      const rg = body.releaseGroupMbid;
+      if (rg) await requestAurral({ id: rg, title: body.albumName || body.trackName, artistName: body.artistName }, 'album');
+      else { const r = await aget('/api/search', { q: body.artistName + ' ' + (body.albumName || body.trackName), scope: 'album', limit: 3 }); const al = aList(r)[0]; if (!al) throw e; await requestAurral(al, 'album'); }
     }
     toast('✓ ' + t('requested'));
   } catch (e) { toast('⚠ ' + ((e.responseJSON && (e.responseJSON.error || e.responseJSON.message)) || e.message || e.statusText || 'error')); }
@@ -103,7 +104,7 @@ async function aurralPopular(n, ar, popBox) {
   } catch (e) { console.warn('[cinema] popular', e); }
 }
 /* request single songs: finds the songs inside the artist's biggest releases (when the query names an artist) and inside matching albums */
-async function aurralTrackSearch(node, q) {
+async function aurralTrackSearchOld(node, q) {
   if (!aurralOn() || q.length < 2) return;
   const toks = norm(q).split(' ').filter(Boolean); if (!toks.length) return; const qset = new Set(toks);
   const artistOf = o => o.artistName || (o.artist && (o.artist.name || o.artist)) || ((o['artist-credit'] || [])[0] || {}).name || '';
@@ -129,6 +130,19 @@ async function aurralTrackSearch(node, q) {
     const its = (await toTrackItems(scored.slice(0, 14).map(o => o.x))).filter(x => x._ext).slice(0, 10); if (!its.length) return;
     const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.insertBefore(sec, node.firstChild);
   } catch (e) { console.warn('[cinema] track search', e); }
+}
+/* song search over a public catalogue (server side), popularity ranked */
+async function aurralTrackSearch(node, q) {
+  if (!aurralOn() || q.length < 2) return;
+  let list = null; try { list = await cget('/music/search', { q }); } catch (e) { list = null; }
+  if (!Array.isArray(list) || !list.length) return aurralTrackSearchOld(node, q);
+  try {
+    const BAD = /\b(karaoke|instrumental|tribute|8[- ]?bit|lullaby|made famous|in the style|backing track|midi)\b/i; const seen = new Set();
+    const flat = list.filter(x => { if (!x.title || !x.artist || BAD.test(x.title + ' ' + x.artist + ' ' + (x.album || ''))) return false; const k = norm(x.title) + '|' + norm(x.artist); if (seen.has(k)) return false; seen.add(k); return true; })
+      .map(x => ({ artistName: x.artist, trackName: x.title, title: x.title, albumName: x.album || '', durationMs: x.length, preview_url: x.preview, artworkUrl: x.image, id: x.id }));
+    const its = (await toTrackItems(flat.slice(0, 30))).filter(x => x._ext).slice(0, 10); if (!its.length) return;
+    const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.insertBefore(sec, node.firstChild);
+  } catch (e) { console.warn('[cinema] track search', e); aurralTrackSearchOld(node, q); }
 }
 Object.assign(TX.en, { recRediscover: 'Rediscover', recSimilar: 'Similar to', recSimilarNew: 'Similar artists you could add', recMore: 'Because you listen to' });
 Object.assign(TX.de, { recRediscover: 'Wiederentdecken', recSimilar: 'Ähnlich wie', recSimilarNew: 'Ähnliche Künstler zum Hinzufügen', recMore: 'Weil du hörst' });
