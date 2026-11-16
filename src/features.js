@@ -25,7 +25,7 @@ function cfg(k) {
   const d = (C.status && C.status.defaults) || {}; const allow = d.allowUserOverrides !== false; const u = allow ? CFGU[k] : undefined;
   if (k === 'hero') return feat('hero') && u !== false; if (k === 'peek') return feat('peek') && u !== false; if (k === 'infinite') return feat('infiniteScroll') && u !== false;
   if (u !== undefined) return u;
-  if (k === 'sections') { try { const j = d.sections && JSON.parse(d.sections); if (j && j.length) return j; } catch (e) { } return null; }
+  if (k === 'sections') { try { const j = d.sections && JSON.parse(d.sections); const OLD = 'continue,nextup,newMovies,newShows,top,watchlist,favs,random,genres'; if (j && j.length && !(j.length === 9 && j.every(x => x.on !== false) && j.map(x => x.id).join(',') === OLD)) return j; } catch (e) { } return null; } // the old built-in list, saved by an earlier config page, counts as "not customised"
   if (SRV[k] !== undefined && d[SRV[k]] !== undefined && d[SRV[k]] !== '') return d[SRV[k]];
   return CFG_DEF[k];
 }

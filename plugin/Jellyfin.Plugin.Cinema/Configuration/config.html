@@ -152,7 +152,9 @@
             var page = document.querySelector('#CinemaConfigPage');
             var cfg = {};
             var SECTIONS = [['continue', 'Continue watching'], ['nextup', 'Next up'], ['newMovies', 'Recently added movies'], ['newShows', 'Recently added shows'], ['top', 'Top rated'], ['watchlist', 'Watchlist'], ['favs', 'My List'], ['random', 'Picked for you'], ['genres', 'Random genre rows'], ['because', 'Because you watched'], ['seerrTrending', 'Seerr trending'], ['seerrMovies', 'Seerr popular movies'], ['seerrRec', 'Seerr recommendations']];
-            var DEFAULT_ON = ['continue', 'nextup', 'newMovies', 'newShows', 'top', 'watchlist', 'favs', 'random', 'genres'];
+            SECTIONS = SECTIONS.concat([['spotlight', 'Spotlight'], ['top10Movies', 'Top 10 movies'], ['top10Shows', 'Top 10 shows'], ['genreTiles', 'Browse by genre tiles'], ['recentEps', 'New episodes'], ['collections', 'Collections'], ['unwatched', 'Unwatched gems']].filter(function (n) { return !SECTIONS.some(function (o) { return o[0] === n[0]; }); }));
+            var DEFAULT_ON = ['continue', 'nextup', 'spotlight', 'top10Movies', 'newMovies', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'watchlist', 'collections', 'top', 'unwatched', 'favs', 'random', 'genres'];
+            var secsDirty = false, secsReset = false;
             var secs = [];
             var COLORS = ['#e50914', '#ff6a3d', '#f5b301', '#34c759', '#0a84ff', '#8b5cf6', '#ff2d92', '#ffffff'];
 
@@ -179,7 +181,8 @@
                 try { var j = JSON.parse(cfg.DefaultSections || ''); if (j && j.length) return j; } catch (e) { }
                 return def;
             }
-            function drawSecs() {
+            function drawSecs(changed) {
+                if (changed) { secsDirty = true; }
                 var host = page.querySelector('#CinSecs'); host.innerHTML = '';
                 var name = function (id) { var f = SECTIONS.filter(function (s) { return s[0] === id; })[0]; return f ? f[1] : id; };
                 secs.forEach(function (s, i) {
@@ -187,16 +190,16 @@
                     row.innerHTML = '<b>' + name(s.id) + '</b>';
                     var ctl = document.createElement('div');
                     var mk = function (txt, fn) { var b = document.createElement('button'); b.className = 'cin-mini'; b.textContent = txt; b.onclick = fn; ctl.appendChild(b); };
-                    mk('↑', function () { if (i) { var t = secs[i - 1]; secs[i - 1] = secs[i]; secs[i] = t; drawSecs(); } });
-                    mk('↓', function () { if (i < secs.length - 1) { var t = secs[i + 1]; secs[i + 1] = secs[i]; secs[i] = t; drawSecs(); } });
-                    var sw = document.createElement('button'); sw.className = 'cin-sw' + (s.on === false ? '' : ' on'); sw.onclick = function () { s.on = s.on === false; drawSecs(); }; ctl.appendChild(sw);
+                    mk('↑', function () { if (i) { var t = secs[i - 1]; secs[i - 1] = secs[i]; secs[i] = t; secsReset = false; drawSecs(true); } });
+                    mk('↓', function () { if (i < secs.length - 1) { var t = secs[i + 1]; secs[i + 1] = secs[i]; secs[i] = t; drawSecs(true); } });
+                    var sw = document.createElement('button'); sw.className = 'cin-sw' + (s.on === false ? '' : ' on'); sw.onclick = function () { s.on = s.on === false; drawSecs(true); }; ctl.appendChild(sw);
                     row.appendChild(ctl); host.appendChild(row);
                 });
                 var missing = SECTIONS.filter(function (s) { return !secs.some(function (x) { return x.id === s[0]; }); });
                 if (missing.length) {
                     var sel = document.createElement('select'); sel.style.cssText = 'width:240px;margin-top:8px';
                     sel.innerHTML = '<option value="">Add a row...</option>' + missing.map(function (m) { return '<option value="' + m[0] + '">' + m[1] + '</option>'; }).join('');
-                    sel.onchange = function () { if (sel.value) { secs.push({ id: sel.value, on: true }); drawSecs(); } };
+                    sel.onchange = function () { if (sel.value) { secs.push({ id: sel.value, on: true }); secsReset = false; drawSecs(true); } };
                     host.appendChild(sel);
                 }
             }
@@ -223,7 +226,7 @@
                     $$('[data-k]').forEach(function (el) { var k = el.getAttribute('data-k'); var v = el.value; if (el.type === 'number') v = parseInt(v, 10) || 0; c[k] = typeof v === 'string' ? v.trim() : v; });
                     $$('[data-sw]').forEach(function (b) { c[b.getAttribute('data-sw')] = b.classList.contains('on'); });
                     c.AccentColor = cfg.AccentColor || c.AccentColor;
-                    c.DefaultSections = JSON.stringify(secs);
+                    if (secsReset) { c.DefaultSections = ''; } else if (secsDirty) { c.DefaultSections = JSON.stringify(secs); } // only when the rows were edited here: otherwise new built-in rows keep arriving with updates
                     ApiClient.updatePluginConfiguration(pluginId, c).then(function (r) { Dashboard.processPluginConfigurationUpdateResult(r); cfg = c; page.querySelector('#CinSaved').textContent = 'Saved. Users see changes after a page reload.'; chips(); });
                 });
             }
@@ -239,7 +242,7 @@
                 $$('.cin-panel').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-panel') === tab); });
             });
             page.querySelector('#CinSave').onclick = save;
-            page.querySelector('#CinSecsReset').onclick = function () { secs = DEFAULT_ON.map(function (id) { return { id: id, on: true }; }); drawSecs(); };
+            page.querySelector('#CinSecsReset').onclick = function () { secs = DEFAULT_ON.map(function (id) { return { id: id, on: true }; }); secsDirty = false; secsReset = true; drawSecs(); };
             $$('[data-test]').forEach(function (btn) {
                 btn.onclick = function () {
                     var s = btn.getAttribute('data-test'); var out = page.querySelector('[data-res="' + s + '"]'); out.textContent = 'Saving and testing...';
