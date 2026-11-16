@@ -96,7 +96,8 @@ html.cx-ready .MuiMenuItem-root.Mui-selected { background: var(--dx-a-soft) !imp
 html.cx-ready .MuiMenuItem-root:hover { background: rgba(255, 255, 255, .08) !important; }
 
 /* classic (non-React) admin screens: sections, lists, inputs */
-html.cx-ready .content-primary, html.cx-ready .content-secondary { max-width: 1100px; }
+html.cx-ready .content-primary, html.cx-ready .content-secondary { max-width: 1500px; }
+html.cx-ready #dashboardPage .content-primary, html.cx-ready #dashboardPage .content-secondary { max-width: none; }
 html.cx-ready .verticalSection, html.cx-ready .detailSection { margin-bottom: 30px; }
 html.cx-ready .paperList { background: var(--dx-card) !important; border: 1px solid var(--dx-line); }
 html.cx-ready .listItem-content, html.cx-ready .listItemBody { color: #e8e8ec; }
@@ -124,3 +125,13 @@ html.cx-ready .card .cardContent, html.cx-ready .cardBox { border-radius: 18px; 
 html.cx-ready .cardBox { background: var(--dx-card) !important; border: 1px solid var(--dx-line); overflow: hidden; transition: border-color .2s, transform .2s; }
 html.cx-ready .cardBox:hover { border-color: rgba(255, 255, 255, .16); }
 html.cx-ready .cardFooter, html.cx-ready .cardText { color: #d4d4da; }
+
+/* app bar + drawer: flat, full width, no card rounding */
+html.cx-ready .MuiAppBar-root.MuiPaper-root { border-radius: 0 !important; background: rgba(12, 12, 14, .88) !important; backdrop-filter: blur(18px) saturate(1.2); border: 0 !important; border-bottom: 1px solid rgba(255,255,255,.07) !important; box-shadow: none !important; }
+html.cx-ready .MuiAppBar-root .MuiToolbar-root { min-height: 56px; padding: 0 20px; }
+html.cx-ready .MuiDrawer-paper.MuiPaper-root, html.cx-ready .MuiDrawer-root .MuiPaper-root { border-radius: 0 !important; border: 0 !important; border-right: 1px solid rgba(255,255,255,.07) !important; box-shadow: none !important; }
+html.cx-ready .MuiAppBar-root .MuiIconButton-root { width: 40px; height: 40px; }
+html.cx-ready .MuiAppBar-root .MuiAvatar-root { width: 34px; height: 34px; }
+html.cx-ready main.MuiBox-root, html.cx-ready .skinBody { max-width: none !important; }
+html.cx-ready #dashboardPage .padded-left, html.cx-ready .dashboardContent { padding-left: clamp(16px, 2vw, 36px); padding-right: clamp(16px, 2vw, 36px); }
+html.cx-ready .dashboardColumn { max-width: none; }

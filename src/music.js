@@ -346,6 +346,7 @@ function buildSP() {
 const tint = async (url) => { const c = await dominant(url); C.sp.el.style.setProperty('--tint', rgb(c, 1)); C.sp.bgEl.style.setProperty('--tint', rgb(c.map(v => Math.round(v * .8)))); };
 function setHeader(opts) {
   opts = opts || {}; const hd = C.sp.header;
+  { const typing = hd.querySelector('.sp-hsearch input'); if (opts.search && typing && document.activeElement === typing) return; }
   const mob = matchMedia('(max-width: 800px)').matches; const rt = parse(); const v0 = rt.parts[2] === 'home' ? '' : (rt.parts[2] || '');
   if (mob) {
     const nm = (ME && ME.Name) || 'U';

@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.16.0",
+                             "changelog":  "Search box keeps focus while typing, cleaner Top 10 numbers and Spotlight labels, no hover work while scrolling, endless rows load in batches ahead of the scroll position, dashboard bar and content use the full width.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.16.0.zip",
+                             "checksum":  "64608c0200d25d2280305757c8ddb7ae",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.15.0",
                              "changelog":  "Better song search for music requests (popularity ranked public catalogue, switchable in the config), back button on phones closes the player or lyrics instead of leaving the music page.",
                              "targetAbi":  "12.4.0.0",

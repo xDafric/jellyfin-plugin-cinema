@@ -192,16 +192,16 @@ async function endlessRows(rows, page) {
   [2020, 2010, 2000, 1990, 1980, 1970].forEach(d => queue.push({ kind: 'decade', from: d }));
   queue.push({ kind: 'rated' }, { kind: 'unwatched' }, { kind: 'recentShows' });
   const used = new Set(rows.querySelectorAll('.nf-row h2') ? [...rows.querySelectorAll('.nf-row h2')].map(x => x.textContent.replace(/ ›$/, '')) : []);
-  const next = () => {
-    const q = queue.shift(); if (!q) { io.disconnect(); sentinel.remove(); return; }
-    if (q.kind === 'genre') { if (used.has(q.name)) return next(); lazyRow(rows, q.name, () => items({ IncludeItemTypes: 'Movie,Series', Genres: q.name, SortBy: 'Random', Limit: 24 }), 'poster', { min: 4, href: '#/c/browse/genre/' + encodeURIComponent(q.name) }); }
+  const one = () => {
+    const q = queue.shift(); if (!q) { try { io.disconnect(); } catch (e) { } sentinel.remove(); return; }
+    if (q.kind === 'genre') { if (used.has(q.name)) return one(); lazyRow(rows, q.name, () => items({ IncludeItemTypes: 'Movie,Series', Genres: q.name, SortBy: 'Random', Limit: 24 }), 'poster', { min: 4, href: '#/c/browse/genre/' + encodeURIComponent(q.name) }); }
     else if (q.kind === 'decade') { const years = Array.from({ length: 10 }, (_, i) => q.from + i).join(','); lazyRow(rows, t('fromDecade') + ' ' + q.from + 's', () => items({ IncludeItemTypes: 'Movie', Years: years, SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24 }), 'poster', { min: 4, href: '#/c/browse/decade/' + q.from }); }
     else if (q.kind === 'rated') lazyRow(rows, t('top'), () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24, StartIndex: 20 }), 'poster', { min: 4, href: '#/c/browse/top/x' });
     else if (q.kind === 'unwatched') lazyRow(rows, t('unwatched'), () => items({ IncludeItemTypes: 'Movie', Filters: 'IsUnplayed', SortBy: 'Random', Limit: 24 }), 'poster', { min: 4, href: '#/c/browse/unwatched/x' });
     else if (q.kind === 'recentShows') lazyRow(rows, t('newShows'), () => items({ IncludeItemTypes: 'Series', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24, StartIndex: 12 }), 'poster');
-    setTimeout(() => { if (sentinel.isConnected && sentinel.getBoundingClientRect().top < innerHeight + 900) next(); }, 1200);
   };
-  const io = new IntersectionObserver(es => { if (es[0].isIntersecting) next(); }, { root: C.nf.el, rootMargin: '900px' });
+  const next = () => { for (let i = 0; i < 4; i++) one(); setTimeout(() => { if (sentinel.isConnected && sentinel.getBoundingClientRect().top < innerHeight + 3200) next(); }, 500); };
+  const io = new IntersectionObserver(es => { if (es[0].isIntersecting) next(); }, { root: C.nf.el, rootMargin: '3200px' });
   io.observe(sentinel);
 }
 
