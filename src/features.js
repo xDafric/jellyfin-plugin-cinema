@@ -48,7 +48,7 @@ function applyCfg() { const r = document.documentElement; r.style.setProperty('-
 /* ---------- peek popover (replaces card hover) ---------- */
 const PEEK = { el: null, t: 0, hideT: 0, cur: null };
 function scrollHost() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }
-function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); PEEK.el.addEventListener('wheel', e => { const sh = scrollHost(); if (sh) sh.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' }); hidePeek(); }, { passive: true }); getUI().append(PEEK.el); } return PEEK.el; }
+function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); PEEK.el.addEventListener('wheel', e => { const sh = scrollHost(); if (sh) sh.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'instant' }); PEEK.el.style.pointerEvents = 'none'; hidePeek(); }, { passive: true }); /* instant: the page has CSS smooth scrolling, which made every forwarded wheel tick restart a slow animation */ getUI().append(PEEK.el); } return PEEK.el; }
 function hidePeek(delay) { clearTimeout(PEEK.t); clearTimeout(PEEK.hideT); PEEK.hideT = setTimeout(() => { if (PEEK.el) PEEK.el.classList.remove('show'); PEEK.cur = null; }, delay || 0); }
 function showPeek(anchor, d) {
   const el = peekEl(); const r = anchor.getBoundingClientRect();
@@ -64,7 +64,7 @@ function showPeek(anchor, d) {
   el.classList.remove('show'); el.style.visibility = 'hidden'; el.style.top = '0px'; el.style.left = left + 'px';
   requestAnimationFrame(() => {
     const H = el.offsetHeight; let top = r.top + r.height / 2 - H / 2 - 24; top = Math.max(80, Math.min(innerHeight - H - 12, top));
-    el.style.top = top + 'px'; el.style.visibility = ''; requestAnimationFrame(() => el.classList.add('show'));
+    el.style.top = top + 'px'; el.style.visibility = ''; el.style.pointerEvents = ''; requestAnimationFrame(() => el.classList.add('show'));
   });
   PEEK.cur = anchor;
 }
