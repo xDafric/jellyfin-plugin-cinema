@@ -79,7 +79,7 @@ public class ExtrasController : ControllerBase
         await System.IO.File.WriteAllTextAsync(Path.Combine(Dir("letterboxd"), user.ToLowerInvariant() + ".json"), arr.ToJsonString()).ConfigureAwait(false);
     }
 
-    private static void LbMerge(Dictionary<string, JsonObject> d, int? tmdb, string title, int? year, string? date, double? rating, string? slug)
+    private static void LbMerge(Dictionary<string, JsonObject> d, int? tmdb, string title, int? year, string? date, double? rating, string? slug, bool? liked = null, bool? rewatch = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -88,9 +88,16 @@ public class ExtrasController : ControllerBase
 
         // a film first imported by name gets its TMDb id later: drop the name based duplicate
         var key = LbKey(tmdb, title, year);
-        if (tmdb is > 0)
+        if (tmdb is > 0 && d.Remove(LbKey(null, title, year), out var byName))
         {
-            d.Remove(LbKey(null, title, year));
+            // the same film was known by name only: carry its rating and date over
+            rating ??= byName["rating"]?.GetValue<double?>();
+            slug ??= byName["slug"]?.ToString();
+            var bd = byName["date"]?.ToString();
+            if (!string.IsNullOrEmpty(bd) && (string.IsNullOrEmpty(date) || string.CompareOrdinal(bd, date) > 0))
+            {
+                date = bd;
+            }
         }
 
         if (d.TryGetValue(key, out var old))
@@ -103,9 +110,11 @@ public class ExtrasController : ControllerBase
 
             rating ??= old["rating"]?.GetValue<double?>();
             slug ??= old["slug"]?.ToString();
+            liked ??= old["liked"]?.GetValue<bool?>();
+            rewatch ??= old["rewatch"]?.GetValue<bool?>();
         }
 
-        d[key] = new JsonObject { ["tmdb"] = tmdb, ["title"] = title, ["year"] = year, ["date"] = date, ["rating"] = rating, ["slug"] = slug };
+        d[key] = new JsonObject { ["tmdb"] = tmdb, ["title"] = title, ["year"] = year, ["date"] = date, ["rating"] = rating, ["slug"] = slug, ["liked"] = liked, ["rewatch"] = rewatch };
     }
 
     private async Task<int> LbFetchRss(string user, Dictionary<string, JsonObject> d, CancellationToken ct)
@@ -138,7 +147,7 @@ public class ExtrasController : ControllerBase
             double? rating = double.TryParse(item.Element(lb + "memberRating")?.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var r) ? r : null;
             var link = item.Element("link")?.Value ?? string.Empty;
             var m = Regex.Match(link, @"/film/([^/]+)/");
-            LbMerge(d, tmdb, title, year, watched, rating, m.Success ? m.Groups[1].Value : null);
+            LbMerge(d, tmdb, title, year, watched, rating, m.Success ? m.Groups[1].Value : null, item.Element(lb + "memberLike")?.Value == "Yes", item.Element(lb + "rewatch")?.Value == "Yes");
             n++;
         }
 
@@ -213,7 +222,8 @@ public class ExtrasController : ControllerBase
                 }
 
                 int? year = int.TryParse(o["year"]?.ToString(), out var y) ? y : null;
-                LbMerge(d, null, title, year, o["date"]?.ToString(), null, null);
+                double? rating = double.TryParse(o["rating"]?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var rt) && rt > 0 ? rt : null;
+                LbMerge(d, null, title, year, o["date"]?.ToString(), rating, null);
                 n++;
             }
 

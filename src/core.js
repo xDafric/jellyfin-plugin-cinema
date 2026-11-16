@@ -359,6 +359,6 @@ async function itemView(page, id) {
   }
   if (people.length) body.append(h('section', { class: 'nf-sect' }, h('h2', {}, t('cast')), h('div', { class: 'nf-cast' }, people.filter(p => p.Type === 'Actor').slice(0, 20).map(p => h('a', { class: 'nf-person', href: '#/c/person/' + p.Id }, h('div', Object.assign({ class: 'pi' }, bg(p.PrimaryImageTag ? U(p.Id, 'Primary', 200, p.PrimaryImageTag) : ''))), p.Name, h('small', {}, p.Role || ''))))));
   if (feat('mediaInfo')) { const admin = (await me()).Policy.IsAdministrator; const mi = mediaInfoSection(it, admin); if (mi) body.append(mi); }
-  if (feat('ratings')) ratingsRow(it, d); if (feat('seerrSimilar')) seerrSimilarRow(it, body);
+  if (feat('ratings')) ratingsRow(it, d); try { lbDetailChip(it, d); } catch (e) { } if (feat('seerrSimilar')) seerrSimilarRow(it, body);
   if (!isBox) { const sim = await api('Items/' + it.Id + '/Similar', { userId: uid(), limit: 14, Fields: F_BASE }).catch(() => null); if (sim && sim.Items && sim.Items.length) { const sec = h('section', { class: 'nf-sect', style: 'margin-left:calc(-1 * var(--pad));margin-right:calc(-1 * var(--pad))' }); sec.append(row(t('similar'), sim.Items, 'poster')); body.append(sec); } }
 }

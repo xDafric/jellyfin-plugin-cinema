@@ -248,3 +248,5 @@ html.cx-tv .nf-row { contain: layout style; }
 .set-p { margin: 0 0 14px; color: #a8a8b2; line-height: 1.55; font-size: 14px; }
 
 .nf-card .dmark.seen .dtx { display: none; } .nf-card .dmark.seen { padding: 5px 7px; }
+
+.rt-chip.lb-chip small { margin-left: 6px; }

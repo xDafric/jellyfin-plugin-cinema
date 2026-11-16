@@ -3,7 +3,7 @@ Object.assign(TX.en, {
   lbTitle: 'Letterboxd', lbIntro: 'Films you logged as watched on Letterboxd are marked as watched here, and they are labelled in Discover. This is one way only: nothing is ever written to Letterboxd.',
   lbUser: 'Letterboxd username', lbUserHint: 'The name in your profile address, letterboxd.com/NAME. The profile has to be public.', lbSave: 'Save and sync', lbSyncNow: 'Sync now',
   lbStatus: 'Status', lbStatusN: 'films known', lbNever: 'not synced yet', lbSynced: 'films marked as watched', lbImport: 'Import everything you marked as watched', lbImportHint: 'Letterboxd shares only your latest ~50 diary entries automatically, and films you just ticked as watched (without a diary entry) are not in that feed at all. To bring in all of them: on Letterboxd open Settings, Import & Export, Export your data, then pick the downloaded ZIP file (or watched.csv) here. Repeat it now and then to catch up; new diary entries arrive automatically.',
-  lbMatched: 'of your library films found on Letterboxd', lbSeen: 'Watched', lbSeenOn: 'Watched on Letterboxd', lbHideSeen: 'Hide watched', lbImported: 'imported', lbOff: 'Letterboxd sync is turned off on the server.', lbErr: 'Letterboxd could not be reached',
+  lbMatched: 'of your library films found on Letterboxd', lbSeen: 'Watched', lbSeenOn: 'Watched on Letterboxd', lbYourRating: 'Your Letterboxd rating and viewing', lbWatchedOn: 'watched on', lbRewatch: 'rewatch', lbRated: 'ratings saved', lbHideSeen: 'Hide watched', lbImported: 'imported', lbOff: 'Letterboxd sync is turned off on the server.', lbErr: 'Letterboxd could not be reached',
   archive: 'Archive', archived: 'Archived', archiveIntro: 'Movies you archived: the file is gone to free up space, but title, poster and details are kept here. Restore a movie to have it downloaded again.', archOff: 'The archive is turned off on the server.', archEmpty: 'Nothing archived yet. Use the three-dot menu of a movie, then "Archive".',
   archiveDo: 'Archive…', archDlgTitle: 'Archive this movie', archDlgIntro: 'This frees up disk space. What happens:', archStep1: 'Title, details and pictures are saved in the archive.', archStep2: 'The movie file is deleted from the disk and the movie leaves your library.', archStep3: 'In Radarr the file is deleted and the movie is no longer monitored, so it is not downloaded again.',
   archRadarr: 'Also delete it in Radarr and stop monitoring it', archRadarrOff: 'Radarr is not connected', archGo: 'Archive and delete file', archBusy: 'Archiving…', archDone: 'Archived', archSize: 'Frees up', archWarn: 'This cannot be undone from here. You can restore the movie later by downloading it again.',
@@ -14,7 +14,7 @@ Object.assign(TX.de, {
   lbTitle: 'Letterboxd', lbIntro: 'Filme, die du auf Letterboxd als gesehen eingetragen hast, werden hier als gesehen markiert und in Entdecken gekennzeichnet. Das geht nur in eine Richtung: Es wird nie etwas zu Letterboxd geschrieben.',
   lbUser: 'Letterboxd-Benutzername', lbUserHint: 'Der Name in deiner Profiladresse, letterboxd.com/NAME. Das Profil muss öffentlich sein.', lbSave: 'Speichern und abgleichen', lbSyncNow: 'Jetzt abgleichen',
   lbStatus: 'Stand', lbStatusN: 'Filme bekannt', lbNever: 'noch nicht abgeglichen', lbSynced: 'Filme als gesehen markiert', lbImport: 'Alles importieren, was du als gesehen markiert hast', lbImportHint: 'Letterboxd gibt automatisch nur deine letzten ~50 Tagebuch-Einträge heraus, und Filme, die du nur als gesehen abgehakt hast (ohne Tagebuch-Eintrag), stehen in diesem Feed gar nicht. Um alle zu übernehmen: Auf Letterboxd Settings, Import & Export, Export your data öffnen, dann hier die heruntergeladene ZIP-Datei (oder watched.csv) wählen. Wiederhole das ab und zu; neue Tagebuch-Einträge kommen automatisch.',
-  lbMatched: 'deiner Bibliotheksfilme auf Letterboxd gefunden', lbSeen: 'Gesehen', lbSeenOn: 'Auf Letterboxd gesehen', lbHideSeen: 'Gesehene ausblenden', lbImported: 'importiert', lbOff: 'Der Letterboxd-Abgleich ist auf dem Server ausgeschaltet.', lbErr: 'Letterboxd war nicht erreichbar',
+  lbMatched: 'deiner Bibliotheksfilme auf Letterboxd gefunden', lbSeen: 'Gesehen', lbSeenOn: 'Auf Letterboxd gesehen', lbYourRating: 'Deine Letterboxd-Bewertung und Sichtung', lbWatchedOn: 'gesehen am', lbRewatch: 'Wiederholung', lbRated: 'Bewertungen gespeichert', lbHideSeen: 'Gesehene ausblenden', lbImported: 'importiert', lbOff: 'Der Letterboxd-Abgleich ist auf dem Server ausgeschaltet.', lbErr: 'Letterboxd war nicht erreichbar',
   archive: 'Archiv', archived: 'Archiviert', archiveIntro: 'Filme, die du archiviert hast: Die Datei ist gelöscht, um Platz zu sparen, Titel, Poster und Details bleiben hier erhalten. Stelle einen Film wieder her, damit er erneut geladen wird.', archOff: 'Das Archiv ist auf dem Server ausgeschaltet.', archEmpty: 'Noch nichts archiviert. Nutze das Drei-Punkte-Menü eines Films, dann "Archivieren".',
   archiveDo: 'Archivieren…', archDlgTitle: 'Diesen Film archivieren', archDlgIntro: 'Das gibt Speicherplatz frei. Was passiert:', archStep1: 'Titel, Details und Bilder werden im Archiv gespeichert.', archStep2: 'Die Filmdatei wird von der Festplatte gelöscht und der Film verschwindet aus deiner Bibliothek.', archStep3: 'In Radarr wird die Datei gelöscht und der Film nicht mehr überwacht, damit er nicht erneut geladen wird.',
   archRadarr: 'Auch in Radarr löschen und nicht mehr überwachen', archRadarrOff: 'Radarr ist nicht verbunden', archGo: 'Archivieren und Datei löschen', archBusy: 'Archiviere…', archDone: 'Archiviert', archSize: 'Gibt frei', archWarn: 'Das lässt sich von hier aus nicht rückgängig machen. Du kannst den Film später wiederherstellen, indem er neu geladen wird.',
@@ -36,11 +36,18 @@ function lbLoad(refresh) {
   LB.p = api('Cinema/letterboxd/watched', params).then(r => {
     LB.tmdb.clear(); LB.names.clear();
     (r.items || []).forEach(e => { if (e.tmdb) LB.tmdb.set(+e.tmdb, e); LB.names.set(lbNorm(e.title) + '|' + (e.year || ''), e); });
-    LB.n = (r.items || []).length; LB.err = r.error || ''; LB.at = Date.now(); return r;
+    LB.n = (r.items || []).length; LB.rated = (r.items || []).filter(e => e.rating).length; LB.err = r.error || ''; LB.at = Date.now(); return r;
   }).catch(e => { LB.err = String((e && e.message) || e); return null; }).finally(() => { LB.p = null; });
   return LB.p;
 }
 /* is this film (a library item or a Seerr result) watched on Letterboxd? */
+function lbDetailChip(it, container) {
+  if (!optOn('letterboxd') || it.Type !== 'Movie') return; const e = lbMatch(it); if (!e || (!e.rating && !e.date)) return;
+  const info = $('.nf-dinfo .nf-meta', container); if (!info) return;
+  const when = e.date ? new Date(e.date + 'T12:00:00').toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+  const chip = h('span', { class: 'rt-chip lb-chip', title: t('lbYourRating') }, 'Letterboxd ', e.rating ? h('b', {}, '★ ' + Number(e.rating).toFixed(1)) : null, e.liked ? h('b', { class: 'lb-heart' }, ' ♥') : null, when ? h('small', {}, t('lbWatchedOn') + ' ' + when + (e.rewatch ? ' · ' + t('lbRewatch') : '')) : null);
+  const row = $('.rt-row', container); if (row) row.append(chip); else info.after(h('div', { class: 'rt-row' }, chip));
+}
 function lbSeen(x) {
   if (!LB.n) return null;
   if (x.mediaType === 'tv' || x.Type === 'Series') return null;
@@ -99,7 +106,7 @@ async function zipTexts(buf) {
     if (v.getUint32(p, true) !== 0x02014b50) break;
     const method = v.getUint16(p + 10, true), csize = v.getUint32(p + 20, true), nl = v.getUint16(p + 28, true), el = v.getUint16(p + 30, true), cl = v.getUint16(p + 32, true), off = v.getUint32(p + 42, true);
     const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl)).toLowerCase(); p += 46 + nl + el + cl;
-    if (!/(^|\/)(watched|diary)\.csv$/.test(name)) continue;
+    if (!/(^|\/)(watched|diary|ratings)\.csv$/.test(name)) continue;
     const lnl = v.getUint16(off + 26, true), lel = v.getUint16(off + 28, true), start = off + 30 + lnl + lel; const data = u8.subarray(start, start + csize);
     out[name.split('/').pop()] = method === 0 ? new TextDecoder().decode(data) : await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
   }
@@ -109,10 +116,11 @@ function csvFilms(text) {
   const rows = csvRows(String(text).replace(/^\uFEFF/, '')); if (rows.length < 2) return [];
   const head = rows[0].map(x => x.trim().toLowerCase()); const iN = head.indexOf('name'), iY = head.indexOf('year'); const iD = head.indexOf('watched date') >= 0 ? head.indexOf('watched date') : head.indexOf('date');
   if (iN < 0) throw new Error('"Name" column?');
-  return rows.slice(1).filter(r => r[iN]).map(r => ({ title: r[iN], year: iY >= 0 ? +r[iY] || null : null, date: iD >= 0 ? (r[iD] || '').slice(0, 10) : null }));
+  const iR = head.indexOf('rating'), isRatings = iR >= 0 && head.indexOf('watched date') < 0 && head.indexOf('rewatch') < 0; // ratings.csv: its date is the rating date, not the viewing
+  return rows.slice(1).filter(r => r[iN]).map(r => ({ title: r[iN], year: iY >= 0 ? +r[iY] || null : null, date: isRatings ? null : (iD >= 0 ? (r[iD] || '').slice(0, 10) : null), rating: iR >= 0 ? +r[iR] || null : null }));
 }
 async function lbReadExport(file) {
-  if (/\.zip$/i.test(file.name)) { const t_ = await zipTexts(await file.arrayBuffer()); const all = []; Object.keys(t_).sort().reverse().forEach(k => all.push(...csvFilms(t_[k]))); if (!all.length) throw new Error('watched.csv?'); return all; }
+  if (/\.zip$/i.test(file.name)) { const t_ = await zipTexts(await file.arrayBuffer()); const all = []; ['ratings.csv', 'watched.csv', 'diary.csv'].forEach(k => { if (t_[k]) all.push(...csvFilms(t_[k])); }); if (!all.length) throw new Error('watched.csv?'); return all; }
   return csvFilms(await file.text());
 }
 async function lbImportCsv(file, onDone) {
@@ -135,7 +143,7 @@ const archImg = (e, kind) => (kind === 'primary' ? e.hasPrimary : e.hasBackdrop)
 function lbArchBadges(x) {
   const out = []; const tm = +(x.id || x.tmdbId) || 0;
   if (tm && ARCH.tmdb.has(tm) && x.mediaType !== 'tv') out.push(h('span', { class: 'dmark arch' }, ic('lib', 'ic-s'), t('archived')));
-  const seen = lbSeen(x); if (seen) out.push(h('span', { class: 'dmark seen', title: t('lbSeenOn') + (seen.date ? ' · ' + seen.date : '') }, ic('eye', 'ic-s'), h('span', { class: 'dtx' }, t('lbSeen'))));
+  const seen = lbSeen(x); if (seen) out.push(h('span', { class: 'dmark seen', title: t('lbSeenOn') + (seen.date ? ' · ' + seen.date : '') }, ic('eye', 'ic-s'), h('span', { class: 'dtx' }, t('lbSeen') + (seen.rating ? ' ★ ' + Number(seen.rating).toFixed(1) : ''))));
   return out;
 }
 async function blobB64(url) { if (!url) return ''; try { const r = await fetch(url); if (!r.ok) return ''; const b = await r.blob(); return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.readAsDataURL(b); }); } catch (e) { return ''; } }
@@ -197,7 +205,7 @@ function lbarchCards(card_, row) {
   if (optOn('letterboxd')) {
     const inp = h('input', { type: 'text', value: lbUser(), placeholder: 'username', maxlength: 40, style: 'width:200px' });
     const stat = h('span', { class: 'lb-stat' });
-    const upd = () => { stat.textContent = LB.n ? LB.n + ' ' + t('lbStatusN') + (LB.last ? ' · ' + LB.last.matched + '/' + LB.last.of + ' ' + t('lbMatched') : '') + (LB.at ? ' · ' + new Date(LB.at).toLocaleTimeString() : '') + (LB.err ? ' · ⚠ ' + t('lbErr') : '') : (lbUser() ? (LB.err ? '⚠ ' + t('lbErr') : t('lbNever')) : '—'); };
+    const upd = () => { stat.textContent = LB.n ? LB.n + ' ' + t('lbStatusN') + (LB.rated ? ' · ' + LB.rated + ' ' + t('lbRated') : '') + (LB.last ? ' · ' + LB.last.matched + '/' + LB.last.of + ' ' + t('lbMatched') : '') + (LB.at ? ' · ' + new Date(LB.at).toLocaleTimeString() : '') + (LB.err ? ' · ⚠ ' + t('lbErr') : '') : (lbUser() ? (LB.err ? '⚠ ' + t('lbErr') : t('lbNever')) : '—'); };
     const save = h('button', { class: 'btn white', style: 'height:38px', onclick: async () => { const v = inp.value.trim().replace(/^@/, '').replace(/^https?:\/\/letterboxd\.com\//, '').replace(/\/.*$/, ''); await saveCfg({ lbUser: v || null }); stat.textContent = '…'; await lbSync(true); upd(); } }, t('lbSave'));
     const syncB = h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { stat.textContent = '…'; await lbSync(true); upd(); } }, t('lbSyncNow'));
     const file = h('input', { type: 'file', accept: '.zip,.csv,application/zip,text/csv', style: 'display:none', onchange: async e => { const f = e.target.files[0]; if (!f) return; stat.textContent = '…'; try { await lbImportCsv(f, n => { toast('✓ ' + n + ' ' + t('lbImported')); }); } catch (er) { toast('⚠ ' + (er.message || er)); } upd(); } });
