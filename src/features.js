@@ -70,11 +70,14 @@ function showPeek(anchor, d) {
 }
 function attachPeek(el, anchor, getDesc) {
   if (!matchMedia('(hover:hover) and (pointer:fine)').matches || !cfg('peek')) return;
-  el.addEventListener('pointerenter', () => { clearTimeout(PEEK.hideT); clearTimeout(PEEK.t); PEEK.t = setTimeout(() => showPeek(anchor, getDesc()), PEEK.cur ? 60 : (+cfg('peekDelay') || 320)); });
+  el.addEventListener('pointerenter', () => { clearTimeout(PEEK.hideT); clearTimeout(PEEK.t); const wait = Math.max(0, (PEEK.noUntil || 0) - Date.now()); PEEK.t = setTimeout(() => { if (el.matches(':hover')) showPeek(anchor, getDesc()); }, wait + (PEEK.cur ? 60 : (+cfg('peekDelay') || 320))); });
   el.addEventListener('pointerleave', () => { clearTimeout(PEEK.t); hidePeek(160); });
   el.addEventListener('click', () => hidePeek());
 }
-window.addEventListener('scroll', () => hidePeek(), { capture: true, passive: true });
+/* no previews while the page is moving (slow scrolling over cards used to open and close one after another) */
+const peekPause = () => { PEEK.noUntil = Date.now() + 550; clearTimeout(PEEK.t); hidePeek(); };
+window.addEventListener('scroll', peekPause, { capture: true, passive: true });
+window.addEventListener('wheel', peekPause, { capture: true, passive: true });
 
 function libDesc(it, poster) {
   const isEp = it.Type === 'Episode'; const hash = itemHash(it) || '#/home';

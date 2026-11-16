@@ -31,7 +31,9 @@ function tvInit() {
   const EXCL = e => !!e.closest('#cx-lite, .cx-nframe, h2') || e.matches('.nf-logo, .nf-logo *') || (e.matches('a') && !!e.closest('.sp-row')) || e.matches('.sp-row button.pl, .sp-hbtn') || (e.tagName === 'INPUT' && e.type === 'file');
   function buildRects() {
     const H = scrollHost(); const st = H ? H.scrollTop : 0; const m = new Map(); m._an = new Map();
+    const ov = document.documentElement.classList.contains('cx-on'); // our interface is showing: the stock page behind it must not take part
     document.querySelectorAll(SEL).forEach(e => {
+      if (ov && !e.closest('#cx, #cx-ui')) return;
       let x = e._tvx; if (x === undefined) { x = EXCL(e); e._tvx = x; } if (x || e.closest('[inert], .hide')) return;
       const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4 || r.bottom < -2400 || r.top > innerHeight + 2600) return;
       const sc = e.closest(SCR); const inHost = !!(H && H.contains(e));

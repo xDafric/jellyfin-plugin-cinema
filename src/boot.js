@@ -21,5 +21,6 @@ window.cinemaUI = { dev: { get C() { return C; }, seerrModal: x => seerrModal(x)
 /* while the page scrolls, cards ignore the pointer: no hover effects, previews or transitions get triggered underneath the wheel */
 (function () {
   const H = document.documentElement; let tm = 0;
-  window.addEventListener('scroll', () => { if (!H.classList.contains('cx-scrolling')) H.classList.add('cx-scrolling'); clearTimeout(tm); tm = setTimeout(() => H.classList.remove('cx-scrolling'), 140); }, { capture: true, passive: true });
+  if ((typeof TVM !== 'undefined' && TVM) || /CinemaTV/.test(navigator.userAgent)) return;
+  window.addEventListener('scroll', () => { if (!H.classList.contains('cx-scrolling')) H.classList.add('cx-scrolling'); clearTimeout(tm); tm = setTimeout(() => H.classList.remove('cx-scrolling'), 220); }, { capture: true, passive: true });
 })();
