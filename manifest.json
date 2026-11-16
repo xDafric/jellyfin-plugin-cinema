@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.21.0",
+                             "changelog":  "Calmer, minimal login page; slim integrated scrollbars instead of the browser default ones.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.21.0.zip",
+                             "checksum":  "69d9118df1da5fe6c60b3905cbc62bfe",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.20.0",
                              "changelog":  "Video player: new loading screen, skip icons, picture fit, skip length and subtitle delay, modern controls. TV: dialogs focus immediately, closed search box skipped, lighter focus visuals. Ratings line reserved on detail pages, genre tiles and Discover focus rings.",
                              "targetAbi":  "12.4.0.0",

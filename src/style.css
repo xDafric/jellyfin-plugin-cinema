@@ -14,9 +14,6 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
 :is(#cx, #cx-ui) svg { width: 24px; height: 24px; fill: currentColor; flex: none; display: block; }
 :is(#cx, #cx-ui) .ic-s svg { width: 16px; height: 16px; }
 :is(#cx, #cx-ui) .ic-l svg { width: 32px; height: 32px; }
-:is(#cx, #cx-ui) ::-webkit-scrollbar { width: 12px; height: 0; }
-:is(#cx, #cx-ui) ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 12px; border: 3px solid transparent; background-clip: content-box; }
-:is(#cx, #cx-ui) ::-webkit-scrollbar-track { background: transparent; }
 :is(#cx, #cx-ui) .hide { display: none !important; }
 :is(#cx, #cx-ui) .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 :is(#cx, #cx-ui) .clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

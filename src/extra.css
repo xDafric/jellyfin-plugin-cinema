@@ -78,8 +78,6 @@ html.cx-ready .emby-tab-button { border-radius: 999px !important; }
 html.cx-ready .emby-tab-button-active { background: #fff !important; color: #000 !important; }
 html.cx-ready .checkboxIcon, html.cx-ready .emby-checkbox:checked + span + .checkboxOutline { border-radius: 6px !important; }
 html.cx-ready .emby-checkbox:checked + span::before, html.cx-ready .emby-radio:checked + span::before { background: #fff !important; }
-html.cx-ready ::-webkit-scrollbar { width: 12px; height: 12px; }
-html.cx-ready ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); border-radius: 12px; border: 3px solid transparent; background-clip: content-box; }
 html.cx-ready .MuiChip-root, html.cx-ready .MuiAvatar-root { border-radius: 999px; }
 html.cx-ready .MuiIconButton-root, html.cx-ready .paper-icon-button-light, html.cx-ready .headerButton { border-radius: 50% !important; }
 
