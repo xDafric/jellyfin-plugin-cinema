@@ -17,10 +17,10 @@ import org.json.JSONObject
 class MainActivity : Activity() {
     private lateinit var store: Store
     private lateinit var web: WebView
-    private var returning = false
+    private var returning = false; private var blanked = false; private var savedHash = "#/home"
 
     inner class Bridge {
-        @JavascriptInterface fun play(itemId: String, startTicks: Long) { runOnUiThread { returning = true; web.evaluateJavascript("window.cxTvSleep&&window.cxTvSleep()", null); web.postDelayed({ web.onPause(); web.pauseTimers() }, 400); startActivity(Intent(this@MainActivity, PlayerActivity::class.java).putExtra("id", itemId).putExtra("ticks", startTicks)) } }
+        @JavascriptInterface fun play(itemId: String, startTicks: Long) { runOnUiThread { returning = true; web.evaluateJavascript("location.hash") { h -> savedHash = h?.trim('"')?.takeIf { it.startsWith("#") } ?: "#/home"; web.postDelayed({ web.loadUrl("about:blank"); blanked = true }, 300) }; startActivity(Intent(this@MainActivity, PlayerActivity::class.java).putExtra("id", itemId).putExtra("ticks", startTicks)) } }
         @JavascriptInterface fun exit() { runOnUiThread { finish() } }
         @JavascriptInterface fun logout() { runOnUiThread { store.clearLogin(); web.clearCache(true); CookieManager.getInstance().removeAllCookies(null); WebStorage.getInstance().deleteAllData(); startActivity(Intent(this@MainActivity, LoginActivity::class.java)); finish() } }
         @JavascriptInterface fun version(): String = "1.0.0"
@@ -73,7 +73,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::web.isInitialized) { web.onResume(); web.resumeTimers() }
+        if (::web.isInitialized) { web.onResume(); web.resumeTimers(); if (blanked) { blanked = false; web.loadUrl(store.url + "/web/index.html" + savedHash) } }
         if (returning) { returning = false; web.evaluateJavascript("window.cxTvResume&&window.cxTvResume()", null) }
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     }
