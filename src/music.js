@@ -121,7 +121,17 @@ function buildPlayer() {
 
   /* mobile mini + full */
   const mcv = h('div', { class: 'cv' }), mtn = h('b', { class: 'ell' }), mta = h('span', { class: 'ell' }), mpp = h('button', { class: 'pl-btn', onclick: e => { e.stopPropagation(); toggle(); } }, ic('play')), mfill = h('i');
-  const mini = h('div', { class: 'sp-mini hide', onclick: () => openFull(true) }, mcv, h('div', { class: 'tx' }, mtn, mta), mpp, h('div', { class: 'mbar' }, mfill));
+  const mLike = h('div', { class: 'mlike', onclick: e => e.stopPropagation() });
+  const mbar = h('div', { class: 'mbar' }, h('div', { class: 'mtrack' }, mfill, h('b', { class: 'mknob' })));
+  { let drag = false; const frac = e => { const r = mbar.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+    const paint = f => { mfill.style.width = f * 100 + '%'; mbar.querySelector('.mknob').style.left = f * 100 + '%'; };
+    mbar.addEventListener('click', e => e.stopPropagation());
+    mbar.addEventListener('pointerdown', e => { e.stopPropagation(); drag = true; mbar.classList.add('drag'); mbar.setPointerCapture(e.pointerId); paint(frac(e)); });
+    mbar.addEventListener('pointermove', e => { if (drag) { e.stopPropagation(); paint(frac(e)); } });
+    const end = e => { if (!drag) return; e.stopPropagation(); drag = false; mbar.classList.remove('drag'); const f = frac(e); if (P.audio.duration) P.audio.currentTime = f * P.audio.duration; };
+    mbar.addEventListener('pointerup', end); mbar.addEventListener('pointercancel', () => { drag = false; mbar.classList.remove('drag'); });
+    mbar.isDragging = () => drag; }
+  const mini = h('div', { class: 'sp-mini hide', onclick: () => openFull(true) }, mcv, h('div', { class: 'tx' }, mtn, mta), mLike, mpp, mbar);
   const fcv = h('div', { class: 'cvbig' }), ftn = h('div', { class: 'tn' }), fta = h('div', { class: 'ta' }), fLike = h('div');
   const fcur = h('span', {}, '0:00'), fdur = h('span', {}, '0:00');
   const fseek = seekBar(null, (f, commit) => { if (P.audio.duration) { if (commit) P.audio.currentTime = f * P.audio.duration; fcur.textContent = fmtTime(f * P.audio.duration); } });
@@ -161,11 +171,11 @@ function buildPlayer() {
       tn.replaceChildren(h('a', { href: '#/c/music/album/' + (it.AlbumId || '') }, it.Name)); tn.querySelector('a').addEventListener('click', e => { if (!it.AlbumId) e.preventDefault(); });
       ta.replaceChildren(...[].concat(artistLinks(it)).flat());
       mtn.textContent = ftn.textContent = it.Name; mta.textContent = fta.textContent = artistText(it);
-      likeSlot.replaceChildren(trackLikeBtn(it)); fLike.replaceChildren(trackLikeBtn(it));
+      likeSlot.replaceChildren(trackLikeBtn(it)); fLike.replaceChildren(trackLikeBtn(it)); mLike.replaceChildren(trackLikeBtn(it));
       dominant(trackImg(it, 64)).then(c => { full.style.setProperty('--tint', rgb(c)); mini.style.setProperty('--mini', rgb(c.map(v => Math.round(v * .55)))); });
       tDur.textContent = fdur.textContent = fmtTime((it.RunTimeTicks || 0) / 1e7);
     }
-    $$('.pl-btn', likeSlot).concat($$('.pl-btn', fLike)).forEach(b => b._upd && b._upd());
+    $$('.pl-btn', likeSlot).concat($$('.pl-btn', fLike), $$('.pl-btn', mLike)).forEach(b => b._upd && b._upd());
     const pi = playing ? 'pause' : 'play';
     [bPlay, fb.pp, mpp].forEach(b => b.replaceChildren(ic(pi)));
     [bShuffle, fb.sh].forEach(b => b.classList.toggle('on', P.shuffle));
@@ -181,7 +191,7 @@ function buildPlayer() {
     const d = P.audio.duration || ((cur() || {}).RunTimeTicks || 0) / 1e7 || 0; const f = d ? P.audio.currentTime / d : 0;
     if (!seek.dragging()) { seek.set(f); tCur.textContent = fmtTime(P.audio.currentTime); }
     if (!fseek.dragging()) { fseek.set(f); fcur.textContent = fmtTime(P.audio.currentTime); }
-    tDur.textContent = fdur.textContent = fmtTime(d); mfill.style.width = f * 100 + '%';
+    tDur.textContent = fdur.textContent = fmtTime(d); if (!mbar.isDragging()) { mfill.style.width = f * 100 + '%'; const mk = mbar.querySelector('.mknob'); if (mk) mk.style.left = f * 100 + '%'; }
   };
   return { bar, mini, full };
 }

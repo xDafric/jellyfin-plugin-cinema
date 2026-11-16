@@ -17,11 +17,13 @@ async function toTrackItems(list) {
 }
 async function requestExtTrack(it) {
   const x = it._tr || {};
+  const body = { artistName: x.artistName || (it.Artists || [])[0] || it.AlbumArtist || '', trackName: x.trackName || x.title || it.Name || '', albumName: x.albumName || it.Album || '', trackMbid: x.trackMbid || x.mbid || undefined, releaseGroupMbid: x.releaseGroupMbid || undefined, artistMbid: x.artistMbid || undefined };
   try {
-    if (x.trackMbid || x.mbid) { await apost('/api/library/downloads/track', { trackMbid: x.trackMbid || x.mbid }); }
-    else {
-      const r = await aget('/api/search', { q: (x.artistName || '') + ' ' + (x.albumName || x.trackName || ''), scope: 'album', limit: 3 });
-      const a = aList(r)[0]; if (!a) throw new Error(t('noRes')); await requestAurral(a, 'album');
+    if (!body.artistName || !body.trackName) throw new Error('artist / title missing');
+    try { await apost('/api/library/downloads/track', body); }
+    catch (e) { // fall back to requesting the release the song is on
+      const rg = body.releaseGroupMbid; if (!rg) throw e;
+      await requestAurral({ id: rg, title: body.albumName || body.trackName, artistName: body.artistName }, 'album');
     }
     toast('✓ ' + t('requested'));
   } catch (e) { toast('⚠ ' + ((e.responseJSON && (e.responseJSON.error || e.responseJSON.message)) || e.message || e.statusText || 'error')); }
@@ -100,19 +102,34 @@ async function aurralPopular(n, ar, popBox) {
     popBox.replaceChildren(trackList(its, { id: mb + '-pop', number: 'idx' })); $$('.sp-th', popBox).forEach(x => x.remove());
   } catch (e) { console.warn('[cinema] popular', e); }
 }
-/* request single songs: look inside the matching releases for tracks whose name matches the search */
+/* request single songs: finds the songs inside the artist's biggest releases (when the query names an artist) and inside matching albums */
 async function aurralTrackSearch(node, q) {
   if (!aurralOn() || q.length < 2) return;
-  const toks = norm(q).split(' ').filter(Boolean); if (!toks.length) return;
+  const toks = norm(q).split(' ').filter(Boolean); if (!toks.length) return; const qset = new Set(toks);
+  const artistOf = o => o.artistName || (o.artist && (o.artist.name || o.artist)) || ((o['artist-credit'] || [])[0] || {}).name || '';
   try {
-    const r = await aget('/api/search', { q, scope: 'album', limit: 6 }); const albums = aList(r).slice(0, 5);
-    const lists = await Promise.all(albums.map(o => aget('/api/artists/release-group/' + o.id + '/tracks').then(tr => (tr || []).map(x => Object.assign({ artistName: o.artistName || (o.artist && (o.artist.name || o.artist)) || ((o['artist-credit'] || [])[0] || {}).name || '', albumName: o.title || o.name, durationMs: x.length, releaseGroupMbid: o.id }, x))).catch(() => [])));
-    const seen = new Set(); const flat = lists.flat().filter(x => { const nm = norm(x.title || x.trackName || x.name), full = nm + ' ' + norm(x.artistName); if (!nm || seen.has(nm + '|' + norm(x.artistName))) return false; if (!toks.every(t_ => full.includes(t_))) return false; seen.add(nm + '|' + norm(x.artistName)); return true; });
-    const its = (await toTrackItems(flat)).filter(x => x._ext).slice(0, 8); if (!its.length) return;
-    const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.append(sec);
+    const [ra, rr] = await Promise.all([aget('/api/search', { q, scope: 'artist', limit: 8 }).catch(() => null), aget('/api/search', { q, scope: 'album', limit: 8 }).catch(() => null)]);
+    const artists = aList(ra).filter(o => { const nt = norm(aName(o)).split(' ').filter(Boolean); return nt.length && nt.every(w => qset.has(w)); }).slice(0, 2);
+    const groups = [];
+    const byArtist = await Promise.all(artists.map(ar => aget('/api/artists/' + ar.id).then(a => (a['release-groups'] || []).filter(g => ['Album', 'Single', 'EP'].includes(g['primary-type'])).sort((x, y) => (y.listenCount || 0) - (x.listenCount || 0)).slice(0, 12).map(g => ({ id: g.id, title: g.title, artistName: aName(ar), rank: g.listenCount || 0, src: 1 }))).catch(() => [])));
+    byArtist.flat().forEach(g => groups.push(g));
+    aList(rr).slice(0, 6).forEach(o => groups.push({ id: o.id, title: o.title || o.name, artistName: artistOf(o), rank: 0, src: 0 }));
+    const seenG = new Set(); const gs = groups.filter(g => g.id && !seenG.has(g.id) && seenG.add(g.id)).slice(0, 16);
+    const lists = await Promise.all(gs.map(g => aget('/api/artists/release-group/' + g.id + '/tracks').then(tr => (tr || []).map(x => Object.assign({ artistName: g.artistName, albumName: g.title, durationMs: x.length, releaseGroupMbid: g.id, _g: g }, x))).catch(() => [])));
+    const scored = []; const seen = new Set();
+    lists.flat().forEach(x => {
+      const title = norm(x.title || x.trackName || x.name), art = norm(x.artistName); if (!title) return;
+      if (!toks.every(w => (title + ' ' + art).includes(w))) return;
+      const rest = toks.filter(w => !art.split(' ').includes(w)); const titleHit = rest.length ? rest.every(w => title.includes(w)) : true;
+      const exact = rest.length && title === rest.join(' ');
+      const k = title + '|' + art; if (seen.has(k)) return; seen.add(k);
+      scored.push({ x, s: (exact ? 8 : 0) + (titleHit ? 4 : 0) + (x._g.src ? 2 : 0) + Math.min(2, (x._g.rank || 0) / 150000) });
+    });
+    scored.sort((a, b) => b.s - a.s);
+    const its = (await toTrackItems(scored.slice(0, 14).map(o => o.x))).filter(x => x._ext).slice(0, 10); if (!its.length) return;
+    const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.insertBefore(sec, node.firstChild);
   } catch (e) { console.warn('[cinema] track search', e); }
 }
-
 Object.assign(TX.en, { recRediscover: 'Rediscover', recSimilar: 'Similar to', recSimilarNew: 'Similar artists you could add', recMore: 'Because you listen to' });
 Object.assign(TX.de, { recRediscover: 'Wiederentdecken', recSimilar: 'Ähnlich wie', recSimilarNew: 'Ähnliche Künstler zum Hinzufügen', recMore: 'Weil du hörst' });
 async function musicRecs(node) {

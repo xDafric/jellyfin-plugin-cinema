@@ -53,7 +53,8 @@
 .sp-full .f-lyr p.on { color: #fff; }
 .sp-full { overflow-y: auto; }
 
-/* track list: header and rows share one grid, time and actions line up */
+/* track list (desktop): header and rows share one grid, number, time and actions line up */
+@media (min-width: 801px) {
 .sp-th, .sp-row { grid-template-columns: 28px minmax(0, 6fr) minmax(0, 4fr) 150px !important; column-gap: 16px; }
 .sp-th.noalb, .sp-row.noalb { grid-template-columns: 28px minmax(0, 1fr) 150px !important; }
 .sp-row .du { display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
@@ -61,6 +62,10 @@
 .sp-th > :last-child { text-align: right; padding-right: 50px; }
 .sp-row .ti, .sp-row .tx { min-width: 0; }
 .sp-row .du .lk, .sp-row .du .mo { width: 32px; height: 32px; display: grid; place-items: center; }
+.sp-th > :first-child { text-align: center; }
+.sp-row .ix { display: grid; place-items: center; width: 28px; justify-self: center; }
+.sp-row .ix .n, .sp-row .ix .pl, .sp-row .ix .eq { grid-area: 1 / 1; }
+}
 /* seek bars: always a visible knob on touch screens */
 @media (max-width: 800px), (pointer: coarse) { .bar b { opacity: 1 !important; width: 12px; height: 12px; top: 50%; transform: translateY(-50%); } .bar { min-height: 16px; display: flex; align-items: center; position: relative; } }
 /* full-screen player on phones */
@@ -89,3 +94,47 @@
 .lyr-ctr .pl-btn.big svg { fill: #000; }
 .sp-lyrics .lyr-body { flex: 1 1 0; min-height: 0; }
 .sp-lyrics .lyr-song { border: 0; }
+
+/* ---------- phones: lists, chips, mini player, full player ---------- */
+@media (max-width: 800px) {
+  #cx-sp .sp-header { width: 100%; box-sizing: border-box; }
+  #cx-sp .sp-header > div[style*="flex:1"] { display: none; }
+  #cx-sp .sp-header .sp-chips { -webkit-mask-image: linear-gradient(90deg, #000 94%, transparent); mask-image: linear-gradient(90deg, #000 94%, transparent); }
+  /* mini player sits directly on the tab bar */
+  #cx .sp-mini { bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important; margin: 0 8px !important; height: 58px; gap: 6px; padding-right: 4px; }
+  #cx .sp-mini .mlike .pl-btn, #cx .sp-mini .mlike button { width: 38px; height: 38px; display: grid; place-items: center; color: #fff; }
+  #cx .sp-mini .mlike svg { width: 22px; height: 22px; }
+  #cx .sp-mini .mbar { position: absolute; left: 10px; right: 10px; bottom: 0; height: 22px; background: none; touch-action: none; display: flex; align-items: flex-end; padding-bottom: 3px; box-sizing: border-box; }
+  #cx .sp-mini .mtrack { position: relative; width: 100%; height: 3px; border-radius: 3px; background: rgba(255,255,255,.28); }
+  #cx .sp-mini .mbar i { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: #fff; border-radius: 3px; }
+  #cx .sp-mini .mknob { position: absolute; top: 50%; width: 10px; height: 10px; margin-left: -5px; margin-top: -5px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.5); left: 0; transition: transform .15s; }
+  #cx .sp-mini .mbar.drag .mknob { transform: scale(1.5); }
+  #cx .sp-mini .mbar.drag .mtrack { height: 5px; }
+  /* full player: slides up from the mini player, controls near the bottom like Spotify */
+  #cx:not(.mode-nf) .sp-full { display: flex !important; transform: translateY(100%); visibility: hidden; transition: transform .45s cubic-bezier(.22,.9,.2,1), visibility 0s linear .45s; animation: none !important; }
+  #cx:not(.mode-nf) .sp-full.open { transform: none; visibility: visible; transition: transform .45s cubic-bezier(.22,.9,.2,1), visibility 0s; }
+  .sp-full .cvbig { transform: scale(.9); opacity: .4; transition: transform .6s cubic-bezier(.22,.9,.2,1) .08s, opacity .45s .08s; }
+  .sp-full.open .cvbig { transform: none; opacity: 1; }
+  .sp-full .top, .sp-full .meta, .sp-full .seekwrap, .sp-full .ctr, .sp-full .f-lyr { transition: opacity .4s .12s, transform .5s cubic-bezier(.22,.9,.2,1) .1s; }
+  .sp-full:not(.open) .meta, .sp-full:not(.open) .seekwrap, .sp-full:not(.open) .ctr, .sp-full:not(.open) .f-lyr { opacity: 0; transform: translateY(24px); }
+  .sp-full.open { justify-content: flex-start; }
+  .sp-full .cvbig { flex: 0 1 auto; max-height: 46vh; }
+  .sp-full .meta { margin-top: auto !important; }
+  .sp-full .ctr { margin-bottom: 8px !important; }
+  .sp-full .f-lyr { margin: 14px 0 6px; }
+  /* song lists on phones keep their own compact layout */
+  .sp-row { grid-template-columns: minmax(0, 1fr) auto !important; column-gap: 10px; }
+  .sp-row .ix, .sp-row .al { display: none !important; }
+  .sp-row .ti { min-width: 0; }
+  .sp-row .du { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+  .sp-row .du .tm { display: none; }
+  .sp-row .du .lk, .sp-row .du .mo { width: 38px; height: 38px; display: grid; place-items: center; }
+}
+/* lyrics + queue panel: one left edge, empty state, controls at the bottom */
+.sp-queue, .sp-lyrics { padding-left: 20px; padding-right: 20px; }
+.sp-queue h3, .sp-lyrics h3 { margin: 0; padding: 0; font-size: 17px; }
+.lyr-song { padding: 4px 0 12px; }
+.sp-lyrics > .nf-empty { flex: 1; display: grid; place-items: center; padding: 0 !important; }
+.lyr-foot { margin-top: auto; }
+@media (max-width: 800px) { #cx > .sp-lyrics .lyr-body { flex: 1 1 0; } }
+.sp-tile .cv { margin: 0 0 14px; }
