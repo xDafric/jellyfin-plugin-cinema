@@ -168,9 +168,10 @@ class PlayerActivity : Activity() {
         setContentView(root)
     }
 
+    private var softDecoders = false; private var uiLoop = false
     private fun buildPlayer() {
         val dsf = DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true).setDefaultRequestProperties(mapOf("Authorization" to store.authHeader()))
-        player = ExoPlayer.Builder(this, DefaultRenderersFactory(this).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER).setEnableDecoderFallback(true))
+        player = ExoPlayer.Builder(this, DefaultRenderersFactory(this).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER).setEnableDecoderFallback(softDecoders))
             .setMediaSourceFactory(DefaultMediaSourceFactory(this).setDataSourceFactory(dsf))
             .setSeekBackIncrementMs(10_000).setSeekForwardIncrementMs(10_000).build()
         player.setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)
@@ -191,10 +192,14 @@ class PlayerActivity : Activity() {
             override fun onPlayerError(e: PlaybackException) {
                 Log.e("CinemaPlayer", "error", e)
                 if (method != "Transcode") scope.launch { startStream(forceTranscode = true, resumeMs = player.currentPosition) }
+                else if (!softDecoders && e.errorCodeName.contains("DECOD")) {
+                    /* the hardware decoder is not available: last resort is a software decoder (slower, but it plays) */
+                    softDecoders = true; val pos = player.currentPosition; view.player = null; player.release(); buildPlayer(); scope.launch { startStream(forceTranscode = true, resumeMs = pos) }
+                }
                 else { Toast.makeText(this@PlayerActivity, getString(R.string.play_failed) + " (" + e.errorCodeName + ")", Toast.LENGTH_LONG).show(); finish() }
             }
         })
-        ui.post(object : Runnable { override fun run() { updateUi(); checkSegment(); if (System.currentTimeMillis() - lastReport > 10_000 && player.isPlaying) report("Progress"); ui.postDelayed(this, 500) } })
+        if (!uiLoop) { uiLoop = true; ui.post(object : Runnable { override fun run() { updateUi(); checkSegment(); if (System.currentTimeMillis() - lastReport > 10_000 && player.isPlaying) report("Progress"); ui.postDelayed(this, 500) } }) }
     }
 
     /* ---------------- playback ---------------- */

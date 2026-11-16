@@ -3014,7 +3014,7 @@ function tvInit() {
     history.back(); return true;
   };
   /* the native player needs the TV's memory and video decoder: free what the page holds while it plays */
-  window.cxTvSleep = () => { document.documentElement.classList.add('cx-sleep'); try { C.nf.el.scrollTop = 0; } catch (e) { } };
+  window.cxTvSleep = () => { document.documentElement.classList.add('cx-sleep'); try { document.querySelectorAll('video, audio').forEach(m => { try { m.pause(); m.removeAttribute('src'); m.load(); } catch (e) { } }); document.querySelectorAll('iframe').forEach(f => { try { f.src = 'about:blank'; } catch (e) { } }); } catch (e) { } try { C.nf.el.scrollTop = 0; } catch (e) { } };
   window.cxTvResume = () => { document.documentElement.classList.remove('cx-sleep'); try { refreshView(); } catch (e) { } };
   window.cxTvMenu = () => { const u = document.querySelector('#cx-top .nf-avatar'); u && u.click(); };
 
