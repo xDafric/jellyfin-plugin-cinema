@@ -2904,6 +2904,20 @@ function tvInit() {
   const pane = e => e._pane || (e._pane = e.closest('.sp-side, .sp-main, #cx-top, #cx-nf') || document.body);
   function pick_(dir, cur, list) {
     const a = R(cur), ac = ctr(a); let best = null, bs = 1e12;
+    if (dir === 'up' || dir === 'down') {
+      /* the nearest row always wins (even a short one that is not above the focused card); inside that row the closest card is taken */
+      const cs = []; let minMain = 1e12;
+      for (const e of list) {
+        if (e === cur || cur.contains(e)) continue; const b = R(e), bc = ctr(b);
+        if (dir === 'down' ? bc.y <= ac.y + 2 : bc.y >= ac.y - 2) continue;
+        const main = dir === 'down' ? Math.max(0, b.top - a.bottom) : Math.max(0, a.top - b.bottom); cs.push([e, b, bc, main]); if (main < minMain) minMain = main;
+      }
+      for (const [e, b, bc, main] of cs) {
+        if (main > minMain + 48) continue; const overlap = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const s = (overlap > 0 ? 0 : 1e6) + Math.abs(bc.x - ac.x) + main * 2; if (s < bs) { bs = s; best = e; }
+      }
+      return best;
+    }
     for (const e of list) {
       if (e === cur || cur.contains(e)) continue; const b = R(e), bc = ctr(b); let main, cross, overlap;
       if (dir === 'right') { if (bc.x <= ac.x + 2) continue; main = Math.max(0, b.left - a.right); cross = Math.abs(bc.y - ac.y); overlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top); }

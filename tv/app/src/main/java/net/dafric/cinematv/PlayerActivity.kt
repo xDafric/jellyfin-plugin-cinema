@@ -484,6 +484,11 @@ class PlayerActivity : Activity() {
             }
         } else {
             resetHide()
+            /* from the timeline: up hides the controls, down goes to play / pause */
+            if (seek.hasFocus()) {
+                if (k == KeyEvent.KEYCODE_DPAD_UP) { showOverlay(false); return true }
+                if (k == KeyEvent.KEYCODE_DPAD_DOWN) { ppBtn.requestFocus(); return true }
+            }
             if (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_ESCAPE) { showOverlay(false); return true }
         }
         return super.dispatchKeyEvent(e)
