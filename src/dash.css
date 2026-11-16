@@ -135,3 +135,12 @@ html.cx-ready .MuiAppBar-root .MuiAvatar-root { width: 34px; height: 34px; }
 html.cx-ready main.MuiBox-root, html.cx-ready .skinBody { max-width: none !important; }
 html.cx-ready #dashboardPage .padded-left, html.cx-ready .dashboardContent { padding-left: clamp(16px, 2vw, 36px); padding-right: clamp(16px, 2vw, 36px); }
 html.cx-ready .dashboardColumn { max-width: none; }
+
+/* drawer header (server name + version) */
+html.cx-ready .MuiDrawer-paper a.MuiListItemButton-root[href="#/"] { background: none !important; border: 0 !important; box-shadow: none !important; margin: 12px 10px 8px !important; padding: 8px 10px !important; gap: 12px; align-items: center; }
+html.cx-ready .MuiDrawer-paper a.MuiListItemButton-root[href="#/"]:hover { background: rgba(255,255,255,.05) !important; }
+html.cx-ready .MuiDrawer-paper a[href="#/"] .MuiListItemIcon-root { min-width: 0 !important; margin: 0; }
+html.cx-ready .MuiDrawer-paper a[href="#/"] img { width: 36px; height: 36px; object-fit: contain; display: block; }
+html.cx-ready .MuiDrawer-paper a[href="#/"] .MuiListItemText-root { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+html.cx-ready .MuiDrawer-paper a[href="#/"] .MuiListItemText-primary { font-size: 17px !important; font-weight: 800 !important; line-height: 1.15; letter-spacing: -.01em; margin: 0; }
+html.cx-ready .MuiDrawer-paper a[href="#/"] .MuiListItemText-secondary { font-size: 12px !important; line-height: 1.1; color: #8a8a94 !important; margin: 0; }

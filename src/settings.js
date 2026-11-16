@@ -192,8 +192,15 @@ async function endlessRows(rows, page) {
   [2020, 2010, 2000, 1990, 1980, 1970].forEach(d => queue.push({ kind: 'decade', from: d }));
   queue.push({ kind: 'rated' }, { kind: 'unwatched' }, { kind: 'recentShows' });
   const used = new Set(rows.querySelectorAll('.nf-row h2') ? [...rows.querySelectorAll('.nf-row h2')].map(x => x.textContent.replace(/ ›$/, '')) : []);
+  let cycle = 0; const genreNames = queue.filter(x => x.kind === 'genre').map(x => x.name);
+  const refill = () => { if (!genreNames.length || cycle >= 8) return false; cycle++; const kinds = ['genreTop', 'genreNew', 'genreShows', 'genreClassic']; const k = kinds[(cycle - 1) % kinds.length]; shuffleArr(genreNames).forEach(n => queue.push({ kind: k, name: n })); return true; };
   const one = () => {
-    const q = queue.shift(); if (!q) { try { io.disconnect(); } catch (e) { } sentinel.remove(); return; }
+    let q = queue.shift(); if (!q && refill()) q = queue.shift();
+    if (!q) { try { io.disconnect(); } catch (e) { } sentinel.remove(); return; }
+    if (q.kind === 'genreTop') return lazyRow(rows, t('bestIn') + ' ' + q.name, () => items({ IncludeItemTypes: 'Movie,Series', Genres: q.name, SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24, MinCommunityRating: 6 }), 'poster', { min: 4, href: '#/c/browse/genre/' + encodeURIComponent(q.name) });
+    if (q.kind === 'genreNew') return lazyRow(rows, t('newIn') + ' ' + q.name, () => items({ IncludeItemTypes: 'Movie,Series', Genres: q.name, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), 'poster', { min: 4, href: '#/c/browse/genre/' + encodeURIComponent(q.name) });
+    if (q.kind === 'genreShows') return lazyRow(rows, q.name + ' · ' + t('shows'), () => items({ IncludeItemTypes: 'Series', Genres: q.name, SortBy: 'Random', Limit: 24 }), 'poster', { min: 4 });
+    if (q.kind === 'genreClassic') return lazyRow(rows, q.name + ' · ' + t('classics'), () => items({ IncludeItemTypes: 'Movie', Genres: q.name, MaxPremiereDate: '2000-01-01', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24 }), 'poster', { min: 4 });
     if (q.kind === 'genre') { if (used.has(q.name)) return one(); lazyRow(rows, q.name, () => items({ IncludeItemTypes: 'Movie,Series', Genres: q.name, SortBy: 'Random', Limit: 24 }), 'poster', { min: 4, href: '#/c/browse/genre/' + encodeURIComponent(q.name) }); }
     else if (q.kind === 'decade') { const years = Array.from({ length: 10 }, (_, i) => q.from + i).join(','); lazyRow(rows, t('fromDecade') + ' ' + q.from + 's', () => items({ IncludeItemTypes: 'Movie', Years: years, SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24 }), 'poster', { min: 4, href: '#/c/browse/decade/' + q.from }); }
     else if (q.kind === 'rated') lazyRow(rows, t('top'), () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24, StartIndex: 20 }), 'poster', { min: 4, href: '#/c/browse/top/x' });
@@ -216,3 +223,6 @@ async function genreTilesRow(container) {
     ph.replaceWith(h('section', { class: 'nf-row tiles' }, h('h2', {}, t('genreTiles')), h('button', { class: 'nf-arrow l', onclick: () => sc.scrollBy({ left: -sc.clientWidth * .85 }) }, ic('left')), sc, h('button', { class: 'nf-arrow r', onclick: () => sc.scrollBy({ left: sc.clientWidth * .85 }) }, ic('right'))));
   } catch (e) { ph.remove(); }
 }
+
+Object.assign(TX.en, { bestIn: 'Best of', newIn: 'New in', classics: 'Classics' });
+Object.assign(TX.de, { bestIn: 'Das Beste aus', newIn: 'Neu in', classics: 'Klassiker' });

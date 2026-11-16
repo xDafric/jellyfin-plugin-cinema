@@ -24,7 +24,7 @@ function tvInit() {
   const vis2 = e => { const r = e.getBoundingClientRect(); return r.width >= 4 && r.height >= 4 && r.bottom > -2400 && r.top < innerHeight + 2600; };
   const visible = e => { if (e.checkVisibility && !e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false; return vis2(e); };
   /* the topmost modal layer limits where focus may go */
-  const LAYER_SEL = '.cxd-bg.show, .sp-modal-bg, .nf-pop:not(.hide), .sp-ctx, #cx-menu, .sr-modal';
+  const LAYER_SEL = '.cxd-bg.show, .sp-modal-bg, .nf-pop:not(.hide), .sp-ctx, #cx-menu, .sp-menu, .sr-modal';
   const layer = () => { const all = document.querySelectorAll(LAYER_SEL); for (let k = all.length - 1; k >= 0; k--) if (visible(all[k])) return all[k]; return null; };
   /* rectangles are measured once and kept (page coordinates), so a key press never forces a layout */
   let RC = null, rcDirty = true; const SCR = '.nf-scroller, .sp-shelf, .nf-cast, .nf-row-scroll';
@@ -127,7 +127,7 @@ function tvInit() {
     if (nx) focusEl(nx, dir);
   }, true);
 
-  const preferredSel = ['.cxd-bg.show .cxd-chip, .cxd-bg.show button', '.nf-hero .btn.white', '#cx .nf-dinfo .btn.white', '#cx .sp-card .sp-navlink.on', '#cx .nf-card', '#cx .sp-row', '#cx-top a'];
+  const preferredSel = ['.cxd-bg.show .cxd-chip, .cxd-bg.show button', '.sp-modal-bg .btn.white', '.sp-modal-bg .btn', '.sp-menu button, #cx-menu .mi, #cx-menu button, #cx-menu a, #cx-menu [role=menuitem]', '.sp-ctx button, .sp-ctx a', '.nf-hero .btn.white', '#cx .nf-dinfo .btn.white', '#cx .sp-card .sp-navlink.on', '#cx .nf-card', '#cx .sp-row', '#cx-top a'];
   function tvPreferred(list) { for (const s of preferredSel) { const f = list.find(e => e.matches(s)); if (f) return f; } return list[0]; }
   let autoT = 0; const MEM = {};
   const rootAll = () => [...document.getElementById('cx').querySelectorAll(SEL)];
@@ -135,6 +135,7 @@ function tvInit() {
   function tvAuto() {
     clearTimeout(autoT); autoT = setTimeout(() => { if (rcDirty && !layer()) buildRects();
       const ae = document.activeElement; const ok = ae && ae !== document.body && ae.isConnected && visible(ae);
+      { const L0 = layer(); if (L0 && !L0.contains(ae)) { if (ae && ae !== document.body && !TVSTATE.opener) TVSTATE.opener = ae; const f0 = tvPreferred(cands()); if (f0) { f0.focus({ preventScroll: true }); mark(f0); } return; } } // a dialog / menu just opened: the focus has to move into it
       if (ok && ae.closest('#cx-top') && TVSTATE.userActive) return;
       const list = cands(); const m = TVSTATE.restore;
       if (TVSTATE.keyed) TVSTATE.restore = null; const all_ = rootAll(); if (m && !TVSTATE.keyed && Date.now() < m.until && all_.length > m.i) { const e = all_[m.i]; if (e && e !== ae && visible(e)) { e.focus({ preventScroll: true }); mark(e); try { scrollHost().scrollTop = m.st; } catch (x) { } } if (all_.length > m.i + 4) TVSTATE.restore = null; return; }
@@ -153,7 +154,7 @@ function tvInit() {
 
   /* Back button from the app */
   window.cxTvBack = () => {
-    const L = layer(); if (L) { const x = L.querySelector('.cxd-x, .sr-close, button[aria-label=Close]'); if (x) x.click(); else if (L.matches('.cxd-bg')) L.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); else L.remove(); return true; }
+    const L = layer(); if (L) { const x = L.querySelector('.cxd-x, .sr-close, button[aria-label=Close]'); if (x) x.click(); else if (L.matches('.cxd-bg')) L.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); else L.remove(); setTimeout(() => { if (layer()) return; const o = TVSTATE.opener; TVSTATE.opener = null; if (o && o.isConnected) { o.focus({ preventScroll: true }); mark(o); } }, 80); return true; }
     if (document.querySelector('.sp-full.open')) { document.querySelector('.sp-full .top .pl-btn').click(); return true; }
     const h = location.hash; if (/^#\/(home)?$|^#\/c(\/home)?$|^#\/c\/music\/?$|^#\/c\/music\/home$/.test(h) || h === '') return false;
     history.back(); return true;

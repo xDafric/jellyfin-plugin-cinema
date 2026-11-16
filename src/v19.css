@@ -150,3 +150,15 @@ html.cx-scrolling #cx .nf-card *, html.cx-scrolling #cx .nf-card { transition: n
 /* top 10: a static heavy font (the variable font drew its overlapping contours inside the outline) */
 .nf-card.t10c .n { font-family: "Arial Black", "Helvetica Neue", Impact, Arial, sans-serif !important; font-weight: 900 !important; letter-spacing: -.06em; -webkit-text-stroke: 0; color: #0b0b0d; paint-order: stroke fill; text-shadow: -3px -3px 0 #6b6b73, 3px -3px 0 #6b6b73, -3px 3px 0 #6b6b73, 3px 3px 0 #6b6b73, 0 -3px 0 #6b6b73, 0 3px 0 #6b6b73, -3px 0 0 #6b6b73, 3px 0 0 #6b6b73; width: auto; min-width: 80px; }
 .nf-card.t10c:hover .n { text-shadow: -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff, 0 -3px 0 #fff, 0 3px 0 #fff, -3px 0 0 #fff, 3px 0 0 #fff; }
+
+/* selected genre (Discover tiles, home tiles with the remote) */
+.dc-tile.on { outline: 3px solid #fff; outline-offset: 3px; }
+.dc-tile:focus-visible, .nf-row.tiles .nf-card.gtile:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+html.cx-tv .nf-row.tiles .nf-card.gtile.tvf-on { outline: 4px solid #fff; outline-offset: 4px; transform: scale(1.04); filter: brightness(1.12); box-shadow: 0 0 0 1px rgba(255,255,255,.2), 0 18px 44px rgba(0,0,0,.55); z-index: 3; }
+html.cx-tv .nf-row.tiles .nf-card.gtile { transition: transform .18s ease, outline-color .18s ease, filter .18s ease; }
+/* TV Top 10: room for the first number */
+html.cx-tv .nf-row.top10 .nf-scroller { padding-left: 150px !important; }
+html.cx-tv .nf-row.top10 .nf-card.t10c:first-child { margin-left: 0 !important; }
+/* dashboard: breathing room under the app bar */
+html.cx-ready main.MuiBox-root > :first-child { margin-top: 14px; }
+html.cx-ready #dashboardPage, html.cx-ready .dashboardContent { padding-top: 12px; }
