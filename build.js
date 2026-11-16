@@ -22,6 +22,7 @@ ${r('services.js')}
 ${r('player.js')}
 ${r('discover2.js')}
 ${r('extras.js')}
+${r('lbarch.js')}
 ${r('musicx.js')}
 ${r('music.js')}
 ${r('tv.js')}

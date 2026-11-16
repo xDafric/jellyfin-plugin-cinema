@@ -93,7 +93,10 @@
                                 <div data-feats="Discover|Discover|Seerr recommendations with filters and search.,Watchlist|Watchlist|Your saved titles.,Requests|Requests and downloads|Seerr requests with download progress.,Calendar|Release calendar|Needs Radarr or Sonarr.,Music|Music app|The Spotify style music interface.,MusicDiscovery|Music discovery|Aurral discovery, track previews and requests.,PluginMenus|Plugin entries in the account menu|Shows entries other plugins add to Jellyfin's menu."></div></div>
                             <div class="cin-card"><h3>Player</h3><p>The built-in video player.</p>
                                 <div data-feats="OwnPlayer|Cinema video player|Turn off to use Jellyfin's own player everywhere."></div></div>
-                        </div>
+                        <div class="cin-card"><h3>Extras (off by default)</h3><p>Two optional features. Turn them on here, then each person sets them up in Cinema settings.</p>
+                                <div data-feats="Letterboxd|Letterboxd watched films|Films a user logged as watched on Letterboxd show as watched in Jellyfin and are labelled in Discover. Read only: nothing is ever written to Letterboxd. Each user enters their public Letterboxd name in Cinema settings under Services. Letterboxd has no official API; the public diary feed is used (latest entries) plus an optional CSV import for the full history.,Archive|Movie archive|Administrators can archive a movie from its three-dot menu: the file is deleted to free space while title; poster and details stay on an Archive page. Archived movies can be restored later."></div>
+                                <div class="cin-row"><div><b>Archive also cleans up Radarr</b><span>When archiving, delete the file in Radarr and stop monitoring the movie so it is not downloaded again. Needs the Radarr connection. Turn off to leave Radarr untouched.</span></div><button class="cin-sw" data-sw="ArchiveRadarr"></button></div></div>
+                            </div>
                         <!-- appearance -->
                         <div class="cin-panel" data-panel="look">
                             <div class="cin-card"><h3>Branding</h3><p>Defaults for every user. Users can change them in their own settings unless you lock them below.</p>

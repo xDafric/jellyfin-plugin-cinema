@@ -32,6 +32,7 @@ function dCard(x, lm, rm) {
   const src = TM(x.posterPath, 'w500');
   const year = (x.releaseDate || x.firstAirDate || '').slice(0, 4);
   const im = h('div', { class: 'im' }, src ? h('div', Object.assign({ class: 'bgi' }, bg(src))) : h('div', { class: 'ph' }, title), dMark(s));
+  lbArchBadges(x).forEach(b => im.append(b));
   const open = () => { if (s.k === 'own' && s.item) go(itemHash(s.item)); else openSeerrInfo(x); };
   const el = h('div', { class: 'nf-card poster seerr ' + (s.k === 'none' ? 'notown' : s.k), onclick: open }, im, h('div', { class: 'title ell' }, title));
   attachPeek(el, im, () => ({ poster: true, img: src || TM(x.backdropPath, 'w780'), title, open, overview: x.overview,

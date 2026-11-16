@@ -105,11 +105,13 @@ async function itemMenu(e, it) {
   if (it.Type !== 'Series' || true) ent.push({ icon: 'check', label: ud(it).Played ? t('markUnwatched') : t('markWatched'), fn: () => togglePlayed(it) });
   ent.push('-');
   ent.push({ icon: 'info', label: t('openDetails'), fn: () => go(itemHash(it) || '#/home') });
+  if ((ud(it).PlaybackPositionTicks || 0) > 0) ent.push({ icon: 'close', label: t('rmResume'), fn: async () => { try { await jf('POST', 'UserItems/' + it.Id + '/UserData', { userId: uid() }, { PlaybackPositionTicks: 0 }); it.UserData = Object.assign(ud(it), { PlaybackPositionTicks: 0 }); toast('✓ ' + t('rmResumeDone')); C.libCache = null; route(); } catch (e) { toast('⚠ ' + (e.message || e)); } } });
   const isVid = ['Movie', 'Episode', 'Video', 'MusicVideo'].includes(it.Type);
   if (['Movie', 'Episode', 'Video', 'MusicVideo', 'Audio'].includes(it.Type) && (!user.Policy || user.Policy.EnableContentDownloading !== false)) ent.push({ icon: 'download', label: t('download'), fn: () => { const a = h('a', { href: ApiClient.getUrl('Items/' + it.Id + '/Download', { api_key: ApiClient.accessToken() }), download: '' }); document.body.append(a); a.click(); a.remove(); } });
   if (admin && isVid) ent.push({ icon: 'badge-cc', label: t('editSubs'), fn: () => nativeCommand(it.Id, ['editsubtitles']) });
   if (it.Type === 'Episode' || it.Type === 'Series') ent.push({ icon: 'close', label: t('nuHide'), fn: () => hideNextUp(it.SeriesId || it.Id) });
   if (HID.on && admin) { const hid = hxIsHiddenItem(it); ent.push('-'); ent.push({ icon: hid ? 'eye' : 'eyeOff', label: hid ? t('hxStHidden') : t('hxStVisible'), fn: () => hxToggle(it) }); }
+  if (admin && it.Type === 'Movie' && optOn('archive')) { ent.push('-'); ent.push({ icon: 'download', label: t('archiveDo'), fn: () => archiveDialog(it) }); }
   if (admin) {
     ent.push('-');
     ent.push({ icon: 'edit', label: t('editMeta'), fn: () => editMeta(it.Id) });
@@ -202,3 +204,6 @@ async function showNativeActions(it, x, y) {
 }
 
 async function hideNextUp(seriesId) { const l = (CFGU.nuHide || []).slice(); if (!l.includes(seriesId)) l.push(seriesId); await saveCfg({ nuHide: l }); toast('✓ ' + t('nuDone')); route(); }
+
+Object.assign(TX.en, { rmResume: 'Remove from Continue watching', rmResumeDone: 'Removed from Continue watching' });
+Object.assign(TX.de, { rmResume: 'Aus "Weiterschauen" entfernen', rmResumeDone: 'Aus "Weiterschauen" entfernt' });

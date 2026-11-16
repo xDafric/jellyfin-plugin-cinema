@@ -23,7 +23,7 @@ async function seerrModal(x) {
   const lang = (d.spokenLanguages || []).find(l => l.iso_639_1 === d.originalLanguage); const trailer = (d.relatedVideos || []).find(v => v.site === 'YouTube' && v.type === 'Trailer') || (d.relatedVideos || []).find(v => v.site === 'YouTube');
   const runtime = d.runtime || (d.episodeRunTime && d.episodeRunTime[0]);
   const facts = [[t('factDirector'), names(['Director'])], [t('factWriter'), names(['Screenplay', 'Writer', 'Story', 'Creator'])], [t('factStatus'), d.status], [t('factLang'), lang ? (lang.name || lang.english_name) : d.originalLanguage], [t('factRuntime'), runtime ? runtime + ' ' + t('min') : ''], [t('factBudget'), money(d.budget)], [t('factRevenue'), money(d.revenue)], [t('factStudio'), (d.productionCompanies || []).slice(0, 3).map(c => c.name).join(', ')], [t('factNetwork'), (d.networks || []).slice(0, 3).map(c => c.name).join(', ')], [t('factSeasons'), mt === 'tv' && d.numberOfSeasons ? d.numberOfSeasons + ' · ' + (d.numberOfEpisodes || '') + ' ' + t('episodes') : '']].filter(f => f[1]);
-  const status = h('div', { class: 'sr-status' });
+  const status = h('div', { class: 'sr-status' }); lbArchBadges(Object.assign({}, d, { mediaType: mt, id: x.id })).forEach(b => status.append(b));
   const adv = { serverId: null, profileId: null, rootFolder: null };
   const btn = h('button', { class: 'btn white' }, ic('plus'), t('request'));
   btn.onclick = async () => {

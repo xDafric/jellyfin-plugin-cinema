@@ -11,9 +11,9 @@ async function discoverView2(page) {
   if (!(await waitSeerr())) { page.append(h('div', { class: 'nf-page-pad' }, h('h1', {}, t('discover')), h('div', { class: 'nf-empty' }, 'Seerr is not available.'))); return; }
   const wrap = h('div', {}); page.append(wrap); const skel = h('div', { style: 'height:62vh;display:grid;place-items:center' }, h('div', { class: 'spinner' })); wrap.append(skel);
   const heroP = seerrGet('/discover/trending', { page: 1 }).then(r => r.results.filter(x => x.backdropPath && x.overview && (x.mediaType === 'movie' || x.mediaType === 'tv')).slice(0, 8)).catch(() => []);
-  const [lm, rm, heroRaw, genres] = await Promise.all([libMap(), reqMap(), heroP, dcGenres()]); skel.remove();
+  const [lm, rm, heroRaw, genres] = await Promise.all([libMap(), reqMap(), heroP, dcGenres(), lbLoad(), archLoad()]); skel.remove();
   const make = x => dCard(x, lm, rm);
-  const st = { type: 'all', genre: '', genreName: '', sort: 'popularity', hideOwned: false, q: '' };
+  const st = { type: 'all', genre: '', genreName: '', sort: 'popularity', hideOwned: false, hideSeen: false, q: '' };
   const hero = heroRaw.map(x => toHero(x, lm, rm));
   const heroHolder = h('div', {}, hero.length ? heroEl(hero) : h('div', { style: 'height:90px' })); wrap.prepend(heroHolder);
   /* filter bar */
@@ -26,7 +26,8 @@ async function discoverView2(page) {
   const sSel = h('select', { onchange: e => { st.sort = e.target.value; refresh(); } }, [['popularity', t('sortPop')], ['rating', t('sortRating')], ['newest', t('sortNew')]].map(([v, l]) => h('option', { value: v }, l)));
   const hide = h('input', { type: 'checkbox', onchange: e => { st.hideOwned = e.target.checked; refresh(); } });
   let qT; const q = h('input', { type: 'text', placeholder: t('dcSearch'), oninput: e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); refresh(); }, 400); } });
-  const bar = h('div', { class: 'dc-bar' }, typeChips, h('div', { class: 'dc-sel' }, gSel), h('div', { class: 'dc-sel' }, sSel), h('label', { class: 'dc-tg' }, hide, h('i'), h('span', {}, t('hideOwned'))), h('div', { class: 'dc-q' }, ic('search', 'ic-s'), q));
+  const hideSeen = LB.n ? h('label', { class: 'dc-tg' }, h('input', { type: 'checkbox', onchange: e => { st.hideSeen = e.target.checked; refresh(); } }), h('i'), h('span', {}, t('lbHideSeen'))) : null;
+  const bar = h('div', { class: 'dc-bar' }, typeChips, h('div', { class: 'dc-sel' }, gSel), h('div', { class: 'dc-sel' }, sSel), h('label', { class: 'dc-tg' }, hide, h('i'), h('span', {}, t('hideOwned'))), hideSeen, h('div', { class: 'dc-q' }, ic('search', 'ic-s'), q));
   wrap.append(bar);
   /* genre tiles (Netflix-style "browse by genre") */
   const tiles = h('div', { class: 'dc-tiles' });
@@ -36,7 +37,7 @@ async function discoverView2(page) {
   const personal = h('div', { class: 'nf-rows', style: 'margin-top:10px' }); wrap.append(personal);
   const gridHost = h('div', { class: 'nf-page-pad', style: 'padding-top:0' }); wrap.append(gridHost);
   let grid = null;
-  const filtered = () => st.q || st.genre || st.sort !== 'popularity' || st.type !== 'all' || st.hideOwned;
+  const filtered = () => st.q || st.genre || st.sort !== 'popularity' || st.type !== 'all' || st.hideOwned || st.hideSeen;
   /* personalised rows (only when no filter is active) */
   function buildPersonal() {
     personal.replaceChildren();
@@ -60,6 +61,7 @@ async function discoverView2(page) {
         list = rs.flat(); if (st.type === 'all') list.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)); more = rs.some(r => r.length >= 20);
       }
       if (st.hideOwned) list = list.filter(x => !own(x));
+      if (st.hideSeen) list = list.filter(x => !lbSeen(x));
       return { Items: list, done: !more };
     };
   }

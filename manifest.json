@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.27.0",
+                             "changelog":  "New optional features: Letterboxd watched sync (read only, RSS + CSV import) and a movie archive (keep metadata, delete file, Radarr cleanup). Remove from Continue watching, clearer detail buttons (heart and eye), smoother scrolling.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.27.0.zip",
+                             "checksum":  "a523fb40b5648ba93e32148f328f9afe",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.26.0",
                              "changelog":  "Fast scrolling while a hover preview is open no longer crawls (the preview forwarded each wheel tick as a slow smooth scroll).",
                              "targetAbi":  "12.4.0.0",

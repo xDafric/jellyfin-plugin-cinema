@@ -12,15 +12,8 @@ window.addEventListener('hashchange', route);
 let ready = false;
 const iv = setInterval(() => {
   const ok = window.ApiClient && ApiClient.getCurrentUserId && ApiClient.getCurrentUserId();
-  if (ok && !ready) { ready = true; Promise.all([loadStatus(), loadCfg()]).then(route).then(() => { setTimeout(syncWatchlist, 3000); setInterval(syncWatchlist, 600000); }); }
+  if (ok && !ready) { ready = true; Promise.all([loadStatus(), loadCfg()]).then(route).then(() => { setTimeout(syncWatchlist, 3000); setInterval(syncWatchlist, 600000); setTimeout(() => { lbSync(); archLoad(); }, 4500); setInterval(() => lbSync(), 1800000); }); }
   if (!ok && ready) { ready = false; route(); }
 }, 400);
 document.addEventListener('viewshow', () => { if (ready) route(); });
-window.cinemaUI = { dev: { get C() { return C; }, seerrModal: x => seerrModal(x), setSeerrBase(b) { SEERR = b; }, calendarView: p => calendarView(p), harvest: () => harvestMenus(), HARV: () => HARV }, native(id) { C.allowNative = true; location.hash = '#/details?id=' + id; }, get player() { return P; }, skin(on) { setSkin(on !== false); }, off() { localStorage.setItem('cinema-off', '1'); location.reload(); }, on() { localStorage.removeItem('cinema-off'); location.reload(); } };
-
-/* while the page scrolls, cards ignore the pointer: no hover effects, previews or transitions get triggered underneath the wheel */
-(function () {
-  const H = document.documentElement; let tm = 0;
-  if ((typeof TVM !== 'undefined' && TVM) || /CinemaTV/.test(navigator.userAgent)) return;
-  window.addEventListener('scroll', () => { if (!H.classList.contains('cx-scrolling')) H.classList.add('cx-scrolling'); clearTimeout(tm); tm = setTimeout(() => H.classList.remove('cx-scrolling'), 220); }, { capture: true, passive: true });
-})();
+window.cinemaUI = { dev: { get C() { return C; }, lb: () => ({ LB, lbLoad, lbSync, lbSeen, ARCH, archLoad, CFG: () => CFGU, save: saveCfg, archiveDialog }), seerrModal: x => seerrModal(x), setSeerrBase(b) { SEERR = b; }, calendarView: p => calendarView(p), harvest: () => harvestMenus(), HARV: () => HARV }, native(id) { C.allowNative = true; location.hash = '#/details?id=' + id; }, get player() { return P; }, skin(on) { setSkin(on !== false); }, off() { localStorage.setItem('cinema-off', '1'); location.reload(); }, on() { localStorage.removeItem('cinema-off'); location.reload(); } };

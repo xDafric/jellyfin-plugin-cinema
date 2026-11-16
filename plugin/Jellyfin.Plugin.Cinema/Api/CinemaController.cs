@@ -175,7 +175,7 @@ public class CinemaController : ControllerBase
             {
                 hero = c.FeatHero, peek = c.FeatPeek, discover = c.FeatDiscover, watchlist = c.FeatWatchlist, requests = c.FeatRequests,
                 calendar = c.FeatCalendar, music = c.FeatMusic, musicDiscovery = c.FeatMusicDiscovery, ownPlayer = c.FeatOwnPlayer,
-                mediaInfo = c.FeatMediaInfo, ratings = c.FeatRatings, seerrSimilar = c.FeatSeerrSimilar, infiniteScroll = c.FeatInfiniteScroll,
+                letterboxd = c.FeatLetterboxd, archive = c.FeatArchive, archiveRadarr = c.ArchiveRadarr, mediaInfo = c.FeatMediaInfo, ratings = c.FeatRatings, seerrSimilar = c.FeatSeerrSimilar, infiniteScroll = c.FeatInfiniteScroll,
                 pluginMenus = c.FeatPluginMenus, itemMenu = c.FeatItemMenu
             },
             defaults = new

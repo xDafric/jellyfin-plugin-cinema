@@ -93,4 +93,13 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Song search for music requests uses a public catalogue (only the typed words are sent, by the server). Turn off to stay fully local.</summary>
     public bool ExternalSongSearch { get; set; } = true;
+
+    /// <summary>Show films watched on Letterboxd as watched here (read only, never written back).</summary>
+    public bool FeatLetterboxd { get; set; }
+
+    /// <summary>Archive movies: remove the file, keep the metadata in an archive section.</summary>
+    public bool FeatArchive { get; set; }
+
+    /// <summary>When archiving, also delete the file in Radarr and stop monitoring the movie.</summary>
+    public bool ArchiveRadarr { get; set; } = true;
 }

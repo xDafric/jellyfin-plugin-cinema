@@ -228,6 +228,7 @@ async function renderNF(r) {
   else if (view === 'list') await listView(page);
   else if (view === 'search') await searchView(page, decodeURIComponent(c || ''));
   else if (view === 'item') await itemView(page, c);
+  else if (view === 'archive') await archiveView(page);
   else page.append(h('div', { class: 'nf-empty' }, '404'));
   done();
 }
@@ -309,8 +310,10 @@ async function itemView(page, id) {
   const logo = imgUrl(it, 'Logo', 700);
   const isSeries = it.Type === 'Series', isBox = it.Type === 'BoxSet';
   const prog = pct(it);
-  const favBtn = h('button', { class: 'btn round' + (ud(it).IsFavorite ? ' on' : ''), 'aria-label': t('mylist'), onclick: async () => { const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData.IsFavorite = on; favBtn.classList.toggle('on', on); favBtn.replaceChildren(ic(on ? 'check' : 'plus')); } }, ic(ud(it).IsFavorite ? 'check' : 'plus'));
-  const seenBtn = !isSeries && !isBox ? h('button', { class: 'btn round' + (ud(it).Played ? ' on' : ''), 'aria-label': t('watched'), onclick: async () => { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData.Played = on; seenBtn.classList.toggle('on', on); } }, ic('check')) : null;
+  const favBtn = h('button', { class: 'btn round' + (ud(it).IsFavorite ? ' on' : ''), 'aria-label': t('mylist'), onclick: async () => { const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData.IsFavorite = on; favBtn.classList.toggle('on', on); favBtn.replaceChildren(ic(on ? 'heartOn' : 'heart')); favBtn.title = on ? t('favRemove') : t('favAdd'); } }, ic(ud(it).IsFavorite ? 'heartOn' : 'heart'));
+  favBtn.title = ud(it).IsFavorite ? t('favRemove') : t('favAdd');
+  const seenBtn = !isSeries && !isBox ? h('button', { class: 'btn round' + (ud(it).Played ? ' on' : ''), 'aria-label': t('watched'), onclick: async () => { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData.Played = on; seenBtn.classList.toggle('on', on); seenBtn.title = on ? t('markUnwatched') : t('markWatched'); } }, ic('eye')) : null;
+  if (seenBtn) seenBtn.title = ud(it).Played ? t('markUnwatched') : t('markWatched');
   const moreBtn = h('button', { class: 'btn round', 'aria-label': t('more'), onclick: e => itemMenu(e, it) }, ic('more'));
   const trailer = (it.RemoteTrailers || [])[0];
   const people = (it.People || []);
