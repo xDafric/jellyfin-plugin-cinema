@@ -19,4 +19,8 @@
     <string name="play_failed">Playback failed</string>
     <string name="none_available">Nothing to choose</string>
     <string name="ends_at">Ends at</string>
+    <string name="fit">Fit</string>
+    <string name="fill">Fill</string>
+    <string name="stretch">Stretch</string>
+    <string name="speed">Speed</string>
 </resources>

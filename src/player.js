@@ -20,7 +20,17 @@ const PIC = {
 const PICMAP = { play: 'player-play', pause: 'player-pause', vol: 'volume', mute: 'volume-3', cc: 'badge-cc', audio: 'language', gear: 'settings', pip: 'picture-in-picture', fs: 'maximize', fsx: 'minimize', chap: 'list-details', next: 'player-skip-forward', back: 'chevron-left', info: 'info-circle', eps: 'list-numbers', skip: 'player-skip-forward' };
 const PICFILL = { play: 1, pause: 1 };
 function pic(name) { return luSvg(PICMAP[name] || 'player-play', PICFILL[name]); }
-function skipIcon(dir) { const s = luSvg(dir > 0 ? 'rewind-forward-10' : 'rewind-backward-10'); s.classList.add('lu-skip'); return s; }
+const skipLen = () => { const n = +pcfg('skipLen', 10); return [5, 10, 15, 30].includes(n) ? n : 10; };
+function skipIcon(dir) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'lu lu-skip');
+  const g = dir > 0 ? '<g>' : '<g transform="translate(24 0) scale(-1 1)">';
+  s.innerHTML = g + '<path d="M14.74 4.98A8 8 0 1 1 9.26 4.98"/><path d="M12.3 3.9L10.1 7.4L8.4 2.5z" fill="currentColor"/></g><text class="skn" x="12.4" y="15.8" text-anchor="middle" font-size="7.6" font-weight="800" font-family="Inter,system-ui,sans-serif" fill="currentColor" stroke="none" style="letter-spacing:-.03em">' + skipLen() + '</text>';
+  return s;
+}
+const updSkipIcons = () => $$('.lu-skip .skn', PL.el || document).forEach(x => { x.textContent = skipLen(); });
+const FIT = { contain: 'contain', cover: 'cover', fill: 'fill' };
+const applyFit = () => { if (PL.v) PL.v.style.objectFit = FIT[pcfg('fit', 'contain')] || 'contain'; };
+function applySubDelay() { const d = +(PL.subDelay || 0); const tr = PL.v && [...PL.v.textTracks].find(x => x.mode === 'hidden' || x.mode === 'showing'); if (!tr || !tr.cues) return; for (const c of tr.cues) { if (c._os == null) { c._os = c.startTime; c._oe = c.endTime; } c.startTime = Math.max(0, c._os + d); c.endTime = Math.max(.01, c._oe + d); } }
 
 function deviceProfile() {
   const hevc = !!(window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="hvc1.1.6.L120.90,mp4a.40.2"'));
@@ -142,6 +152,7 @@ function buildTrackMenus() {
   const def = subs.find(s => s.DeliveryUrl && s.IsDefault); if (def && PL.sub === -1 && !PL.subTouched && !PL.encodeSub) setSub(def.Index, true);
 }
 function setSub(idx, auto) {
+  setTimeout(applySubDelay, 900);
   const v = PL.v; const s = idx >= 0 ? PL.ms.MediaStreams.find(x => x.Index === idx) : null; if (!auto) PL.subTouched = true;
   const wasEncode = PL.encodeSub; PL.sub = idx; v.querySelectorAll('track').forEach(x => x.remove()); PL.subsEl.replaceChildren();
   if (s && s.DeliveryMethod === 'Encode' && !s.DeliveryUrl) { PL.encodeSub = true; closeMenus(); startStream(ticks()); return; }
@@ -194,10 +205,14 @@ function openSettings(tab) {
   const sw = (key, def, fn) => { const b = h('button', { class: 'set-switch' + (pcfg(key, def) ? ' on' : ''), onclick: () => { const nv = !pcfg(key, def); psave(key, nv); b.classList.toggle('on', nv); fn && fn(nv); } }, h('i')); return b; };
   if (tab === 'quality') {
     body.append(row(t('plQuality'), seg(QUALITIES.map(([k]) => [k, k === 'auto' ? t('plAuto') : (k === '20' ? '1080p+' : k === '8' ? '1080p' : k === '4' ? '720p' : '480p')]), pcfg('quality', 'auto'), v => { psave('quality', v); startStream(ticks()); }), t('plQualityHint')),
+      row(t('plFit'), seg([['contain', t('plFitContain')], ['cover', t('plFitCover')], ['fill', t('plFitFill')]], pcfg('fit', 'contain'), v => { psave('fit', v); applyFit(); }), t('plFitHint')),
+      row(t('plSkipLen'), seg([[5, '5 s'], [10, '10 s'], [15, '15 s'], [30, '30 s']], skipLen(), v => { psave('skipLen', +v); updSkipIcons(); })),
       row(t('plSpeed'), seg([[0.5, '0.5×'], [0.75, '0.75×'], [1, '1×'], [1.25, '1.25×'], [1.5, '1.5×'], [2, '2×']], PL.speed, v => { PL.speed = +v; PL.v.playbackRate = +v; })));
   } else if (tab === 'playback') {
     body.append(row(t('plAutoNext'), sw('autoNext', true), t('plAutoNextHint')), row(t('plAutoSkip'), sw('autoSkip', false), t('plAutoSkipHint')), row(t('plRemember'), sw('rememberVol', true)));
   } else if (tab === 'subs') {
+    { const val = h('b', { class: 'pl-delayv' }, ((PL.subDelay || 0) >= 0 ? '+' : '') + (PL.subDelay || 0).toFixed(1) + ' s'); const bump = d => { PL.subDelay = Math.round(((PL.subDelay || 0) + d) * 10) / 10; val.textContent = (PL.subDelay >= 0 ? '+' : '') + PL.subDelay.toFixed(1) + ' s'; applySubDelay(); };
+      body.append(row(t('plSubDelay'), h('div', { class: 'pl-stepper' }, h('button', { onclick: () => bump(-.5) }, '−.5'), h('button', { onclick: () => bump(-.1) }, '−'), val, h('button', { onclick: () => bump(.1) }, '+'), h('button', { onclick: () => bump(.5) }, '+.5')), t('plSubDelayHint'))); }
     body.append(row(t('plSubSize'), seg([['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']], pcfg('subSize', 'm'), v => { psave('subSize', v); applySubStyle(); })),
       row(t('plSubPos'), seg([[4, t('plLow')], [9, t('plMid')], [16, t('plHigh')]], pcfg('subPos', 9), v => { psave('subPos', +v); applySubStyle(); })),
       row(t('plSubBg'), seg([['shadow', t('plShadow')], ['box', t('plBox')], ['none', t('plNone')]], pcfg('subBg', 'shadow'), v => { psave('subBg', v); applySubStyle(); })),
@@ -220,7 +235,8 @@ function showStats(on) { const st = $('.pl-stats', PL.el); if (on === undefined)
 
 /* build */
 function buildPlayerUI(it) {
-  const v = h('video', { playsinline: '', preload: 'auto' });
+  const v = h('video', { playsinline: '', preload: 'auto', poster: 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=' });
+  v.addEventListener('playing', () => { wake(); applyFit(); }, { once: true });
   const seekFill = h('i'), seekBuf = h('em'), seekKnob = h('b'), bubble = h('div', { class: 'pl-bubble' }, h('div', { class: 'pl-thumb' }), h('span', {})), chapters = h('div', { class: 'pl-chapters' });
   const seek = h('div', { class: 'pl-seek' }, seekBuf, chapters, seekFill, seekKnob, bubble);
   const tCur = h('span', {}, '0:00'), tDur = h('span', {}, '0:00');
@@ -229,11 +245,12 @@ function buildPlayerUI(it) {
   const muteBtn = h('button', { onclick: () => { v.muted = !v.muted; updVol(); }, 'aria-label': 'Mute' }, pic('vol'));
   const tip = (label, el) => { el.setAttribute('data-tip', label); el.setAttribute('aria-label', label); return el; };
   const subsEl = h('div', { class: 'pl-subs' });
-  const el = h('div', { id: 'cx-player', class: 'loading' }, v, subsEl,
+  const loadBg = imgUrl(it, 'Backdrop', 1280) || imgUrl(it, 'Primary', 600);
+  const el = h('div', { id: 'cx-player', class: 'loading' }, h('div', Object.assign({ class: 'pl-loadbg' }, bg(loadBg))), v, subsEl,
     
     h('div', { class: 'pl-top' }, tip(t('plBack'), h('button', { class: 'pl-back', onclick: backFromPlayer }, pic('back'))), h('div', { class: 'pl-ttl' }, h('div', { class: 'pl-title ell' }), h('div', { class: 'pl-sub ell' })), tip(t('plInfo'), h('button', { class: 'pl-round', onclick: () => showStats() }, pic('info')))),
     h('div', { class: 'pl-stats' }),
-    h('div', { class: 'pl-bigctl' }, h('button', { 'aria-label': '-10', onclick: () => skip(-10) }, skipIcon(-1)), h('button', { class: 'pl-bigpp', 'aria-label': 'Play / Pause', onclick: () => togglePlay() }, pic('play')), h('button', { 'aria-label': '+10', onclick: () => skip(10) }, skipIcon(1))),
+    h('div', { class: 'pl-bigctl' }, h('button', { 'aria-label': '-10', onclick: () => skip(-skipLen()) }, skipIcon(-1)), h('button', { class: 'pl-bigpp', 'aria-label': 'Play / Pause', onclick: () => togglePlay() }, pic('play')), h('button', { 'aria-label': '+10', onclick: () => skip(skipLen()) }, skipIcon(1))),
     h('div', { class: 'pl-center' }, h('div', { class: 'pl-spin' }), h('div', { class: 'pl-status' })),
     h('div', { class: 'pl-flash' }), h('div', { class: 'pl-stack' }), h('div', { class: 'pl-gest' }),
     h('div', { class: 'pl-err' }, h('b', {}, t('plFail')), h('p', { class: 'pl-errmsg' }), h('div', { class: 'nf-btns', style: 'justify-content:center' },
@@ -243,7 +260,7 @@ function buildPlayerUI(it) {
     h('button', { class: 'pl-skipseg btn white' }, pic('skip'), h('span', {}, t('plSkipIntro'))),
     h('div', { class: 'pl-nextcard' }, h('div', { class: 'pl-nc-s' }), h('div', { class: 'pl-nc-t ell' }), h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: playNextEp }, pic('next'), t('plNext')), h('button', { class: 'btn grey', onclick: () => { psave('autoNext', false); $('.pl-nextcard', el).classList.remove('show'); } }, t('cancel')))),
     h('div', { class: 'pl-bar' }, seek, h('div', { class: 'pl-row' },
-      ppBtn, tip(t('plBack10'), h('button', { onclick: () => skip(-10), class: 'pl-skip' }, skipIcon(-1))), tip(t('plFwd10'), h('button', { onclick: () => skip(10), class: 'pl-skip' }, skipIcon(1))),
+      ppBtn, tip(t('plBack10'), h('button', { onclick: () => skip(-skipLen()), class: 'pl-skip' }, skipIcon(-1))), tip(t('plFwd10'), h('button', { onclick: () => skip(skipLen()), class: 'pl-skip' }, skipIcon(1))),
       h('div', { class: 'pl-vol' }, muteBtn, volBar), h('div', { class: 'pl-time' }, tCur, h('span', { class: 'sl' }, ' / '), tDur), h('div', { style: 'flex:1' }),
       h('div', { class: 'pl-btn-wrap pl-btn-next' }, tip(t('plNext'), h('button', { onclick: playNextEp }, pic('next')))),
       h('div', { class: 'pl-btn-wrap pl-btn-eps hide' }, tip(t('episodes'), h('button', { onclick: showEpisodes }, pic('eps'))), h('div', { class: 'pl-menu pl-menu-eps' })),
@@ -366,7 +383,7 @@ const onFsChange = () => { if (PL.el) { const b = $('.pl-fs', PL.el); b && b.rep
 function onKey(e) {
   if (!PL.open || (e.target.closest && e.target.closest('input,textarea'))) return;
   const k = e.key; let used = true;
-  if (k === ' ' || k === 'k') togglePlay(); else if (k === 'ArrowRight' || k === 'l') skip(10); else if (k === 'ArrowLeft' || k === 'j') skip(-10);
+  if (k === ' ' || k === 'k') togglePlay(); else if (k === 'ArrowRight' || k === 'l') skip(skipLen()); else if (k === 'ArrowLeft' || k === 'j') skip(-skipLen());
   else if (k === 'ArrowUp') PL.v.volume = Math.min(1, PL.v.volume + .1); else if (k === 'ArrowDown') PL.v.volume = Math.max(0, PL.v.volume - .1);
   else if (k === 'f') toggleFs(); else if (k === 'm') PL.v.muted = !PL.v.muted; else if (k === 'i') showStats(); else if (k === 'c') { const b = $('.pl-btn-subs:not(.hide)', PL.el); b && toggleMenu('.pl-menu-subs'); }
   else if (k === 'Escape') { if ($('.pl-settings.open, .pl-menu.open', PL.el)) { $('.pl-settings', PL.el).classList.remove('open'); closeMenus(); } else if (!document.fullscreenElement) backFromPlayer(); else used = false; } else used = false;
@@ -378,3 +395,6 @@ function playNative(id) {
   COVER.show(); C.allowNative = true; location.hash = '#/details?id=' + id; let tries = 0;
   const iv = setInterval(() => { tries++; const page = $('#itemDetailPage:not(.hide)'); const btn = page && ($('.btnResume:not(.hide)', page) || $('.btnPlay:not(.hide)', page)); if (btn) { clearInterval(iv); btn.click(); } if (tries > 80) { clearInterval(iv); COVER.hide(); } }, 150);
 }
+
+Object.assign(TX.en, { plFit: 'Picture fit', plFitContain: 'Fit', plFitCover: 'Fill', plFitFill: 'Stretch', plFitHint: 'Fit keeps the whole picture, Fill crops it to the screen, Stretch distorts it.', plSkipLen: 'Skip length', plSubDelay: 'Subtitle delay', plSubDelayHint: 'Positive values show subtitles later.' });
+Object.assign(TX.de, { plFit: 'Bildformat', plFitContain: 'Anpassen', plFitCover: 'Füllen', plFitFill: 'Strecken', plFitHint: 'Anpassen zeigt das ganze Bild, Füllen schneidet es auf den Bildschirm zu, Strecken verzerrt es.', plSkipLen: 'Sprunglänge', plSubDelay: 'Untertitel-Verzögerung', plSubDelayHint: 'Positive Werte zeigen Untertitel später.' });

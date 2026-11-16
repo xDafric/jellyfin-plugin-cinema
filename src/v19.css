@@ -162,3 +162,44 @@ html.cx-tv .nf-row.top10 .nf-card.t10c:first-child { margin-left: 0 !important; 
 /* dashboard: breathing room under the app bar */
 html.cx-ready main.MuiBox-root > :first-child { margin-top: 14px; }
 html.cx-ready #dashboardPage, html.cx-ready .dashboardContent { padding-top: 12px; }
+
+/* ratings placeholder: same height as the finished chips */
+.rt-row.rt-ph { min-height: 34px; align-items: center; }
+.rt-chip.sk { width: 150px; height: 30px; border-radius: 999px; background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06)); background-size: 200% 100%; animation: rtsk 1.2s linear infinite; }
+@keyframes rtsk { to { background-position: -200% 0; } }
+.rt-row.rt-in .rt-chip { animation: cxfade .3s both; }
+/* TV: lighter focus visuals (outline only, no blurred glow on every card) */
+html.cx-tv .nf-card.tvf-on .im, html.cx-tv .nf-person.tvf-on .pi { box-shadow: none !important; transform: none !important; }
+html.cx-tv .nf-card .im, html.cx-tv .nf-person .pi { transition: none !important; }
+/* any other focused element (genre tiles, segmented buttons, switches...) still gets a visible ring */
+html.cx-tv #cx :where(.tvf-on):not(.nf-card):not(.nf-person):not(.btn):not(.sp-row):not(.sp-li):not(.sp-navlink):not(.sp-chip):not(.sp-card):not(.sp-top1):not(.pl-btn):not(.nf-chip):not(.cxd-chip):not(.cxd-opt):not(.cxd-res):not(.nf-ep):not(input):not(select):not(textarea):not(.set-switch) { outline: 4px solid #fff; outline-offset: 3px; border-radius: 14px; }
+
+/* ---------- video player: modern pass ---------- */
+#cx-player .pl-loadbg { position: absolute; inset: -6%; background-size: cover; background-position: center; filter: blur(30px) brightness(.4) saturate(1.2); opacity: 0; transition: opacity .5s; z-index: 0; pointer-events: none; }
+#cx-player.loading .pl-loadbg { opacity: 1; }
+#cx-player video { transition: opacity .4s; background: #000; }
+#cx-player.loading video { opacity: 0; }
+#cx-player .pl-center { z-index: 3; }
+#cx-player .pl-spin { width: 54px; height: 54px; border-width: 3px; }
+#cx-player .pl-bar { background: linear-gradient(0deg, rgba(0,0,0,.82), rgba(0,0,0,.45) 60%, transparent); padding-top: 54px; }
+#cx-player .pl-row { gap: 6px; align-items: center; }
+#cx-player .pl-row button { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; transition: background .15s, transform .15s; }
+#cx-player .pl-row button:hover { background: rgba(255,255,255,.14); }
+#cx-player .pl-row button:active { transform: scale(.92); }
+#cx-player .pl-row svg, #cx-player .pl-bigctl svg { width: 24px; height: 24px; stroke-width: 1.7; }
+#cx-player .pl-row .lu-skip, #cx-player .pl-bigctl .lu-skip { width: 28px; height: 28px; stroke-width: 1.7; }
+#cx-player .pl-pp { width: 48px !important; height: 48px !important; background: #fff !important; color: #000 !important; }
+#cx-player .pl-pp svg { fill: #000; stroke: #000; }
+#cx-player .pl-seek { height: 6px; border-radius: 6px; }
+#cx-player .pl-bigctl { gap: clamp(34px, 9vw, 90px); }
+#cx-player .pl-bigctl button { width: 64px; height: 64px; border-radius: 50%; background: rgba(0,0,0,.35); backdrop-filter: blur(8px); display: grid; place-items: center; }
+#cx-player .pl-bigctl .pl-bigpp { width: 84px; height: 84px; background: rgba(255,255,255,.95); color: #000; }
+#cx-player .pl-bigctl .pl-bigpp svg { width: 36px; height: 36px; fill: #000; stroke: #000; }
+#cx-player .pl-top { background: linear-gradient(180deg, rgba(0,0,0,.7), transparent); }
+#cx-player .pl-ttl .pl-title { font-weight: 800; letter-spacing: -.01em; }
+#cx-player .pl-settings { border-radius: 22px; background: rgba(22,22,26,.92); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,.08); }
+.pl-stepper { display: inline-flex; align-items: center; gap: 6px; }
+.pl-stepper button { min-width: 44px; height: 38px; border-radius: 999px; background: rgba(255,255,255,.1); color: #fff; font-weight: 700; padding: 0 12px; }
+.pl-stepper button:hover { background: rgba(255,255,255,.2); }
+.pl-stepper .pl-delayv { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+.pl-seg button.on { background: #fff; color: #000; }

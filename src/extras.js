@@ -18,13 +18,16 @@ function mediaInfoSection(it, admin) {
 async function ratingsRow(it, container) {
   const tm = (it.ProviderIds || {}).Tmdb; if (!tm || !hasSeerr()) return;
   const mt = it.Type === 'Series' ? 'tv' : 'movie';
+  const info = $('.nf-dinfo .nf-meta', container); if (!info) return;
+  const row = h('div', { class: 'rt-row rt-ph' }, h('span', { class: 'rt-chip sk' }), h('span', { class: 'rt-chip sk' })); info.after(row); // the space is reserved right away
   try {
     const r = await seerrGet('/' + mt + '/' + tm + '/ratingscombined'); const chips = [];
     const rt = r.rt; const im = r.imdb;
     if (rt && (rt.criticsScore != null)) chips.push(h('span', { class: 'rt-chip' }, 'Rotten Tomatoes ', h('b', {}, rt.criticsScore + '%'), rt.audienceScore != null ? h('small', {}, t('audience') + ' ' + rt.audienceScore + '%') : null));
     if (im && im.criticsScore != null) chips.push(h('span', { class: 'rt-chip' }, 'IMDb ', h('b', {}, im.criticsScore), im.criticsScoreCount ? h('small', {}, (im.criticsScoreCount / 1000).toFixed(0) + 'k') : null));
-    if (!chips.length) return; const row = h('div', { class: 'rt-row' }, chips); const info = $('.nf-dinfo .nf-meta', container); if (info) info.after(row);
-  } catch (e) { }
+    if (!chips.length) { row.remove(); return; }
+    row.replaceChildren(...chips); row.classList.remove('rt-ph'); row.classList.add('rt-in');
+  } catch (e) { row.remove(); }
 }
 async function seerrSimilarRow(it, body) {
   const tm = (it.ProviderIds || {}).Tmdb; if (!tm || !(await waitSeerr())) return;

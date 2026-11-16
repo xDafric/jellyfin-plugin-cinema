@@ -60,6 +60,7 @@ class PlayerActivity : Activity() {
     private lateinit var skipBtn: IconBtn; private lateinit var spinner: ProgressBar; private lateinit var toast: TextView; private lateinit var centerIcon: ImageView
     private lateinit var preview: LinearLayout; private lateinit var previewImg: ImageView; private lateinit var previewTime: TextView; private lateinit var previewChap: TextView
     private var overlayOn = false
+    private lateinit var aspectBtn: IconBtn; private lateinit var speedBtn: IconBtn; private var aspectMode = 0
     private val hideRunnable = Runnable { if (player.isPlaying && !scrubbing) showOverlay(false) }
     private val commitRunnable = Runnable { commitScrub() }
 
@@ -68,7 +69,7 @@ class PlayerActivity : Activity() {
     /** Icon (+ optional label) button that turns white when focused. */
     inner class IconBtn(ctx: Context, icon: Int, label: String?, size: Int, round: Boolean) : LinearLayout(ctx) {
         private val img = ImageView(ctx).apply { setImageResource(icon); setColorFilter(Color.WHITE) }
-        private val txt: TextView? = label?.let { TextView(ctx).apply { text = it; textSize = 17f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD } }
+        private val txt: TextView? = label?.let { TextView(ctx).apply { text = it; textSize = 15f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD } }
         private val bgN = GradientDrawable().apply { cornerRadius = dp(size).toFloat(); setColor(Color.parseColor("#33FFFFFF")) }
         private val bgF = GradientDrawable().apply { cornerRadius = dp(size).toFloat(); setColor(Color.WHITE) }
         init {
@@ -113,36 +114,40 @@ class PlayerActivity : Activity() {
 
         overlay = FrameLayout(this).apply { visibility = View.GONE }
         /* top: back, title, badges */
-        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP; setPadding(dp(56), dp(34), dp(56), dp(70)); background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#D9000000"), Color.TRANSPARENT)) }
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP; setPadding(dp(44), dp(26), dp(44), dp(56)); background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#D9000000"), Color.TRANSPARENT)) }
         val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        titleView = TextView(this).apply { textSize = 30f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; maxLines = 1 }
-        subtitleView = TextView(this).apply { textSize = 18f; setTextColor(Color.parseColor("#C8C8D0")); maxLines = 1 }
+        titleView = TextView(this).apply { textSize = 26f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; maxLines = 1 }
+        subtitleView = TextView(this).apply { textSize = 15f; setTextColor(Color.parseColor("#C8C8D0")); maxLines = 1 }
         titles.addView(titleView); titles.addView(subtitleView)
         badges = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.END }
         top.addView(titles, LinearLayout.LayoutParams(0, -2, 1f)); top.addView(badges, LinearLayout.LayoutParams(-2, -2))
         overlay.addView(top, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
 
         /* bottom: seek, times, buttons */
-        val bottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(56), dp(110), dp(56), dp(30)); background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(Color.parseColor("#F2000000"), Color.parseColor("#99000000"), Color.TRANSPARENT)) }
+        val bottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(44), dp(90), dp(44), dp(40)); background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(Color.parseColor("#F2000000"), Color.parseColor("#99000000"), Color.TRANSPARENT)) }
         seek = SeekView(this).apply { isFocusable = true; onScrub = { dir, rep -> scrubStep(dir, rep) } }
-        curTime = TextView(this).apply { textSize = 16f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD }
-        remTime = TextView(this).apply { textSize = 16f; setTextColor(Color.parseColor("#C8C8D0")) }
+        curTime = TextView(this).apply { textSize = 14f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD }
+        remTime = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#C8C8D0")) }
         val times = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; addView(curTime, LinearLayout.LayoutParams(0, -2, 1f)); addView(remTime) }
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        ppBtn = IconBtn(this, R.drawable.t_play, null, 64, true).apply { setOnClickListener { togglePlay() } }
-        val back10 = IconBtn(this, R.drawable.t_back10, null, 52, true).apply { setOnClickListener { jump(-10_000) } }
-        val fwd10 = IconBtn(this, R.drawable.t_fwd10, null, 52, true).apply { setOnClickListener { jump(10_000) } }
-        audioBtn = IconBtn(this, R.drawable.t_audio, getString(R.string.audio), 52, false).apply { setOnClickListener { chooseTrack(C.TRACK_TYPE_AUDIO) } }
-        subsBtn = IconBtn(this, R.drawable.t_subs, getString(R.string.subtitles), 52, false).apply { setOnClickListener { chooseTrack(C.TRACK_TYPE_TEXT) } }
-        nextBtn = IconBtn(this, R.drawable.t_next, getString(R.string.next_episode), 52, false).apply { setOnClickListener { playNext() }; visibility = View.GONE }
-        endsAt = TextView(this).apply { textSize = 16f; setTextColor(Color.parseColor("#C8C8D0")) }
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false }
+        ppBtn = IconBtn(this, R.drawable.t_play, null, 54, true).apply { setOnClickListener { togglePlay() } }
+        val back10 = IconBtn(this, R.drawable.t_back10, null, 44, true).apply { setOnClickListener { jump(-10_000) } }
+        val fwd10 = IconBtn(this, R.drawable.t_fwd10, null, 44, true).apply { setOnClickListener { jump(10_000) } }
+        audioBtn = IconBtn(this, R.drawable.t_audio, getString(R.string.audio), 44, false).apply { setOnClickListener { chooseTrack(C.TRACK_TYPE_AUDIO) } }
+        subsBtn = IconBtn(this, R.drawable.t_subs, getString(R.string.subtitles), 44, false).apply { setOnClickListener { chooseTrack(C.TRACK_TYPE_TEXT) } }
+        nextBtn = IconBtn(this, R.drawable.t_next, getString(R.string.next_episode), 44, false).apply { setOnClickListener { playNext() }; visibility = View.GONE }
+        aspectBtn = IconBtn(this, R.drawable.t_aspect, null, 44, true).apply { setOnClickListener { cycleAspect() } }
+        speedBtn = IconBtn(this, R.drawable.t_speed, "1×", 44, false).apply { setOnClickListener { chooseSpeed() } }
+        endsAt = TextView(this).apply { textSize = 14f; setTextColor(Color.parseColor("#C8C8D0")) }
         val gap = { dp(14) }
-        row.addView(ppBtn, LinearLayout.LayoutParams(dp(64), dp(64)))
-        row.addView(back10, LinearLayout.LayoutParams(dp(52), dp(52)).apply { leftMargin = gap() })
-        row.addView(fwd10, LinearLayout.LayoutParams(dp(52), dp(52)).apply { leftMargin = gap() })
-        row.addView(audioBtn, LinearLayout.LayoutParams(-2, dp(52)).apply { leftMargin = dp(28) })
-        row.addView(subsBtn, LinearLayout.LayoutParams(-2, dp(52)).apply { leftMargin = gap() })
-        row.addView(nextBtn, LinearLayout.LayoutParams(-2, dp(52)).apply { leftMargin = gap() })
+        row.addView(ppBtn, LinearLayout.LayoutParams(dp(54), dp(54)))
+        row.addView(back10, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = gap() })
+        row.addView(fwd10, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = gap() })
+        row.addView(audioBtn, LinearLayout.LayoutParams(-2, dp(44)).apply { leftMargin = dp(28) })
+        row.addView(subsBtn, LinearLayout.LayoutParams(-2, dp(44)).apply { leftMargin = gap() })
+        row.addView(aspectBtn, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = gap() })
+        row.addView(speedBtn, LinearLayout.LayoutParams(-2, dp(44)).apply { leftMargin = gap() })
+        row.addView(nextBtn, LinearLayout.LayoutParams(-2, dp(44)).apply { leftMargin = gap() })
         row.addView(Space(this), LinearLayout.LayoutParams(0, 1, 1f)); row.addView(endsAt)
         bottom.addView(seek, LinearLayout.LayoutParams(-1, dp(34)))
         bottom.addView(times, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(2) })
@@ -158,8 +163,8 @@ class PlayerActivity : Activity() {
         overlay.addView(preview, FrameLayout.LayoutParams(dp(220), -2, Gravity.BOTTOM or Gravity.START).apply { bottomMargin = dp(168) })
         root.addView(overlay, FrameLayout.LayoutParams(-1, -1))
 
-        skipBtn = IconBtn(this, R.drawable.t_next, getString(R.string.skip_intro), 56, false).apply { visibility = View.GONE; setOnClickListener { skipSegment() } }
-        root.addView(skipBtn, FrameLayout.LayoutParams(-2, dp(56), Gravity.BOTTOM or Gravity.END).apply { rightMargin = dp(56); bottomMargin = dp(190) })
+        skipBtn = IconBtn(this, R.drawable.t_next, getString(R.string.skip_intro), 48, false).apply { visibility = View.GONE; setOnClickListener { skipSegment() } }
+        root.addView(skipBtn, FrameLayout.LayoutParams(-2, dp(48), Gravity.BOTTOM or Gravity.END).apply { rightMargin = dp(44); bottomMargin = dp(170) })
         setContentView(root)
     }
 
@@ -298,6 +303,22 @@ class PlayerActivity : Activity() {
         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().setTrackTypeDisabled(g.type, false).setOverrideForType(TrackSelectionOverride(g.mediaTrackGroup, track)).build()
     }
 
+    /** Picture format: fit (whole picture) / fill (cropped to the screen) / stretch. */
+    private fun cycleAspect() {
+        aspectMode = (aspectMode + 1) % 3
+        view.resizeMode = when (aspectMode) { 1 -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM; 2 -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL; else -> androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT }
+        flash(getString(when (aspectMode) { 1 -> R.string.fill; 2 -> R.string.stretch; else -> R.string.fit })); resetHide()
+    }
+
+    private fun chooseSpeed() {
+        val speeds = floatArrayOf(.75f, 1f, 1.25f, 1.5f, 2f); val names = arrayOf("0.75×", "1×", "1.25×", "1.5×", "2×")
+        val checked = speeds.indexOfFirst { it == player.playbackParameters.speed }.let { if (it < 0) 1 else it }
+        val dlg = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle(R.string.speed)
+            .setSingleChoiceItems(names, checked) { d, w -> player.setPlaybackSpeed(speeds[w]); speedBtn.setLabel(names[w]); d.dismiss(); resetHide() }.create()
+        dlg.window?.setBackgroundDrawable(GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(Color.parseColor("#1C1C21")) })
+        dlg.show(); dlg.listView?.requestFocus()
+    }
+
     private fun chooseTrack(type: Int) {
         val groups = player.currentTracks.groups.filter { it.type == type }
         val names = ArrayList<String>(); val actions = ArrayList<() -> Unit>(); var checked = 0
@@ -383,7 +404,7 @@ class PlayerActivity : Activity() {
         val d = duration(); val frac = if (d > 0) scrubMs.toFloat() / d else 0f
         seek.set(frac, player.bufferedPosition.toFloat() / (if (d > 0) d else 1)); curTime.text = fmt(scrubMs); remTime.text = "-" + fmt(d - scrubMs)
         previewTime.text = fmt(scrubMs); previewChap.text = chapters.lastOrNull { it.first <= scrubMs }?.second ?: ""
-        val W = resources.displayMetrics.widthPixels; val barL = dp(56); val barW = W - dp(112); val cw = dp(220)
+        val W = resources.displayMetrics.widthPixels; val barL = dp(44); val barW = W - dp(88); val cw = dp(220)
         val lp = preview.layoutParams as FrameLayout.LayoutParams
         lp.leftMargin = (barL + frac * barW - cw / 2f).toInt().coerceIn(dp(24), W - dp(24) - cw); preview.layoutParams = lp
         preview.visibility = View.VISIBLE; loadThumb(scrubMs)

@@ -17,6 +17,9 @@ function tvInit() {
       const cs = getComputedStyle(e); if (cs.cursor === 'pointer') { e.setAttribute('tabindex', '0'); e.dataset.tvf = '1'; }
     }
   }
+  /* dialogs and menus take the focus the moment they open (no waiting for the idle timer) */
+  const quickLayer = () => { const L = layer(); if (!L) return; const ae = document.activeElement; if (ae && L.contains(ae)) return; if (ae && ae !== document.body && !TVSTATE.opener) TVSTATE.opener = ae; rcDirty = true; const f = tvPreferred(cands()); if (f) { f.focus({ preventScroll: true }); mark(f); } };
+  document.addEventListener('click', () => { requestAnimationFrame(() => requestAnimationFrame(quickLayer)); }, true);
   const mo = new MutationObserver(ms => { rcDirty = true; ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) scanQ.add(n); })); clearTimeout(scanT); scanT = setTimeout(() => { const q = [...scanQ]; scanQ = new Set(); q.forEach(n => { if (n.isConnected) scan(n); }); tvAuto(); }, 120); });
   const startMO = () => { [document.getElementById('cx'), document.getElementById('cx-ui')].forEach(t => t && mo.observe(t, { childList: true, subtree: true })); if (!document.getElementById('cx') || !document.getElementById('cx-ui')) setTimeout(startMO, 500); else { scan(document.getElementById('cx')); scan(document.getElementById('cx-ui')); } };
   startMO();
@@ -34,6 +37,7 @@ function tvInit() {
     const ov = document.documentElement.classList.contains('cx-on'); // our interface is showing: the stock page behind it must not take part
     document.querySelectorAll(SEL).forEach(e => {
       if (ov && !e.closest('#cx, #cx-ui')) return;
+      if (e.matches('.nf-search input') && !e.closest('.nf-search.open')) return; // a closed search box would pop up the keyboard
       let x = e._tvx; if (x === undefined) { x = EXCL(e); e._tvx = x; } if (x || e.closest('[inert], .hide')) return;
       const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4 || r.bottom < -2400 || r.top > innerHeight + 2600) return;
       const sc = e.closest(SCR); const inHost = !!(H && H.contains(e));
