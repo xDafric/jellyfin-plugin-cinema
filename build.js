@@ -8,6 +8,7 @@ const out = `/* Cinema UI - Netflix + Spotify style frontend for Jellyfin 12. Ki
 if (window.__cinemaUI) return; window.__cinemaUI = 1;
 try { if (/nocinema/.test(location.hash + location.search) || localStorage.getItem('cinema-off') === '1') { document.documentElement.classList.add('cx-off'); return; } } catch (e) {}
 const CSS_TEXT = ${JSON.stringify(css)};
+${r('early.js')}
 ${r('icons.js')}
 ${r('core.js')}
 ${r('hidden.js')}

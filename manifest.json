@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.13.0",
+                             "changelog":  "Login skin applied reliably, music: aligned track list, mute icon, visible seek knob, lyrics and queue as full-screen layer above the phone player, recommendations on the music home, phone player polish.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.13.0.zip",
+                             "checksum":  "ab25e4f6ada54a1165310395b226532c",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.12.0",
                              "changelog":  "Music: working queue, song requests in search, popular songs (incl. not owned) on artist pages, download queue page, quick play in the library, Spotify-style lyrics card and flatter mobile layout, sidebar and player polish; single hover on spotlight cards.",
                              "targetAbi":  "12.4.0.0",

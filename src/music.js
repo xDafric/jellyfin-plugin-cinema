@@ -114,6 +114,7 @@ function buildPlayer() {
   const sv = parseFloat((() => { try { return localStorage.getItem('cx-vol'); } catch (e) { return null; } })()); P.audio.volume = isFinite(sv) ? sv : 1; vol.set(P.audio.volume);
   const bQ = h('button', { class: 'pl-btn', onclick: toggleQueue, 'aria-label': t('queue') }, ic('queue'));
   const bMute = h('button', { class: 'pl-btn', onclick: () => { P.audio.muted = !P.audio.muted; vol.set(P.audio.muted ? 0 : P.audio.volume); } }, ic('vol'));
+  const upMute = () => bMute.replaceChildren(ic(P.audio.muted || P.audio.volume === 0 ? 'volx' : 'vol')); P.audio.addEventListener('volumechange', upMute);
   const bL = h('button', { class: 'pl-btn', onclick: toggleLyrics, 'aria-label': t('lyrics') }, ic('mic'));
   const right = h('div', { class: 'pl-r' }, bL, bQ, bMute, vol);
   const bar = h('div', { class: 'sp-player' }, left, center, right);
@@ -125,11 +126,11 @@ function buildPlayer() {
   const fcur = h('span', {}, '0:00'), fdur = h('span', {}, '0:00');
   const fseek = seekBar(null, (f, commit) => { if (P.audio.duration) { if (commit) P.audio.currentTime = f * P.audio.duration; fcur.textContent = fmtTime(f * P.audio.duration); } });
   const fb = { sh: h('button', { class: 'pl-btn', onclick: toggleShuffle }, ic('shuffle')), pv: h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), pp: h('button', { class: 'pl-btn big', onclick: toggle }, ic('play')), nx: h('button', { class: 'pl-btn', onclick: () => next() }, ic('next')), rp: h('button', { class: 'pl-btn', onclick: cycleRepeat }, ic('repeat')) };
-  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { style: 'display:flex' }, h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleLyrics(); } }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => { openFull(false); toggleQueue(); } }, ic('queue')))), fcv,
+  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { class: 'tops' }, h('button', { class: 'pl-btn', onclick: () => toggleLyrics() }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => toggleQueue() }, ic('queue')))), fcv,
     h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), fLike), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
   function openFull(on) { full.classList.toggle('open', on); full.style.transform = ''; }
   /* Spotify style lyrics card inside the full-screen player */
-  const fLn = h('div', { class: 'ln' }); const fLyr = h('div', { class: 'f-lyr hide', onclick: () => { openFull(false); toggleLyrics(); } }, h('b', {}, t('lyrics')), fLn); full.append(fLyr);
+  const fLn = h('div', { class: 'ln' }); const fLyr = h('div', { class: 'f-lyr hide', onclick: () => toggleLyrics() }, h('b', {}, t('lyrics')), fLn); full.append(fLyr);
   let fLyrId = null, fLyrData = null;
   function paintFLyr() {
     if (!fLyrData || !fLyrData.length) { fLyr.classList.add('hide'); return; } fLyr.classList.remove('hide');
@@ -186,7 +187,8 @@ function buildPlayer() {
 }
 let tickUI = () => { };
 let queueEl = null;
-function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; return; } queueEl = h('div', { class: 'sp-queue' }); $('.sp-main', root).parentElement.append(queueEl); renderQueue(); }
+const panelHost = () => matchMedia('(max-width: 800px)').matches ? root : $('.sp-main', root).parentElement;
+function toggleQueue() { if (lyrEl) { lyrEl.remove(); lyrEl = null; } if (queueEl) { queueEl.remove(); queueEl = null; return; } queueEl = h('div', { class: 'sp-queue' }); panelHost().append(queueEl); renderQueue(); }
 function renderQueue() {
   if (!queueEl) return; const it = cur();
   const rowQ = (x, k) => h('div', { class: 'sp-qi' + (k === P.i ? ' playing' : ''), onclick: () => { P.i = k; loadCurrent(); } }, h('div', Object.assign({ class: 'cv' }, bg(trackImg(x, 100)))), h('div', {}, h('b', { class: 'ell' }, x.Name), h('span', { class: 'ell' }, artistText(x))));
@@ -245,9 +247,9 @@ function refreshRows() { $$('.sp-row .lk').forEach(b => b._upd && b._upd()); }
 function trackList(tracks, ctx) {
   ctx = ctx || {}; const noAlb = ctx.noAlbum;
   const wrap = h('div', {});
-  wrap.append(h('div', { class: 'sp-th' + (noAlb ? ' noalb' : '') }, h('span', {}, '#'), h('span', {}, t('title')), noAlb ? null : h('span', {}, t('album')), h('span', {}, ''), h('span', {}, '⏱')));
+  wrap.append(h('div', { class: 'sp-th' + (noAlb ? ' noalb' : '') }, h('span', {}, '#'), h('span', {}, t('title')), noAlb ? null : h('span', {}, t('album')), h('span', {}, '⏱')));
   // grid has 5 columns with album, 4 without; adjust header to match
-  const th = $('.sp-th', wrap); if (!noAlb) { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, t('album')), h('span', {}, ''), h('span', {}, '⏱')); } else { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, ''), h('span', {}, '⏱')); }
+  const th = $('.sp-th', wrap); if (!noAlb) { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, t('album')), h('span', {}, '⏱')); } else { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, '⏱')); }
   let lastDisc = null;
   tracks.forEach((it, idx) => {
     if (ctx.discs && it.ParentIndexNumber && it.ParentIndexNumber !== lastDisc && tracks.some(x => (x.ParentIndexNumber || 1) > 1)) { lastDisc = it.ParentIndexNumber; wrap.append(h('div', { class: 'sp-disc' }, ic('note', 'ic-s'), 'Disc ' + lastDisc)); }
@@ -356,7 +358,7 @@ C.renderMusic = async function (r) {
     else if (view === 'library') await mLibrary(node);
     else if (view === 'downloads') await mDownloads(node);
   } catch (e) { console.error('[cinema music]', e); node.append(h('div', { class: 'nf-empty' }, t('empty'))); }
-  try { if (view === 'search' && id) { await aurralSearchShelves(node, decodeURIComponent(id)); aurralTrackSearch(node, decodeURIComponent(id)); } else if (!view) await aurralDiscoverShelves(node); } catch (e) { }
+  try { if (view === 'search' && id) { await aurralSearchShelves(node, decodeURIComponent(id)); aurralTrackSearch(node, decodeURIComponent(id)); } else if (!view) { await aurralDiscoverShelves(node); musicRecs(node); } } catch (e) { }
   sp.content.replaceWith(node); sp.content = node;
   sp.scroll.scrollTop = C.scrollPos[r.raw] || 0;
   P.subs.forEach(f => f());
@@ -471,7 +473,7 @@ let lyrEl = null, lyrLines = null, lyrId = null, lyrAt = -1, lyrSynced = false;
 function toggleLyrics() {
   if (lyrEl) { lyrEl.remove(); lyrEl = null; return; }
   if (queueEl) { queueEl.remove(); queueEl = null; }
-  lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); $('.sp-main', root).parentElement.append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics();
+  lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); panelHost().append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics();
 }
 async function loadLyrics(it) {
   lyrId = it.Id; lyrLines = null; lyrAt = -1; drawLyrics(true);
@@ -487,8 +489,13 @@ function drawLyrics(loading) {
   if (loading || lyrLines == null) body = h('div', { class: 'spinner', style: 'margin:60px auto' });
   else if (!lyrLines.length) body = h('div', { class: 'nf-empty', style: 'padding:40px 10px' }, t('noLyrics'));
   else body = h('div', { class: 'lyr-body' + (lyrSynced ? ' sync' : '') }, lyrLines.map((l, i) => h('p', { class: 'lyr-l' + (l.s ? '' : ' gap'), 'data-i': i, onclick: lyrSynced && l.t != null ? () => { P.audio.currentTime = l.t; } : null }, l.s || '♪')));
-  lyrEl.replaceChildren(head, sub_ || '', body);
+  const foot = h('div', { class: 'lyr-foot' }, lyrSeek = seekBar(null, (f, commit) => { if (commit && P.audio.duration) P.audio.currentTime = f * P.audio.duration; }), h('div', { class: 'lyr-ctr' }, h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), lyrPP = h('button', { class: 'pl-btn big', onclick: toggle }, ic(P.audio.paused ? 'play' : 'pause')), h('button', { class: 'pl-btn', onclick: () => next() }, ic('next'))));
+  lyrEl.replaceChildren(head, sub_ || '', body, foot); if (P.audio.duration) lyrSeek.set(P.audio.currentTime / P.audio.duration);
 }
+let lyrSeek = null, lyrPP = null;
+const lyrUpPP = () => { if (lyrPP && lyrPP.isConnected) lyrPP.replaceChildren(ic(P.audio.paused ? 'play' : 'pause')); };
+P.audio.addEventListener('play', lyrUpPP); P.audio.addEventListener('pause', lyrUpPP);
+P.audio.addEventListener('timeupdate', () => { if (lyrSeek && lyrSeek.isConnected && !lyrSeek.dragging() && P.audio.duration) lyrSeek.set(P.audio.currentTime / P.audio.duration); });
 P.audio.addEventListener('timeupdate', () => {
   if (!lyrEl || !lyrSynced || !lyrLines || !lyrLines.length) return; const now = P.audio.currentTime + .25; let idx = -1;
   for (let i = 0; i < lyrLines.length; i++) { if (lyrLines[i].t != null && lyrLines[i].t <= now) idx = i; else if (lyrLines[i].t != null) break; }

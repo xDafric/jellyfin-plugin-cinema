@@ -112,3 +112,22 @@ async function aurralTrackSearch(node, q) {
     const sec = h('section', {}, h('h2', {}, t('songRequests')), trackList(its, { id: 'req-' + q, number: 'idx' })); $$('.sp-th', sec).forEach(x => x.remove()); const res = node.querySelector('.sp-res'); if (res) res.after(sec); else node.append(sec);
   } catch (e) { console.warn('[cinema] track search', e); }
 }
+
+Object.assign(TX.en, { recRediscover: 'Rediscover', recSimilar: 'Similar to', recSimilarNew: 'Similar artists you could add', recMore: 'Because you listen to' });
+Object.assign(TX.de, { recRediscover: 'Wiederentdecken', recSimilar: 'Ähnlich wie', recSimilarNew: 'Ähnliche Künstler zum Hinzufügen', recMore: 'Weil du hörst' });
+async function musicRecs(node) {
+  try {
+    const [albums, recent] = await Promise.all([items({ IncludeItemTypes: 'MusicAlbum', SortBy: 'Random', Limit: 14 }), tracksOf({ Filters: 'IsPlayed', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 12 })]);
+    if (!node.isConnected && !node.parentElement) return;
+    if (albums.Items.length > 5) node.append(shelf(t('recRediscover'), albums.Items.map(albumTile)));
+    const seenA = new Set(); const arts = []; recent.forEach(x => { const a = (x.ArtistItems || [])[0]; if (a && !seenA.has(a.Id)) { seenA.add(a.Id); arts.push(a); } });
+    for (const a of arts.slice(0, 2)) {
+      const sim = await api('Items/' + a.Id + '/Similar', { userId: uid(), Limit: 14 }).catch(() => ({ Items: [] }));
+      const own = (sim.Items || []).filter(i => i.Type === 'MusicArtist'); if (own.length > 3) node.append(shelf(t('recSimilar') + ' ' + a.Name, own.map(artistTile)));
+    }
+    if (aurralOn() && arts[0]) {
+      const full = await getItem(arts[0].Id).catch(() => null); const mb = full && (full.ProviderIds || {}).MusicBrainzArtist;
+      if (mb) { const r = await aget('/api/artists/' + mb + '/similar').catch(() => null); const list = ((r && r.artists) || []).slice(0, 14); if (list.length) node.append(shelf(t('recSimilarNew') + ' · ' + arts[0].Name, list.map(o => aurralTile({ id: o.id, name: o.name, image: o.image, type: 'artist' }, 'artist')))); }
+    }
+  } catch (e) { console.warn('[cinema] music recs', e); }
+}
