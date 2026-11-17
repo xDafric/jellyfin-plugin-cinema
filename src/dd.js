@@ -6,7 +6,7 @@ function ddEnhance(sel) {
   const lab = h('span', { class: 'dd-l' }); const btn = h('button', { type: 'button', class: 'dd-btn', 'aria-haspopup': 'listbox' }, lab, h('i', { class: 'dd-c' }));
   let menu = null;
   const sync = () => { const o = sel.selectedOptions[0]; lab.textContent = o ? o.textContent : ''; btn.disabled = sel.disabled; btn.hidden = sel.hidden; };
-  const close = () => { if (!menu) return; menu.remove(); menu = null; btn.classList.remove('open'); document.removeEventListener('mousedown', away, true); document.removeEventListener('keydown', key, true); window.removeEventListener('resize', close); };
+  const close = () => { if (!menu) return; menu.remove(); menu = null; btn.classList.remove('open'); document.removeEventListener('mousedown', away, true); document.removeEventListener('keydown', key, true); window.removeEventListener('resize', close); window.removeEventListener('hashchange', close); };
   const away = e => { if (menu && !menu.contains(e.target) && !btn.contains(e.target)) close(); };
   const pick = o => { if (sel.value !== o.value) { sel.value = o.value; sel.dispatchEvent(new Event('change', { bubbles: true })); } sync(); close(); };
   const key = e => {
@@ -23,7 +23,7 @@ function ddEnhance(sel) {
     menu.style.minWidth = r.width + 'px'; menu.style.left = Math.max(8, Math.min(r.left, innerWidth - Math.max(r.width, menu.offsetWidth) - 8)) + 'px';
     menu.style.maxHeight = Math.max(160, Math.min(340, up ? r.top - 16 : below)) + 'px'; menu.style[up ? 'bottom' : 'top'] = (up ? innerHeight - r.top + 6 : r.bottom + 6) + 'px';
     const on = menu.querySelector('.dd-i.on') || menu.querySelector('.dd-i'); if (on) { on.focus({ preventScroll: true }); on.scrollIntoView({ block: 'nearest' }); }
-    document.addEventListener('mousedown', away, true); document.addEventListener('keydown', key, true); window.addEventListener('resize', close);
+    document.addEventListener('mousedown', away, true); document.addEventListener('keydown', key, true); window.addEventListener('resize', close); window.addEventListener('hashchange', close);
   };
   btn.onclick = e => { e.preventDefault(); e.stopPropagation(); open(); };
   sel.style.display = 'none'; sel.after(btn); sync();

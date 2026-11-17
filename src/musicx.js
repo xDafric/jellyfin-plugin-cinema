@@ -74,8 +74,8 @@ async function aurralArtistExtras(n, ar) {
 Object.assign(TX.en, { mdl: 'Downloads', mdlTitle: 'Download queue', mdlEmpty: 'Nothing is downloading right now.', mdlHint: 'Requested music shows up here while it is fetched.', popMissing: 'Popular · not in your library', songRequests: 'Songs you can request', reqSong: 'Request' });
 Object.assign(TX.de, { mdl: 'Downloads', mdlTitle: 'Download-Warteschlange', mdlEmpty: 'Gerade wird nichts heruntergeladen.', mdlHint: 'Angefragte Musik erscheint hier, solange sie geladen wird.', popMissing: 'Beliebt · nicht in deiner Bibliothek', songRequests: 'Songs zum Anfragen', reqSong: 'Anfragen' });
 /* Aurral download queue and recent activity (songs, albums, playlists) */
-Object.assign(TX.en, { mdlActive: 'Downloading now', mdlRecent: 'Recently', mdlDone: 'Done', mdlFailed: 'Failed', mdlQueued: 'Waiting', mdlWork: 'Downloading' });
-Object.assign(TX.de, { mdlActive: 'Lädt gerade', mdlRecent: 'Zuletzt', mdlDone: 'Fertig', mdlFailed: 'Fehlgeschlagen', mdlQueued: 'Wartet', mdlWork: 'Lädt' });
+Object.assign(TX.en, { mdlActive: 'In the queue', mdlRecent: 'Recently', mdlDone: 'Done', mdlFailed: 'Failed', mdlQueued: 'Waiting', mdlWork: 'Downloading' });
+Object.assign(TX.de, { mdlActive: 'In der Warteschlange', mdlRecent: 'Zuletzt', mdlDone: 'Fertig', mdlFailed: 'Fehlgeschlagen', mdlQueued: 'Wartet', mdlWork: 'Lädt' });
 async function mDownloads(n) {
   n.append(h('div', { class: 'sp-greet' }, t('mdlTitle')));
   if (!aurralOn()) { n.append(h('div', { class: 'nf-empty' }, t('aurralOff'))); return; }

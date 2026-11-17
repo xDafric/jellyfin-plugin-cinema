@@ -1,6 +1,7 @@
 /* ---------- home rows built from your own taste: because you watched, because you liked, watch again ---------- */
 Object.assign(TX.en, { hrSeen: 'Because you watched {x}', hrLiked: 'Because you liked {x}', hrAgain: 'Watch again', hrSeenL: 'Because you watched ...', hrLikedL: 'Because you liked ...', hrAgainL: 'Watch again (films you liked, not seen for a long time)' });
 Object.assign(TX.de, { hrSeen: 'Weil du {x} gesehen hast', hrLiked: 'Weil dir {x} gefallen hat', hrAgain: 'Erneut ansehen', hrSeenL: 'Weil du ... gesehen hast', hrLikedL: 'Weil dir ... gefallen hat', hrAgainL: 'Erneut ansehen (Filme, die dir gefallen haben, lange nicht gesehen)' });
+const hrShort = s => { const x = String(s || '').split(/\s[-–:]\s|:\s/)[0].trim(); return x.length > 38 ? x.slice(0, 36).trim() + '…' : x; };
 const hrShuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
 async function hrLb() { if (optOn('letterboxd') && lbUser()) { try { await lbLoad(); } catch (e) { } } return !!(LB && LB.n); }
 async function hrSimilar(rows, seeds, title, max) {
@@ -9,7 +10,7 @@ async function hrSimilar(rows, seeds, title, max) {
     if (shown >= max) break;
     try {
       const r = await api('Items/' + seed.Id + '/Similar', { userId: uid(), limit: 40, Fields: F_BASE }); const arr = (r.Items || []).filter(i => !ud(i).Played && hxKeep(i)).slice(0, 20);
-      if (arr.length >= 5) { rows.append(row(title.replace('{x}', seed.Name), arr, 'poster')); shown++; }
+      if (arr.length >= 5) { rows.append(row(title.replace('{x}', hrShort(seed.Name)), arr, 'poster')); shown++; }
     } catch (e) { }
   }
 }

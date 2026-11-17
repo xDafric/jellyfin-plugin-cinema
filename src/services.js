@@ -129,9 +129,9 @@ async function personDialog(c) {
   const [cr, ctx] = await Promise.all([gCredits(a), gCtx()]); if (!d.el.isConnected) return;
   const bio = String(info.biography || '').split('\n')[0]; let shown = 40; const list = h('div', { class: 'gm-frl' });
   const born = info.birthday ? new Date(info.birthday + 'T12:00:00').toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-  const head = h('div', { class: 'gm-ad' }, h('div', Object.assign({ class: 'pd-face' }, bg(info.profilePath || c.profilePath ? TM(info.profilePath || c.profilePath, 'w185') : ''))), h('div', {}, h('h2', {}, c.name), born ? h('p', { class: 'set-p' }, born + (info.placeOfBirth ? ' · ' + info.placeOfBirth : '')) : null, bio ? h('p', { class: 'pd-bio' }, bio.length > 360 ? bio.slice(0, 360).replace(/\s\S*$/, '') + '…' : bio) : null));
+  const head = h('div', { class: 'gm-ad' }, h('div', Object.assign({ class: 'pd-face' }, bg(info.profilePath || c.profilePath ? TM(info.profilePath || c.profilePath, 'w185') : ''))), h('div', {}, born ? h('p', { class: 'set-p' }, born + (info.placeOfBirth ? ' · ' + info.placeOfBirth : '')) : null, bio ? h('p', { class: 'pd-bio' }, bio.length > 360 ? bio.slice(0, 360).replace(/\s\S*$/, '') + '…' : bio) : null));
   const draw = () => {
-    list.replaceChildren(); const items = (cr || []).slice().sort((x, y) => (y.pop || 0) - (x.pop || 0));
+    list.replaceChildren(); const items = (cr || []).slice().sort((x, y) => (y.fame || y.pop || 0) - (x.fame || x.pop || 0));
     if (!items.length) { list.append(h('div', { class: 'nf-empty', style: 'padding:24px 0' }, t('gNoCredits'))); return; }
     items.slice(0, shown).forEach(x => { const s2 = gCredState(x, ctx); list.append(gFilmRow({ title: x.title, year: x.year, poster: TM(x.poster, 'w154'), role: x.role, seen: s2.seen, own: s2.own, req: s2.req, tmdb: x.id, mt: x.mt, scene: false }, a, d.close)); });
     if (items.length > shown) list.append(h('button', { class: 'btn grey', style: 'margin:12px auto 0', onclick: () => { shown += 40; draw(); } }, t('showAll')));

@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.44.0",
+                             "changelog":  "Polish: requests progress bar and filter tabs, dropdown menus close on navigation, correct artist match for popular songs, shorter home row titles, calmer person dialog, cleaner admin request dialog.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.44.0.zip",
+                             "checksum":  "d1bf83d294558400797908b1db831448",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.43.0",
                              "changelog":  "Music: artists of songs you do not have open their own page, songs without a preview no longer skip through the queue, the downloads tab is always reachable.",
                              "targetAbi":  "12.4.0.0",

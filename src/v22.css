@@ -139,3 +139,13 @@
 .dl-row.k-done .st em { background: rgba(52,199,89,.16); color: #7cf0a3; } .dl-row.k-failed .st em { background: rgba(255,90,80,.16); color: #ff9b9b; } .dl-row.k-work .st em { background: rgba(106,169,255,.16); color: #9ccaff; } .dl-row.k-queued .st em { background: rgba(255,207,138,.14); color: #ffcf8a; }
 .dl-row .bar i { display: block; height: 100%; background: #6aa9ff; border-radius: 4px; }
 .sp-navlink[hidden], .sp-chip[hidden] { display: none !important; }
+
+/* ---------- polish ---------- */
+.rq-st:last-child::before { display: block !important; }
+.rq-main > .rq-bad { display: inline-block; align-self: flex-start; padding: 4px 12px; border-radius: 999px; background: rgba(255,90,80,.14); font-size: 12px; }
+.rq-tile.rq-bad { display: flex; background: transparent; padding: 12px 16px; color: inherit; font-weight: inherit; border-radius: 0; margin: 0 0 -1px; align-items: baseline; }
+.rq-bar .dc-q, .dc-q { position: relative; } .rq-bar .dc-q input { padding-left: 38px; } .rq-bar .dc-q svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .7; }
+.dc-fbtn em[hidden] { display: none; }
+.cxd .sr-opts { grid-template-columns: 1fr; }
+.rq-bar .dc-q input { width: 100%; box-sizing: border-box; height: 44px; padding: 0 18px 0 42px !important; border-radius: 999px !important; background: rgba(255,255,255,.07) !important; color: #fff; border: 1px solid transparent !important; font: inherit; font-size: 14px; outline: 0; transition: background .2s, border-color .2s; }
+.rq-bar .dc-q input:focus { background: rgba(255,255,255,.11) !important; border-color: rgba(255,255,255,.35) !important; }

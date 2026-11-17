@@ -6,7 +6,7 @@ const DZ = { art: new Map(), top: new Map(), alb: new Map(), rg: new Map() };
 const dz = (path, params) => cget('/music/deezer', Object.assign({ path }, params || {})).catch(() => ({}));
 function dzArtist(name) {
   const k = norm(name); if (!k) return Promise.resolve(null); if (DZ.art.has(k)) return DZ.art.get(k);
-  const p = dz('search/artist', { q: name, limit: 5 }).then(r => { const l = (r && r.data) || []; const hit = l.find(x => norm(x.name) === k) || l[0]; return hit ? { id: hit.id, name: hit.name, img: hit.picture_big || hit.picture_medium || '' } : null; });
+  const p = dz('search/artist', { q: name, limit: 5 }).then(r => { const l = (r && r.data) || []; const exact = l.filter(x => norm(x.name) === k).sort((a, b) => (b.nb_fan || 0) - (a.nb_fan || 0)); const hit = exact[0] || l[0]; return hit ? { id: hit.id, name: hit.name, img: hit.picture_big || hit.picture_medium || '' } : null; });
   DZ.art.set(k, p); return p;
 }
 function dzAlbumCover(artist, title) {
