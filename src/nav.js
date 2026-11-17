@@ -64,7 +64,7 @@ function getUI() { let u = document.getElementById('cx-ui'); if (!u) { u = h('di
 
 /* ---------- persistent top bar ---------- */
 const NAVFEAT = { discover: 'discover', watchlist: 'watchlist', requests: 'requests', calendar: 'calendar', music: 'music', quiz: 'quiz', wrapped: 'wrapped', tonight: 'tonight' };
-const navOn = k => { const hid = (((C.status && C.status.defaults && C.status.defaults.hiddenNav) || '') + '').split(',').map(x => x.trim()); if (hid.includes(k) || (CFGU.navHide || []).includes(k)) return false; if (k === 'quiz' || k === 'wrapped' || k === 'tonight') return !!cfg(k); return !NAVFEAT[k] || feat(NAVFEAT[k]); };
+const navOn = k => { if (k === 'tonight') return false; const hid = (((C.status && C.status.defaults && C.status.defaults.hiddenNav) || '') + '').split(',').map(x => x.trim()); if (hid.includes(k) || (CFGU.navHide || []).includes(k)) return false; if (k === 'quiz' || k === 'wrapped' || k === 'tonight') return !!cfg(k); return !NAVFEAT[k] || feat(NAVFEAT[k]); };
 function buildTop() {
   const uiRoot = getUI();
   const L_ = (k, label, href, cls) => h('a', { 'data-k': k, href: typeof href === 'function' ? '#' : href, class: cls || '', onclick: typeof href === 'function' ? (e => { e.preventDefault(); go(href()); }) : null }, label);
@@ -77,7 +77,10 @@ function buildTop() {
   const moreItems = [navOn('quiz') ? ['quiz', t('gTitle'), '#/c/quiz', 'm-opt', 'star'] : null, navOn('wrapped') ? ['wrapped', t('wrTitle'), '#/c/wrapped', '', 'film'] : null, navOn('tonight') ? ['tonight', t('tnTitle'), '#/c/tonight', '', 'play'] : null, ['requests', t('requests'), '#/c/requests', 'm-opt', 'plus'], ['calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'm-opt', 'cal'], ['favorites', t('mylist'), '#/c/list', '', 'list'], ['bookmarks', t('bookmarks'), () => tabHref('bookmarks'), '', 'star'], ['live', 'Live TV', '#/livetv', '', 'tv'], ['games', 'Games', '#/games', '', 'film']];
   moreItems.splice(0, moreItems.length, ...moreItems.filter(x => x && navOn(x[0])));
   const popMore = mkPop(moreItems); const popMore2 = mkPop(moreItems.map(x => x.slice())); popMore2.classList.add('up'); uiRoot.append(popMore2);
-  more.append(h('button', { class: 'nf-pillbtn', onclick: e => { e.stopPropagation(); closePops(popMore); popMore.classList.toggle('hide'); } }, t('more'), ic('down', 'ic-s')), popMore);
+  /* entries that already sit in the top bar are not repeated in the menu */
+  const syncMore = () => [popMore, popMore2].forEach(pm => pm.querySelectorAll('a[data-k]').forEach(a => { const top = links.querySelector('a[data-k="' + a.dataset.k + '"]'); a.hidden = !!(top && top.offsetParent !== null); }));
+  window.addEventListener('resize', syncMore); setTimeout(syncMore, 400);
+  more.append(h('button', { class: 'nf-pillbtn', onclick: e => { e.stopPropagation(); syncMore(); closePops(popMore); popMore.classList.toggle('hide'); } }, t('more'), ic('down', 'ic-s')), popMore);
   const sInput = h('input', { type: 'text', placeholder: t('search') + '…', autocomplete: 'off' });
   const sWrap = h('div', { class: 'nf-search' }, h('button', { 'aria-label': t('search'), onclick: () => { sWrap.classList.toggle('open'); if (sWrap.classList.contains('open')) sInput.focus(); } }, ic('search')), sInput);
   let sT; sInput.addEventListener('input', () => { clearTimeout(sT); sT = setTimeout(() => { const v = sInput.value.trim(); if (v) go('#/c/search/' + encodeURIComponent(v)); else if (/search/.test(location.hash)) go('#/home'); }, 350); });

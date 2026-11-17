@@ -28,7 +28,7 @@ function cfg(k) {
   if (k === 'hero') return feat('hero') && u !== false; if (k === 'peek') return feat('peek') && u !== false; if (k === 'infinite') return feat('infiniteScroll') && u !== false;
   if (USER_FEATS.includes(k)) return feat(k) && u !== false;
   if (u !== undefined) return u;
-  if (k === 'sections') { try { const j = d.sections && JSON.parse(d.sections); const OLD = 'continue,nextup,newMovies,newShows,top,watchlist,favs,random,genres'; if (j && j.length && !(j.length === 9 && j.every(x => x.on !== false) && j.map(x => x.id).join(',') === OLD)) return j; } catch (e) { } return null; } // the old built-in list, saved by an earlier config page, counts as "not customised"
+  if (k === 'sections') { try { const j = d.sections && JSON.parse(d.sections); const OLD = 'continue,nextup,newMovies,newShows,top,watchlist,favs,random,genres'; const OLD2 = 'continue,nextup,tonight,spotlight,freshUnseen,top10Movies,newMovies,forYou,recentEps,newShows,genreTiles,top10Shows,actorPicks,followPicks,watchlist,collections,top,unwatched,dirPicks,favs,random,genres'; if (j && j.length && !(j.every(x => x.on !== false) && [OLD, OLD2].includes(j.map(x => x.id).join(',')))) return j; } catch (e) { } return null; } // the old built-in list, saved by an earlier config page, counts as "not customised"
   if (SRV[k] !== undefined && d[SRV[k]] !== undefined && d[SRV[k]] !== '') return d[SRV[k]];
   return CFG_DEF[k];
 }
@@ -50,8 +50,17 @@ function applyCfg() { const r = document.documentElement; r.style.setProperty('-
 
 /* ---------- peek popover (replaces card hover) ---------- */
 const PEEK = { el: null, t: 0, hideT: 0, cur: null };
+/* a wheel tick that arrives over the hover preview: same easing as the browser's own wheel scrolling, one running animation, no restart per tick */
+const GLIDE = { raf: 0, host: null, target: 0 };
+function glideBy(host, dy) {
+  if (GLIDE.host !== host || !GLIDE.raf) GLIDE.target = host.scrollTop; GLIDE.host = host;
+  const max = host.scrollHeight - host.clientHeight; GLIDE.target = Math.max(0, Math.min(max, GLIDE.target + dy));
+  if (GLIDE.raf) return; const prev = host.style.scrollBehavior; host.style.scrollBehavior = 'auto';
+  const step = () => { const d = GLIDE.target - host.scrollTop; if (Math.abs(d) < .6) { host.scrollTop = GLIDE.target; GLIDE.raf = 0; host.style.scrollBehavior = prev; return; } host.scrollTop += d * .24; GLIDE.raf = requestAnimationFrame(step); };
+  GLIDE.raf = requestAnimationFrame(step);
+}
 function scrollHost() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }
-function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); PEEK.el.addEventListener('wheel', e => { const sh = scrollHost(); if (sh) sh.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'instant' }); PEEK.el.style.pointerEvents = 'none'; hidePeek(); }, { passive: true }); /* instant: the page has CSS smooth scrolling, which made every forwarded wheel tick restart a slow animation */ getUI().append(PEEK.el); } return PEEK.el; }
+function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); PEEK.el.addEventListener('wheel', e => { const sh = scrollHost(); if (sh) glideBy(sh, e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * sh.clientHeight : e.deltaY); PEEK.el.style.pointerEvents = 'none'; hidePeek(); }, { passive: true }); getUI().append(PEEK.el); } return PEEK.el; }
 function hidePeek(delay) { clearTimeout(PEEK.t); clearTimeout(PEEK.hideT); PEEK.hideT = setTimeout(() => { if (PEEK.el) PEEK.el.classList.remove('show'); PEEK.cur = null; }, delay || 0); }
 function showPeek(anchor, d) {
   const el = peekEl(); const r = anchor.getBoundingClientRect();
@@ -78,7 +87,7 @@ function attachPeek(el, anchor, getDesc) {
   el.addEventListener('click', () => hidePeek());
 }
 /* no previews while the page is moving (slow scrolling over cards used to open and close one after another) */
-const peekPause = () => { PEEK.noUntil = Date.now() + 550; clearTimeout(PEEK.t); hidePeek(); };
+const peekPause = e => { if (GLIDE.raf && e && !(PEEK.el && PEEK.el.contains(e.target))) { cancelAnimationFrame(GLIDE.raf); GLIDE.raf = 0; if (GLIDE.host) GLIDE.host.style.scrollBehavior = ''; } PEEK.noUntil = Date.now() + 550; clearTimeout(PEEK.t); hidePeek(); };
 window.addEventListener('scroll', peekPause, { capture: true, passive: true });
 window.addEventListener('wheel', peekPause, { capture: true, passive: true });
 

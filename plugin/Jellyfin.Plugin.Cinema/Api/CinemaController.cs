@@ -733,6 +733,55 @@ public class CinemaController : ControllerBase
         }
     }
 
+    // ---------------------------------------------------------------- artist pictures and popular songs (Deezer public API, no key)
+
+    private static readonly System.Text.RegularExpressions.Regex DeezerPath = new(@"^(search/(artist|album)|artist/\d+|artist/\d+/top|artist/\d+/albums|album/\d+)$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>Read-only lookups for artist photos, cover art and an artist's songs ranked by popularity. Only the typed or displayed names leave the server.</summary>
+    [HttpGet("music/deezer")]
+    [Authorize]
+    public async Task<IActionResult> MusicDeezer([FromQuery] string path, CancellationToken ct)
+    {
+        path = (path ?? string.Empty).Trim('/');
+        if (!Cfg.ExternalSongSearch || !DeezerPath.IsMatch(path))
+        {
+            return Content("{}", "application/json");
+        }
+
+        var q = Request.Query["q"].ToString();
+        if (q.Length > 120)
+        {
+            return Content("{}", "application/json");
+        }
+
+        _ = int.TryParse(Request.Query["limit"].ToString(), out var limit);
+        _ = int.TryParse(Request.Query["index"].ToString(), out var index);
+        limit = limit <= 0 ? 25 : Math.Min(limit, 100);
+        var url = "https://api.deezer.com/" + path + "?limit=" + limit + "&index=" + Math.Max(0, index) + (q.Length > 0 ? "&q=" + Uri.EscapeDataString(q) : string.Empty);
+        if (SongCache.TryGetValue("dz|" + url, out var hit) && DateTime.UtcNow - hit.At < TimeSpan.FromMinutes(60))
+        {
+            return Content(hit.Json, "application/json");
+        }
+
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            using var resp = await Client().SendAsync(req, ct).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return StatusCode(502, new { error = "Deezer " + (int)resp.StatusCode });
+            }
+
+            var json = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            SongCache["dz|" + url] = (DateTime.UtcNow, json);
+            return Content(json, "application/json");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, new { error = ex.Message });
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private HttpClient Client()

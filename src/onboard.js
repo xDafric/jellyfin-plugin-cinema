@@ -103,7 +103,6 @@ function featCatalog(X) {
     { id: 'peek', g: 'browse', ic: '👁️', hue: '#0a84ff', name: 'ftPeekN', desc: 'ftPeekD', art: 'peek', key: 'peek', feat: 'peek', opts: () => [X.row(t('setPeekDelay'), t('setPeekDelayHint'), X.seg([[180, t('fast')], [320, t('normal')], [520, t('slow')]], 'peekDelay'), 'peekDelay')] },
     { id: 'inf', g: 'browse', ic: '♾️', hue: '#8b5cf6', name: 'ftInfN', desc: 'ftInfD', art: 'inf', key: 'infinite', feat: 'infiniteScroll' },
     { id: 'home', g: 'browse', ic: '✨', hue: '#5e5ce6', name: 'ftHomeN', desc: 'ftHomeD', art: 'home', on: () => cfg('homeSeen') !== 'off', tab: 'home', actionLbl: 'ftManage', opts: () => [X.row(t('rcSeenSet'), t('rcSeenHint'), X.seg([['badge', t('rcSeenBadge')], ['hide', t('rcSeenHide')], ['off', t('rcSeenOff')]], 'homeSeen'), 'homeSeen')] },
-    { id: 'tonight', g: 'browse', ic: '🍿', hue: '#ff9f0a', name: 'ftTnN', desc: 'ftTnD', art: 'tonight', key: 'tonight', feat: 'tonight', open: '#/c/tonight' },
     { id: 'menu', g: 'browse', ic: '⋯', hue: '#8d8d97', name: 'ftMenuN', desc: 'ftMenuD', art: 'menu', key: 'itemMenu', feat: 'itemMenu' },
     { id: 'plug', g: 'browse', ic: '🧩', hue: '#64d2ff', name: 'ftPlugN', desc: 'ftPlugD', art: 'plug', key: 'pluginMenus', feat: 'pluginMenus' },
     /* discover and requests */

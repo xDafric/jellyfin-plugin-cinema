@@ -278,7 +278,7 @@ function trackList(tracks, ctx) {
   let lastDisc = null;
   tracks.forEach((it, idx) => {
     if (ctx.discs && it.ParentIndexNumber && it.ParentIndexNumber !== lastDisc && tracks.some(x => (x.ParentIndexNumber || 1) > 1)) { lastDisc = it.ParentIndexNumber; wrap.append(h('div', { class: 'sp-disc' }, ic('note', 'ic-s'), 'Disc ' + lastDisc)); }
-    const lk = it._ext ? h('button', { class: 'lk on rq', title: t('request'), onclick: e => { e.stopPropagation(); requestExtTrack(it); } }, ic('plus')) : trackLikeBtn(it, 'lk');
+    const lk = it._ext ? h('button', { class: 'lk on rq', title: t('request'), onclick: async e => { e.stopPropagation(); const b = e.currentTarget; if (b.disabled) return; b.classList.add('busy'); if (await requestExtTrack(it)) doneBtn(b); else b.classList.remove('busy'); } }, ic('plus')) : trackLikeBtn(it, 'lk');
     const play = () => playList(tracks, idx, { ctx: ctx.id ? { id: ctx.id } : null });
     const rowEl = h('div', { class: 'sp-row' + (it._ext ? ' ext' : '') + (noAlb ? ' noalb' : '') + (cur() && cur().Id === it.Id ? ' playing' : ''), 'data-id': it.Id, ondblclick: play, onclick: () => { if (matchMedia('(pointer:coarse)').matches || innerWidth <= 800) play(); }, oncontextmenu: e => trackMenu(e, it, ctx) },
       h('div', { class: 'ix' }, h('span', { class: 'n' }, ctx.number === 'idx' ? idx + 1 : (it.IndexNumber || idx + 1)), h('div', { class: 'eq' }, h('i'), h('i'), h('i')), h('button', { class: 'pl', onclick: e => { e.stopPropagation(); (cur() && cur().Id === it.Id) ? toggle() : play(); } }, ic('play'))),
@@ -309,7 +309,7 @@ const artistTile = a => tile({ id: a.Id, name: a.Name, sub: t('artist'), img: im
 const plTile = p => tile({ id: p.Id, name: p.Name, sub: t('playlist') + (p.ChildCount ? ' · ' + p.ChildCount + ' ' + t('songsN') : ''), img: imgUrl(p, 'Primary', 400), href: '#/c/music/playlist/' + p.Id, play: () => api('Playlists/' + p.Id + '/Items', { userId: uid(), Fields: AUD_F }).then(r => r.Items) });
 const MIXCOL = ['linear-gradient(135deg,#8e2de2,#4a00e0)', 'linear-gradient(135deg,#f12711,#f5af19)', 'linear-gradient(135deg,#11998e,#38ef7d)', 'linear-gradient(135deg,#2193b0,#6dd5ed)', 'linear-gradient(135deg,#ee0979,#ff6a00)', 'linear-gradient(135deg,#373b44,#4286f4)', 'linear-gradient(135deg,#c31432,#240b36)', 'linear-gradient(135deg,#1d976c,#93f9b9)'];
 const mixTile = (g, i) => tile({ id: 'mix-' + g, name: g + ' ' + t('mix'), sub: g, mix: MIXCOL[i % MIXCOL.length], href: '#/c/music/mix/' + encodeURIComponent(g), play: () => tracksOf({ Genres: g, SortBy: 'Random', Limit: 60 }) });
-function shelf(title, nodes, href) { if (!nodes.length) return ''; return h('section', {}, h('h2', {}, title, href ? h('a', { class: 'more', href }, '›') : null), h('div', { class: 'sp-shelf' }, nodes)); }
+function shelf(title, nodes, href) { if (!nodes.length) return ''; return h('section', {}, h('h2', {}, title, href ? h('a', { class: 'more', href }, '›') : null), hscroll(h('div', { class: 'sp-shelf' }, nodes))); }
 
 /* ---------- shell ---------- */
 function buildSP() {
@@ -384,7 +384,7 @@ C.renderMusic = async function (r) {
     else if (view === 'library') await mLibrary(node);
     else if (view === 'downloads') await mDownloads(node);
   } catch (e) { console.error('[cinema music]', e); node.append(h('div', { class: 'nf-empty' }, t('empty'))); }
-  try { if (view === 'search' && id) { await aurralSearchShelves(node, decodeURIComponent(id)); aurralTrackSearch(node, decodeURIComponent(id)); } else if (!view) { await aurralDiscoverShelves(node); musicRecs(node); } } catch (e) { }
+  try { if (view === 'search' && id) { const sk = h('div', { class: 'sk-wrap' }, skelShelf(), skelShelf()); node.append(sk); try { await aurralSearchShelves(node, decodeURIComponent(id)); } finally { sk.remove(); } aurralTrackSearch(node, decodeURIComponent(id)); } else if (!view) { await aurralDiscoverShelves(node); musicRecs(node); } } catch (e) { }
   sp.content.replaceWith(node); sp.content = node;
   sp.scroll.scrollTop = C.scrollPos[r.raw] || 0;
   P.subs.forEach(f => f());
@@ -425,8 +425,10 @@ async function mSearch(n, q) {
     n.append(h('h2', {}, t('browse')), h('div', { class: 'sp-genres' }, genres.Items.map((g, i) => h('div', { class: 'sp-genre', style: 'background:' + MIXCOL[i % MIXCOL.length], onclick: () => go('#/c/music/mix/' + encodeURIComponent(g.Name)) }, g.Name))));
     return;
   }
+  const sk0 = h('div', { class: 'sk-wrap' }, skelRows(4), skelShelf()); n.append(sk0);
   const [tr, al, ar, pl] = await Promise.all([items({ searchTerm: q, IncludeItemTypes: 'Audio', Limit: 20, Fields: AUD_F }), items({ searchTerm: q, IncludeItemTypes: 'MusicAlbum', Limit: 12 }), api('Artists', { userId: uid(), searchTerm: q, Limit: 10, Fields: 'PrimaryImageAspectRatio', ImageTypeLimit: 1, EnableImageTypes: 'Primary' }), items({ searchTerm: q, IncludeItemTypes: 'Playlist', Limit: 8 })]);
-  if (!tr.Items.length && !al.Items.length && !ar.Items.length) { n.append(h('div', { class: 'nf-empty' }, t('noRes'))); return; }
+  sk0.remove();
+  if (!tr.Items.length && !al.Items.length && !ar.Items.length) { if (!aurralOn()) n.append(h('div', { class: 'nf-empty' }, t('noRes'))); return; }
   const topArtist = ar.Items[0], topAlbum = al.Items[0];
   const top = topArtist && topArtist.Name.toLowerCase().includes(q.toLowerCase()) ? { name: topArtist.Name, sub: t('artist'), img: imgUrl(topArtist, 'Primary', 300), round: true, href: '#/c/music/artist/' + topArtist.Id, play: () => tracksOf({ ArtistIds: topArtist.Id, SortBy: 'PlayCount', SortOrder: 'Descending', Limit: 100 }) } : tr.Items[0] ? { name: tr.Items[0].Name, sub: t('songs') + ' · ' + artistText(tr.Items[0]), img: trackImg(tr.Items[0], 300), href: tr.Items[0].AlbumId ? '#/c/music/album/' + tr.Items[0].AlbumId : '#/c/music', play: async () => [tr.Items[0]] } : null;
   const res = h('div', { class: 'sp-res' });
@@ -466,7 +468,7 @@ async function mAlbum(n, id) {
   const [al, tracks] = await Promise.all([getItem(id), tracksOf({ ParentId: id, SortBy: 'ParentIndexNumber,IndexNumber,SortName', Limit: 500 })]);
   const total = tracks.reduce((s, x) => s + (x.RunTimeTicks || 0), 0); const ar = (al.ArtistItems || [])[0];
   pageHead(n, { type: t('album1'), title: al.Name, img: imgUrl(al, 'Primary', 500), meta: [ar ? h('a', { href: '#/c/music/artist/' + ar.Id }, ar.Name) : (al.AlbumArtist || ''), ' · ' + (yearOf(al) || ''), ' · ' + tracks.length + ' ' + t('songsN') + ', ' + fmtDur(total)] });
-  const ctx = { id, noAlbum: true, noCover: true, discs: true }; n.append(actionsBar(tracks, ctx), trackList(tracks, ctx));
+  const ctx = { id, noAlbum: true, noCover: true, discs: true }; n.append(actionsBar(tracks, ctx), trackList(tracks, ctx)); albumMissing(n, al, tracks);
   if (ar) { const more = await items({ IncludeItemTypes: 'MusicAlbum', ArtistIds: ar.Id, SortBy: 'ProductionYear', SortOrder: 'Descending', Limit: 12 }); const o = more.Items.filter(x => x.Id !== id); if (o.length) n.append(shelf('More by ' + ar.Name, o.map(albumTile))); }
 }
 async function mArtist(n, id) {
@@ -476,19 +478,22 @@ async function mArtist(n, id) {
   pageHead(n, { type: t('artist'), title: ar.Name, round: true, img: imgUrl(ar, 'Primary', 500), meta: [all.length + ' ' + t('songsN')] });
   const ctx = { id, number: 'idx' }; n.append(actionsBar(all, ctx));
   window.__artistNode = n; window.__artistItem = ar;
-  const popBox = h('div', {}, trackList(top.slice(0, 5), { id: id + '-top', number: 'idx' })); n.append(h('h2', { style: 'margin-top:8px' }, t('popularTracks')), popBox);
-  $$('.sp-th', n).forEach(x => x.remove());
-  aurralPopular(n, ar, popBox);
-  n.append(shelf(t('discography'), alb.map(albumTile)));
-  await aurralArtistExtras(n, ar);
+  const popBox = h('div', {}), popMore = h('div', { class: 'sp-morewrap' }); n.append(h('h2', { style: 'margin-top:8px' }, t('popularTracks')), popBox, popMore);
+  artistPopular(ar, all, popBox, popMore);
+  await artistDisco(n, ar, alb);
   if (ar.Overview) n.append(h('h2', {}, t('artist')), h('p', { style: 'color:#b3b3b3;line-height:1.6;max-width:780px' }, ar.Overview.replace(/<[^>]+>/g, '')));
 }
 
 /* floating pill in Netflix shell while music plays */
+const it_ = () => cur() || {};
+P.audio.addEventListener('volumechange', () => { try { if (C.updateNPill) C.updateNPill(); } catch (e) { } });
+P.audio.addEventListener('play', () => { pillOff = null; });
+let pillOff = null; /* the pill was closed for this song */
 C.updateNPill = function () {
   let pill = $('#cx-npill'); const it = cur();
-  if (!it || C.mode === 'sp') { if (pill) pill.remove(); return; }
-  if (!pill) { pill = h('div', { id: 'cx-npill', class: 'nf-npill', onclick: () => go('#/c/music') }, h('div', { class: 'cv' }), h('div', { class: 'tx' }, h('b', { class: 'ell' }), h('span', { class: 'ell' })), h('button', { class: 'pp', onclick: e => { e.stopPropagation(); toggle(); } })); root.append(pill); }
+  if (!it || C.mode === 'sp' || pillOff === it.Id) { if (pill) pill.remove(); return; }
+  if (!pill) { pill = h('div', { id: 'cx-npill', class: 'nf-npill', onclick: () => go('#/c/music') }, h('div', { class: 'cv' }), h('div', { class: 'tx' }, h('b', { class: 'ell' }), h('span', { class: 'ell' })), h('div', { class: 'np-vol' }, h('button', { class: 'np-m', 'aria-label': 'Mute', onclick: e => { e.stopPropagation(); P.audio.muted = !P.audio.muted; } }), h('input', { type: 'range', min: 0, max: 1, step: .02, 'aria-label': 'Volume', onclick: e => e.stopPropagation(), oninput: e => { e.stopPropagation(); P.audio.muted = false; P.audio.volume = +e.target.value; try { localStorage.setItem('cx-vol', e.target.value); } catch (er) { } } })), h('button', { class: 'pp', onclick: e => { e.stopPropagation(); toggle(); } }), h('button', { class: 'np-x', 'aria-label': t('close'), title: t('close'), onclick: e => { e.stopPropagation(); pillOff = it_().Id; P.audio.pause(); pill.remove(); } }, ic('close', 'ic-s'))); root.append(pill); }
+  const vr = $('.np-vol input', pill); if (vr) { vr.value = P.audio.muted ? 0 : P.audio.volume; vr.style.setProperty('--v', (+vr.value * 100) + '%'); $('.np-m', pill).replaceChildren(ic(P.audio.muted || P.audio.volume === 0 ? 'volx' : 'vol', 'ic-s')); }
   $('.cv', pill).style.backgroundImage = 'url("' + trackImg(it, 100) + '")'; $('b', pill).textContent = it.Name; $('span', pill).textContent = artistText(it); $('.pp', pill).replaceChildren(ic(P.audio.paused ? 'play' : 'pause'));
 };
 

@@ -8,6 +8,7 @@ async function calWatched(fromMs, toMs) {
   let all = []; try { all = await wrAll(); } catch (e) { }
   return all.filter(r => r.date >= fromMs && r.date < toMs).map(r => ({ kind: 'seen', date: new Date(r.date).toISOString(), title: r.it ? r.it.Name : r.lb.title, subtitle: r.lb && r.lb.rating ? '★ ' + Number(r.lb.rating).toFixed(1) + (r.lb.liked ? ' ♥' : '') : '', it: r.it, poster: r.it ? imgUrl(r.it, 'Primary', 120) : '' }));
 }
+const calHid = x => !HID.on && HID.loaded && (hxSeerrHidden(x) || (x.it && !hxKeep(x.it)));
 async function calendarView(page) {
   const wrap = h('div', { class: 'nf-page-pad cal-page' }, h('h1', {}, t('calendar'))); page.append(wrap);
   if (!(plug().radarr || plug().sonarr)) { wrap.append(h('div', { class: 'nf-empty' }, t('arrOff'))); return; }
@@ -26,7 +27,7 @@ async function calendarView(page) {
     const grid = h('div', { class: 'cal-grid' }, h('div', { class: 'spinner', style: 'grid-column:1/-1' })); body.replaceChildren(grid);
     const s = calYmd(start), e = calYmd(end); const endMs = end.getTime() + 864e5;
     const [rel, hist, seen] = await Promise.all([st.rel ? cget('/arr/calendar', { start: s, end: e }).catch(() => []) : [], st.dl ? cget('/arr/history', { start: s, end: e }).catch(() => []) : [], st.seen ? calWatched(start.getTime(), endMs) : []]);
-    const byDay = {}; const put = (k, o, ord) => { (byDay[k] = byDay[k] || []).push(Object.assign({ ord }, o)); };
+    const byDay = {}; const put = (k, o, ord) => { if (calHid(o)) return; (byDay[k] = byDay[k] || []).push(Object.assign({ ord }, o)); };
     seen.forEach(x => put(calYmd(x.date), x, 0)); hist.forEach(x => put(calYmd(x.date), x, x.kind === 'failed' ? 1 : x.kind === 'imported' ? 2 : 3)); rel.forEach(x => { if (x.date) put(x.date.slice(0, 10), x, 4); });
     grid.replaceChildren(...['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((d, i) => h('div', { class: 'cal-dow' }, L === 'de' ? d : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i])));
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -39,7 +40,7 @@ async function calendarView(page) {
     head.replaceChildren(chips); body.replaceChildren(h('div', { class: 'spinner', style: 'margin:50px auto' }));
     const to = new Date(); const from = new Date(Date.now() - st.days * 864e5);
     const [hist, seen] = await Promise.all([st.f !== 'seen' ? cget('/arr/history', { start: calYmd(from), end: calYmd(to) }).catch(() => []) : [], st.f !== 'dl' ? calWatched(from.getTime(), to.getTime() + 864e5) : []]);
-    const all = hist.concat(seen).sort((a, b) => Date.parse(b.date) - Date.parse(a.date)); if (!all.length) { body.replaceChildren(h('div', { class: 'nf-empty', style: 'padding:50px 0' }, t('calEmptyLog'))); return; }
+    const all = hist.concat(seen).filter(x => !calHid(x)).sort((a, b) => Date.parse(b.date) - Date.parse(a.date)); if (!all.length) { body.replaceChildren(h('div', { class: 'nf-empty', style: 'padding:50px 0' }, t('calEmptyLog'))); return; }
     const byDay = new Map(); all.forEach(x => { const k = calYmd(x.date); (byDay.get(k) || byDay.set(k, []).get(k)).push(x); });
     const kindL = { imported: t('calImported'), grabbed: t('calGrab'), failed: t('calFail'), seen: t('calSeen') };
     body.replaceChildren(h('div', { class: 'cal-log' }, [...byDay.entries()].map(([k, evs]) => h('section', { class: 'cal-lg' }, h('h3', {}, new Date(k + 'T12:00:00').toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })), evs.map(x => { const own = x.tmdbId && lm[(x.source === 'radarr' ? 'movie' : 'tv') + ':' + x.tmdbId]; return h('div', { class: 'cal-li k-' + x.kind, onclick: () => { if (x.it) go(itemHash(x.it)); else if (own) go(itemHash(own)); else if (x.tmdbId) openSeerrInfo({ id: x.tmdbId, mediaType: x.source === 'radarr' ? 'movie' : 'tv' }); } }, h('span', { class: 'cal-lic' }, CAL_ICON[x.kind]), x.poster ? h('div', Object.assign({ class: 'cal-lip' }, bg(x.poster))) : h('div', { class: 'cal-lip' }), h('div', {}, h('b', { class: 'ell' }, x.title), h('span', {}, [kindL[x.kind], x.count > 1 ? t('calEpisodes').replace('{n}', x.count) : x.subtitle, x.quality, x.source === 'radarr' ? 'Radarr' : x.source === 'sonarr' ? 'Sonarr' : ''].filter(Boolean).join(' · '))), h('time', {}, new Date(x.date).toLocaleTimeString(L === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' }))); })))));

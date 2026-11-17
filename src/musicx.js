@@ -26,8 +26,8 @@ async function requestExtTrack(it) {
       if (rg) await requestAurral({ id: rg, title: body.albumName || body.trackName, artistName: body.artistName }, 'album');
       else { const r = await aget('/api/search', { q: body.artistName + ' ' + (body.albumName || body.trackName), scope: 'album', limit: 3 }); const al = aList(r)[0]; if (!al) throw e; await requestAurral(al, 'album'); }
     }
-    toast(t('requested'));
-  } catch (e) { toast(((e.responseJSON && (e.responseJSON.error || e.responseJSON.message)) || e.message || e.statusText || 'error')); }
+    toast(t('requested')); return true;
+  } catch (e) { toast(((e.responseJSON && (e.responseJSON.error || e.responseJSON.message)) || e.message || e.statusText || 'error')); return false; }
 }
 
 async function mDiscover(n) {
@@ -73,23 +73,36 @@ async function aurralArtistExtras(n, ar) {
 
 Object.assign(TX.en, { mdl: 'Downloads', mdlTitle: 'Download queue', mdlEmpty: 'Nothing is downloading right now.', mdlHint: 'Requested music shows up here while it is fetched.', popMissing: 'Popular · not in your library', songRequests: 'Songs you can request', reqSong: 'Request' });
 Object.assign(TX.de, { mdl: 'Downloads', mdlTitle: 'Download-Warteschlange', mdlEmpty: 'Gerade wird nichts heruntergeladen.', mdlHint: 'Angefragte Musik erscheint hier, solange sie geladen wird.', popMissing: 'Beliebt · nicht in deiner Bibliothek', songRequests: 'Songs zum Anfragen', reqSong: 'Anfragen' });
-/* Aurral / Lidarr download queue */
+/* Aurral download queue and recent activity (songs, albums, playlists) */
+Object.assign(TX.en, { mdlActive: 'Downloading now', mdlRecent: 'Recently', mdlDone: 'Done', mdlFailed: 'Failed', mdlQueued: 'Waiting', mdlWork: 'Downloading' });
+Object.assign(TX.de, { mdlActive: 'Lädt gerade', mdlRecent: 'Zuletzt', mdlDone: 'Fertig', mdlFailed: 'Fehlgeschlagen', mdlQueued: 'Wartet', mdlWork: 'Lädt' });
 async function mDownloads(n) {
   n.append(h('div', { class: 'sp-greet' }, t('mdlTitle')));
   if (!aurralOn()) { n.append(h('div', { class: 'nf-empty' }, t('aurralOff'))); return; }
+  const box = h('div', { class: 'dl-wrap' }, skelRows(4)); n.append(box); let first = true;
+  const kindOf = x => { const s = String(x.status || x.state || '').toLowerCase(); return /complete|done|imported|success|available/.test(s) ? 'done' : /fail|error|cancel/.test(s) ? 'failed' : /queue|wait|pending|search|request/.test(s) ? 'queued' : 'work'; };
+  const rowOf = (x, k) => {
+    const title = x.trackName || x.title || x.albumName || x.album || x.name || '?'; const artist = x.artistName || x.artist || ''; const album = x.albumName || x.album || '';
+    const pct = x.progress != null ? Math.round(x.progress > 1 ? x.progress : x.progress * 100) : x.percent != null ? Math.round(x.percent) : (x.size && x.sizeleft != null ? Math.round((1 - x.sizeleft / x.size) * 100) : null);
+    const sub = [artist, album && album !== title ? album : ''].filter(Boolean).join(' · ');
+    const when = x.requestedAt ? rxAgo(x.requestedAt) : '';
+    const why = k === 'failed' ? String(x.subtitle || '').replace(/^Soulseek:\s*/i, '').split(';')[0].slice(0, 90) : '';
+    return h('div', { class: 'dl-row k-' + k }, h('div', Object.assign({ class: 'cv' }, bg(extImg(x.image || x.artworkUrl) || caaImg(x.albumMbid || x.releaseGroupMbid)))),
+      h('div', { class: 'tx' }, h('b', { class: 'ell' }, title), h('span', { class: 'ell' }, sub || why), why && sub ? h('span', { class: 'ell why' }, why) : null, k === 'work' && pct != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.max(2, Math.min(100, pct)) + '%' })) : null),
+      h('div', { class: 'st' }, h('em', {}, k === 'done' ? t('mdlDone') : k === 'failed' ? t('mdlFailed') : k === 'queued' ? t('mdlQueued') : t('mdlWork') + (pct != null ? ' ' + pct + ' %' : '')), when ? h('small', {}, when) : null));
+  };
   async function load() {
-    let r; try { r = await aget('/api/library/downloads'); } catch (e) { r = []; }
-    const list = Array.isArray(r) ? r : (r.items || r.downloads || r.queue || r.records || []);
-    box.replaceChildren();
-    if (!list.length) { box.append(h('div', { class: 'nf-empty' }, h('div', {}, t('mdlEmpty')), h('small', { style: 'opacity:.6' }, t('mdlHint')))); return; }
-    list.forEach(x => {
-      const title = x.title || x.albumName || x.album || x.name || x.trackName || '?', artist = x.artistName || x.artist || '', st = String(x.status || x.state || '').replace(/_/g, ' ');
-      const pct = x.progress != null ? Math.round(x.progress > 1 ? x.progress : x.progress * 100) : x.percent != null ? Math.round(x.percent) : (x.size && x.sizeleft != null ? Math.round((1 - x.sizeleft / x.size) * 100) : null);
-      box.append(h('div', { class: 'dl-row' }, h('div', Object.assign({ class: 'cv' }, bg(extImg(x.image || x.artworkUrl) || caaImg(x.releaseGroupMbid || x.albumMbid)))), h('div', { class: 'tx' }, h('b', { class: 'ell' }, title), h('span', { class: 'ell' }, [artist, st].filter(Boolean).join(' · ')), pct != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.max(2, pct) + '%' })) : null), pct != null ? h('em', {}, pct + '%') : null));
-    });
+    const [q, act] = await Promise.all([aget('/api/library/downloads').catch(() => []), aget('/api/requests').catch(() => [])]);
+    const live = (Array.isArray(q) ? q : (q.items || q.downloads || q.queue || q.records || [])).map(x => ({ x, k: kindOf(x) === 'queued' ? 'queued' : 'work' }));
+    const hist = (Array.isArray(act) ? act : (act.items || act.requests || [])).slice().sort((a, b) => Date.parse(b.requestedAt || 0) - Date.parse(a.requestedAt || 0)).map(x => ({ x, k: kindOf(x) }));
+    const active = live.concat(hist.filter(o => o.k === 'work' || o.k === 'queued')); const recent = hist.filter(o => o.k === 'done' || o.k === 'failed').slice(0, 40);
+    if (!box.isConnected) return; box.replaceChildren();
+    if (!active.length && !recent.length) { box.append(h('div', { class: 'nf-empty' }, h('div', {}, t('mdlEmpty')), h('small', { style: 'opacity:.6' }, t('mdlHint')))); return; }
+    if (active.length) box.append(h('h2', { class: 'dl-h' }, t('mdlActive') + ' · ' + active.length), h('div', { class: 'dl-list' }, active.map(o => rowOf(o.x, o.k))));
+    if (recent.length) box.append(h('h2', { class: 'dl-h' }, t('mdlRecent')), h('div', { class: 'dl-list' }, recent.map(o => rowOf(o.x, o.k))));
   }
-  const box = h('div', { class: 'dl-list' }); n.append(box); await load();
-  const iv = setInterval(() => { if (!box.isConnected) clearInterval(iv); else load(); }, 8000);
+  await load();
+  const iv = setInterval(() => { if (!box.isConnected) clearInterval(iv); else load(); }, 6000);
 }
 /* songs of an artist the library does not have: popularity comes from the release listen counts */
 async function aurralPopular(n, ar, popBox) {
@@ -134,6 +147,10 @@ async function aurralTrackSearchOld(node, q) {
 /* song search over a public catalogue (server side), popularity ranked */
 async function aurralTrackSearch(node, q) {
   if (!aurralReq() || q.length < 2) return;
+  const sk = h('section', { class: 'sk-wrap' }, h('div', { class: 'sk-h' }), skelRows(4)); const res = node.querySelector('.sp-res'); if (res) res.after(sk); else node.append(sk);
+  try { await aurralTrackSearchInner(node, q); } finally { sk.remove(); }
+}
+async function aurralTrackSearchInner(node, q) {
   let list = null; try { list = await cget('/music/search', { q }); } catch (e) { list = null; }
   if (!Array.isArray(list) || !list.length) return aurralTrackSearchOld(node, q);
   try {

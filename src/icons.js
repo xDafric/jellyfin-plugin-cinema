@@ -5,6 +5,7 @@ const LUFILL = { play: 1, pause: 1, heartOn: 1, next: 1, prev: 1 };
 function luSvg(name, fill) { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'lu' + (fill ? ' lu-fill' : '')); s.innerHTML = LU[name] || ''; return s; }
 
 Object.assign(LU, {
+  'filter': '<path d="M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/> <path d="M6 4v4"/> <path d="M6 12v8"/> <path d="M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/> <path d="M12 4v10"/> <path d="M12 18v2"/> <path d="M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/> <path d="M18 4v1"/> <path d="M18 9v11"/>',
   'logout': '<path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/> <path d="M9 12h12l-3 -3"/> <path d="M18 15l3 -3"/>',
   'lock': '<path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z"/> <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"/> <path d="M8 11v-4a4 4 0 1 1 8 0v4"/>',
   'eye': '<path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/> <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>',
@@ -17,3 +18,4 @@ Object.assign(LU, {
   'sparkles': '<path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z"/> <path d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z"/> <path d="M9 18a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/>'
 });
 Object.assign(LUMAP, { volx: 'volume-3', logout: 'logout', lock: 'lock', eye: 'eye', eyeOff: 'eye-off', download: 'download', lyrics: 'align-left', mic: 'microphone', flame: 'flame', trophy: 'trophy', sparkles: 'sparkles' });
+LUMAP.filter = 'filter';

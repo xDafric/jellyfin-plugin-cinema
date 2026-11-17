@@ -5,6 +5,9 @@ async function dcGenres() {
   try { const [m, t_] = await Promise.all([seerrGet('/genres/movie'), seerrGet('/genres/tv')]); if (Array.isArray(m) && m.length) DC.genres = { movie: m, tv: Array.isArray(t_) ? t_ : [] }; else return { movie: [], tv: [] }; } catch (e) { return { movie: [], tv: [] }; }
   return DC.genres;
 }
+Object.assign(TX.en, { dcFilters: 'Filters', dcYearFrom: 'Released from', dcYearTo: 'until', dcMinRate: 'Minimum rating', dcLang: 'Original language', dcRuntime: 'Length', dcAny: 'Any', dcResetF: 'Reset filters', dcShort: 'under 90 min', dcMid: 'under 2 hours', dcLong: 'over 2 hours', dcOrder: 'Sort by' });
+Object.assign(TX.de, { dcFilters: 'Filter', dcYearFrom: 'Erschienen ab', dcYearTo: 'bis', dcMinRate: 'Mindestbewertung', dcLang: 'Originalsprache', dcRuntime: 'Länge', dcAny: 'Egal', dcResetF: 'Filter zurücksetzen', dcShort: 'unter 90 Min.', dcMid: 'unter 2 Stunden', dcLong: 'über 2 Stunden', dcOrder: 'Sortierung' });
+const DC_LANGS = [['en', 'English'], ['de', 'Deutsch'], ['fr', 'Français'], ['es', 'Español'], ['it', 'Italiano'], ['ja', '日本語'], ['ko', '한국어'], ['zh', '中文'], ['hi', 'हिन्दी'], ['sv', 'Svenska'], ['da', 'Dansk']];
 const SORTS = { popularity: ['popularity.desc', 'popularity.desc'], rating: ['vote_average.desc', 'vote_average.desc'], newest: ['primary_release_date.desc', 'first_air_date.desc'] };
 
 async function discoverView2(page) {
@@ -13,7 +16,7 @@ async function discoverView2(page) {
   const heroP = seerrGet('/discover/trending', { page: 1 }).then(r => r.results.filter(x => x.backdropPath && x.overview && (x.mediaType === 'movie' || x.mediaType === 'tv')).slice(0, 8)).catch(() => []);
   const [lm, rm, heroRaw, genres] = await Promise.all([libMap(), reqMap(), heroP, dcGenres(), lbLoad(), archLoad()]); skel.remove();
   const make = x => dCard(x, lm, rm);
-  const st = { type: 'all', genre: '', genreName: '', sort: 'popularity', hideOwned: false, hideSeen: false, q: '' };
+  const st = { type: 'all', genre: '', genreName: '', sort: 'popularity', hideOwned: false, hideSeen: false, q: '', yFrom: '', yTo: '', minRate: '', lang: '', run: '' };
   const hero = heroRaw.map(x => toHero(x, lm, rm));
   const heroHolder = h('div', {}, hero.length ? heroEl(hero) : h('div', { style: 'height:90px' })); wrap.prepend(heroHolder);
   /* filter bar */
@@ -28,7 +31,17 @@ async function discoverView2(page) {
   let qT; const q = h('input', { type: 'text', placeholder: t('dcSearch'), oninput: e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); refresh(); }, 400); } });
   const hideSeen = h('label', { class: 'dc-tg' }, h('input', { type: 'checkbox', onchange: e => { st.hideSeen = e.target.checked; refresh(); } }), h('i'), h('span', {}, t('rcHideSeen')));
   const bar = h('div', { class: 'dc-bar' }, typeChips, h('div', { class: 'dc-sel' }, gSel), h('div', { class: 'dc-sel' }, sSel), h('label', { class: 'dc-tg' }, hide, h('i'), h('span', {}, t('hideOwned'))), hideSeen, h('div', { class: 'dc-q' }, ic('search', 'ic-s'), q));
-  wrap.append(bar);
+  /* extended filters: release years, minimum rating, original language, length */
+  const advN = () => ['yFrom', 'yTo', 'minRate', 'lang', 'run'].filter(k => st[k]).length;
+  const fSel = (key, opts) => { const s_ = h('select', { onchange: e => { st[key] = e.target.value; upd(); refresh(); } }, h('option', { value: '' }, t('dcAny')), opts.map(([v, l]) => h('option', { value: v }, l))); return s_; };
+  const years = []; for (let y = new Date().getFullYear() + 1; y >= 1930; y--) years.push([String(y), String(y)]);
+  const fld = (label, el) => h('div', { class: 'dc-f' }, h('label', {}, label), el);
+  const selY1 = fSel('yFrom', years), selY2 = fSel('yTo', years), selR = fSel('minRate', [['5', '5+'], ['6', '6+'], ['7', '7+'], ['7.5', '7.5+'], ['8', '8+']]), selL = fSel('lang', DC_LANGS), selT = fSel('run', [['90', t('dcShort')], ['120', t('dcMid')], ['121', t('dcLong')]]);
+  const advPanel = h('div', { class: 'dc-adv', hidden: true }, fld(t('dcYearFrom'), selY1), fld(t('dcYearTo'), selY2), fld(t('dcMinRate'), selR), fld(t('dcLang'), selL), fld(t('dcRuntime'), selT),
+    h('button', { class: 'btn grey', onclick: () => { ['yFrom', 'yTo', 'minRate', 'lang', 'run'].forEach(k => st[k] = ''); advPanel.querySelectorAll('select').forEach(s_ => { s_.value = ''; s_.dispatchEvent(new Event('change')); }); } }, t('dcResetF')));
+  const advBtn = h('button', { class: 'dc-fbtn', onclick: () => { advPanel.hidden = !advPanel.hidden; advBtn.classList.toggle('open', !advPanel.hidden); } }, ic('filter', 'ic-s'), h('span', {}, t('dcFilters')), h('em', { hidden: true }, '0'));
+  function upd() { const n = advN(); const em = advBtn.querySelector('em'); em.hidden = !n; em.textContent = n; advBtn.classList.toggle('act', n > 0); }
+  bar.insertBefore(advBtn, bar.querySelector('.dc-q')); wrap.append(bar, advPanel);
   /* genre tiles (Netflix-style "browse by genre") */
   const tiles = h('div', { class: 'dc-tiles' });
   const GCOL = ['#e50914', '#7a3cff', '#0a8f6a', '#e08a00', '#1f6feb', '#c2185b', '#00838f', '#8e24aa', '#d84315', '#2e7d32'];
@@ -38,7 +51,7 @@ async function discoverView2(page) {
   const personal = h('div', { class: 'nf-rows', style: 'margin-top:10px' }); wrap.append(personal);
   const gridHost = h('div', { class: 'nf-page-pad', style: 'padding-top:0' }); wrap.append(gridHost);
   let grid = null;
-  const filtered = () => st.q || st.genre || st.sort !== 'popularity' || st.type !== 'all' || st.hideOwned || st.hideSeen;
+  const filtered = () => st.q || st.genre || advN() || st.sort !== 'popularity' || st.type !== 'all' || st.hideOwned || st.hideSeen;
   /* personalised rows (only when no filter is active) */
   function buildPersonal() {
     personal.replaceChildren();
@@ -49,6 +62,9 @@ async function discoverView2(page) {
     lazyRow(personal, t('upMovies'), () => seerrGet('/discover/movies/upcoming', { page: 1 }).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: 'movie' }))), 'poster', { make });
     lazyRow(personal, t('upShows'), () => seerrGet('/discover/tv/upcoming', { page: 1 }).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: 'tv' }))), 'poster', { make });
   }
+  const advParams = k => { const o = {}; const dk = k === 'movie' ? ['primaryReleaseDateGte', 'primaryReleaseDateLte'] : ['firstAirDateGte', 'firstAirDateLte'];
+    if (st.yFrom) o[dk[0]] = st.yFrom + '-01-01'; if (st.yTo) o[dk[1]] = st.yTo + '-12-31'; if (st.minRate) { o.voteAverageGte = st.minRate; o.voteCountGte = 120; }
+    if (st.run) { if (+st.run > 120) o.withRuntimeGte = 120; else o.withRuntimeLte = +st.run; } return o; };
   function fetcher() {
     const own = x => dStatus(x, lm, rm).k === 'own';
     let pg = 0;
@@ -58,9 +74,10 @@ async function discoverView2(page) {
       else if (!filtered()) { const r = await seerrGet('/discover/trending', { page: p + 1 }); list = (r.results || []).filter(x => x.mediaType === 'movie' || x.mediaType === 'tv'); more = p < (r.totalPages || 1); }
       else {
         const kinds = st.type === 'all' ? ['movie', 'tv'] : [st.type];
-        const rs = await Promise.all(kinds.map(k => seerrGet('/discover/' + (k === 'movie' ? 'movies' : 'tv'), Object.assign({ page: p, sortBy: SORTS[st.sort][k === 'movie' ? 0 : 1] }, st.genre ? { genre: st.genre } : {})).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: k }))).catch(() => [])));
+        const rs = await Promise.all(kinds.map(k => seerrGet('/discover/' + (k === 'movie' ? 'movies' : 'tv'), Object.assign({ page: p, sortBy: SORTS[st.sort][k === 'movie' ? 0 : 1] }, st.genre ? { genre: st.genre } : {}, advParams(k))).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: k }))).catch(() => [])));
         list = rs.flat(); if (st.type === 'all') list.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)); more = rs.some(r => r.length >= 20);
       }
+      if (st.lang) list = list.filter(x => x.originalLanguage === st.lang);
       if (st.hideOwned) list = list.filter(x => !own(x));
       if (st.hideSeen) list = list.filter(x => !rcSeen(x, lm));
       return { Items: list, done: !more };

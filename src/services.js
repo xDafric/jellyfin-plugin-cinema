@@ -27,7 +27,12 @@ async function seerrModal(x) {
   const status = h('div', { class: 'sr-status' }); lbArchBadges(Object.assign({}, d, { mediaType: mt, id: x.id })).forEach(b => status.append(b));
   const adv = { serverId: null, profileId: null, rootFolder: null };
   const btn = h('button', { class: 'btn white' }, ic('plus'), t('request'));
-  btn.onclick = async () => {
+  let advOk = false; let advBox = null; const advDialog = () => {
+    const dg = cxDialog(t('request')); dg.body.replaceChildren(h('p', { class: 'set-p', style: 'margin-top:0' }, t('reqAdvHint')), advBox);
+    dg.foot.append(h('button', { class: 'btn grey', onclick: dg.close }, t('cancel')), h('button', { class: 'btn white', onclick: () => { dg.close(); doRequest(); } }, ic('plus'), t('request')));
+  };
+  btn.onclick = () => { if (admin && advOk) advDialog(); else doRequest(); };
+  const doRequest = async () => {
     btn.disabled = true; btn.textContent = '…';
     try { const body = { mediaType: mt, mediaId: x.id }; if (mt === 'tv') body.seasons = [...picked]; if (adv.serverId != null) body.serverId = adv.serverId; if (adv.profileId != null) body.profileId = adv.profileId; if (adv.rootFolder) body.rootFolder = adv.rootFolder; await cpostSeerr('/request', body); toast(t('requested')); resetSeerrCache(); closeModal(bgEl); }
     catch (e) { toast(((e.responseJSON && e.responseJSON.message) || e.statusText || 'error')); btn.disabled = false; btn.replaceChildren(ic('plus'), t('request')); }
@@ -39,18 +44,18 @@ async function seerrModal(x) {
   seerrGet('/' + mt + '/' + x.id + (mt === 'movie' ? '/ratingscombined' : '/ratings')).then(r => { const rt = r.rt || r; const im = r.imdb; if (rt && rt.criticsScore != null) ratings.append(h('span', { class: 'rt-chip' }, 'Rotten Tomatoes ', h('b', {}, rt.criticsScore + '%'), rt.audienceScore != null ? h('small', {}, t('audience') + ' ' + rt.audienceScore + '%') : null)); if (im && im.criticsScore != null) ratings.append(h('span', { class: 'rt-chip' }, 'IMDb ', h('b', {}, im.criticsScore))); }).catch(() => { });
   if (d.voteAverage) ratings.append(h('span', { class: 'rt-chip' }, 'TMDB ', h('b', {}, d.voteAverage.toFixed(1)), d.voteCount ? h('small', {}, (d.voteCount / 1000).toFixed(1) + 'k') : null));
   /* request options for admins: server, quality profile, folder */
-  const advBox = h('details', { class: 'sr-adv' }, h('summary', {}, t('reqAdvanced')));
+  advBox = h('div', { class: 'sr-opts' });
   if (admin && st.k === 'none') {
     const kind = mt === 'movie' ? 'radarr' : 'sonarr';
     seerrGet('/service/' + kind).then(async servers => {
-      const list = (servers || []).filter(s => !s.is4k); if (!list.length) { advBox.remove(); return; }
+      const list = (servers || []).filter(s => !s.is4k); if (!list.length) return;
       const def = list.find(s => s.isDefault) || list[0]; const sel = (label, key) => { const el = h('select', { onchange: e => { adv[key] = key === 'rootFolder' ? e.target.value : (e.target.value === '' ? null : +e.target.value); } }); return { el, row: h('div', { class: 'sr-opt' }, h('label', {}, label), el) }; };
       const sv = sel(t('reqServer'), 'serverId'), pf = sel(t('reqProfile'), 'profileId'), fo = sel(t('reqFolder'), 'rootFolder');
       list.forEach(s => sv.el.append(h('option', { value: s.id, selected: s.id === def.id }, s.name)));
       const fill = async id => { adv.serverId = id; try { const det = await seerrGet('/service/' + kind + '/' + id); pf.el.replaceChildren(...(det.profiles || []).map(p => h('option', { value: p.id, selected: p.id === def.activeProfileId }, p.name))); fo.el.replaceChildren(...(det.rootFolders || []).map(f => h('option', { value: f.path, selected: f.path === def.activeDirectory }, f.path))); adv.profileId = pf.el.value ? +pf.el.value : null; adv.rootFolder = fo.el.value || null; } catch (e) { } };
-      sv.el.onchange = e => fill(+e.target.value); await fill(def.id); advBox.append(h('div', { class: 'sr-opts' }, sv.row, pf.row, fo.row));
-    }).catch(() => advBox.remove());
-  } else advBox.remove();
+      sv.el.onchange = e => fill(+e.target.value); await fill(def.id); advBox.append(sv.row, pf.row, fo.row); advOk = true;
+    }).catch(() => { });
+  }
   const poster = TM(d.posterPath, 'w500');
   box.replaceChildren(
     h('div', Object.assign({ class: 'sr-hero' }, bg(TM(d.backdropPath, 'w1280'))), h('button', { class: 'sr-close', onclick: () => closeModal(bgEl), 'aria-label': 'Close' }, ic('close'))),
@@ -60,9 +65,9 @@ async function seerrModal(x) {
           h('div', { class: 'nf-meta' }, (d.genres || []).slice(0, 4).map(g => h('span', {}, g.name)), runtime ? h('span', {}, runtime + ' ' + t('min')) : null),
           ratings, status,
           h('div', { class: 'nf-btns', style: 'margin-top:14px' }, btn, trailer ? h('a', { class: 'btn grey', href: 'https://www.youtube.com/watch?v=' + trailer.key, target: '_blank', rel: 'noopener' }, ic('film'), t('watchTrailer')) : null, h('button', { class: 'btn grey', onclick: () => closeModal(bgEl) }, t('close'))))),
-      h('p', { class: 'sr-ov' }, d.overview || ''), seasonBox, advBox,
+      h('p', { class: 'sr-ov' }, d.overview || ''), seasonBox,
       facts.length ? h('dl', { class: 'nf-facts sr-facts' }, facts.map(f => [h('dt', {}, f[0]), h('dd', {}, f[1])])) : null,
-      cast.length ? h('div', { class: 'sr-castw' }, h('h3', {}, t('moreCast')), h('div', { class: 'sr-cast2' }, cast.map(c => h('div', { class: 'sr-p' }, h('div', Object.assign({ class: 'pi' }, bg(c.profilePath ? TM(c.profilePath, 'w185') : ''))), h('b', {}, c.name), h('small', {}, c.character || '')))) ) : null));
+      cast.length ? h('div', { class: 'sr-castw' }, h('h3', {}, t('moreCast')), hscroll(h('div', { class: 'sr-cast2' }, cast.map(c => h('button', { class: 'sr-p', onclick: () => personDialog(c) }, h('div', Object.assign({ class: 'pi' }, bg(c.profilePath ? TM(c.profilePath, 'w185') : ''))), h('b', {}, c.name), h('small', {}, c.character || ''))))) ) : null));
 }
 function cpostSeerr(path, body) { return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl(SEERR + path), data: JSON.stringify(body), contentType: 'application/json', dataType: 'json' }); }
 
@@ -85,8 +90,9 @@ const aImg = o => { const u = pk(o, ['image', 'imageUrl', 'cover', 'coverUrl', '
 function aurralTile(o, kind) {
   const name = aName(o); const sub = kind === 'artist' ? t('artist') : [pk(o, ['artistName', 'artist']) || '', pk(o, ['year', 'releaseYear']) || String(o.releaseDate || '').slice(0, 4)].filter(Boolean).join(' · ');
   const el = tile({ name, sub: sub + ' · ' + t('notOwned'), img: aImg(o), round: kind === 'artist', href: '#', play: null });
+  if (!aImg(o)) { if (kind === 'artist') fillArtistImg(el, name); else fillAlbumImg(el, pk(o, ['id', 'releaseGroupMbid', 'mbid']), pk(o, ['artistName', 'artist']) || '', name); }
   if (!aurralReq()) { el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el; }
-  const btn = h('button', { class: 'pbtn show', 'aria-label': t('request'), onclick: async e => { e.stopPropagation(); btn.classList.add('busy'); try { await requestAurral(o, kind); toast(t('requested')); } catch (er) { toast(((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } btn.classList.remove('busy'); } }, ic('plus'));
+  const btn = h('button', { class: 'pbtn show', 'aria-label': t('request'), onclick: async e => { e.stopPropagation(); btn.classList.add('busy'); try { await requestAurral(o, kind); toast(t('requested')); doneBtn(btn); return; } catch (er) { toast(((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } btn.classList.remove('busy'); } }, ic('plus'));
   el.append(btn); el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el;
 }
 async function requestAurral(o, kind) {
@@ -114,4 +120,21 @@ async function aurralDiscoverShelves(node) {
       node.append(shelf(title, arr.slice(0, 16).map(o => aurralTile(o, /album/i.test(o.type || '') ? 'album' : 'artist'))));
     }
   } catch (e) { }
+}
+
+/* a person from the cast of a film: photo, short bio and everything they are known for, with library and request state */
+async function personDialog(c) {
+  const a = { tid: c.id, k: 'p' + c.id, name: c.name }; const d = cxDialog(c.name, { wide: true }); d.busy();
+  let info = {}; try { info = await seerrGet('/person/' + c.id); } catch (e) { }
+  const [cr, ctx] = await Promise.all([gCredits(a), gCtx()]); if (!d.el.isConnected) return;
+  const bio = String(info.biography || '').split('\n')[0]; let shown = 40; const list = h('div', { class: 'gm-frl' });
+  const born = info.birthday ? new Date(info.birthday + 'T12:00:00').toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const head = h('div', { class: 'gm-ad' }, h('div', Object.assign({ class: 'pd-face' }, bg(info.profilePath || c.profilePath ? TM(info.profilePath || c.profilePath, 'w185') : ''))), h('div', {}, h('h2', {}, c.name), born ? h('p', { class: 'set-p' }, born + (info.placeOfBirth ? ' · ' + info.placeOfBirth : '')) : null, bio ? h('p', { class: 'pd-bio' }, bio.length > 360 ? bio.slice(0, 360).replace(/\s\S*$/, '') + '…' : bio) : null));
+  const draw = () => {
+    list.replaceChildren(); const items = (cr || []).slice().sort((x, y) => (y.pop || 0) - (x.pop || 0));
+    if (!items.length) { list.append(h('div', { class: 'nf-empty', style: 'padding:24px 0' }, t('gNoCredits'))); return; }
+    items.slice(0, shown).forEach(x => { const s2 = gCredState(x, ctx); list.append(gFilmRow({ title: x.title, year: x.year, poster: TM(x.poster, 'w154'), role: x.role, seen: s2.seen, own: s2.own, req: s2.req, tmdb: x.id, mt: x.mt, scene: false }, a, d.close)); });
+    if (items.length > shown) list.append(h('button', { class: 'btn grey', style: 'margin:12px auto 0', onclick: () => { shown += 40; draw(); } }, t('showAll')));
+  };
+  d.body.replaceChildren(head, list); draw();
 }

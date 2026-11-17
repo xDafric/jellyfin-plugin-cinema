@@ -151,6 +151,16 @@ function card(it, kind, opts) {
   return el;
 }
 
+/* a horizontal scroller without scrollbar and with the same arrows as the film rows */
+function hscroll(sc) {
+  sc.classList.add('hs');
+  const L_ = h('button', { class: 'nf-arrow l', 'aria-label': 'Previous', onclick: () => sc.scrollBy({ left: -sc.clientWidth * .8 }) }, ic('left'));
+  const R_ = h('button', { class: 'nf-arrow r', 'aria-label': 'Next', onclick: () => sc.scrollBy({ left: sc.clientWidth * .8 }) }, ic('right'));
+  const w = h('div', { class: 'hs-wrap' }, L_, sc, R_);
+  const upd = () => { L_.classList.toggle('off', sc.scrollLeft < 8); R_.classList.toggle('off', sc.scrollLeft + sc.clientWidth > sc.scrollWidth - 8); };
+  sc.addEventListener('scroll', upd, { passive: true }); setTimeout(upd, 60); setTimeout(upd, 500);
+  return w;
+}
 function row(title, list, kind, opts) {
   opts = opts || {};
   const cardOf = (i, idx) => opts.make ? opts.make(i) : kind === 'top10' ? top10Card(i, idx) : kind === 'spotlight' ? spotCard(i) : card(i, kind === 'top10' ? 'poster' : kind);

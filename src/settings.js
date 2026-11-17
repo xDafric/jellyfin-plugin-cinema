@@ -31,8 +31,13 @@ const SEC = {
   collection: { label: p => p.title || t('collection'), custom: true, run: p => items({ ParentId: p.param, SortBy: 'PremiereDate', Limit: 40 }), kind: 'poster' },
   library: { label: p => p.title || 'Library', custom: true, run: p => items({ ParentId: p.param, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster' }
 };
-const DEFAULT_SECTIONS = ['continue', 'nextup', 'tonight', 'spotlight', 'freshUnseen', 'top10Movies', 'newMovies', 'forYou', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'followPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
-const sectionsCfg = () => { const c = cfg('sections'); return c && c.length ? c : DEFAULT_SECTIONS; };
+const DEFAULT_SECTIONS = ['continue', 'nextup', 'becauseSeen', 'spotlight', 'freshUnseen', 'top10Movies', 'becauseLiked', 'newMovies', 'forYou', 'rewatch', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'followPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
+/* rows added in a later version are put into a customised list once, unless the person already saw and removed them */
+const sectionsCfg = () => {
+  const c = cfg('sections'); if (!(c && c.length)) return DEFAULT_SECTIONS;
+  const known = new Set(CFGU.secKnown || []); const miss = (typeof NEW_SECS !== 'undefined' ? NEW_SECS : []).filter(id => !known.has(id) && !c.some(s => s.id === id)); if (!miss.length) return c;
+  const out = c.slice(); let at = out.findIndex(s => s.id === 'nextup'); at = at < 0 ? Math.min(2, out.length) : at + 1; out.splice(at, 0, ...miss.map(id => ({ id, on: true }))); return out;
+};
 
 async function homeView2(page) {
   const heroHost = h('div', { class: 'nf-hero-host', style: 'min-height:90px' }); page.append(heroHost);
@@ -43,6 +48,7 @@ async function homeView2(page) {
   const first = list.slice(0, 7), rest = list.slice(7);
   const render = s => {
     const d = SEC[s.id];
+    if (d.build) return d.build(rows, s);
     if (d.multi) return genreRows(rows, 'Movie', s.n || 4);
     if (d.tiles) return genreTilesRow(rows);
     if (d.seerr) return seerrRow(rows, s.title || d.label(s), d.seerr);
@@ -50,7 +56,7 @@ async function homeView2(page) {
     if (d.forYou) return forYouRow(rows);
     if (d.follow) return followRow(rows);
     if (d.picks) return peopleRow(rows, d.picks);
-    if (d.tonight) { if (cfg('tonight')) tonightBanner(rows); return; }
+    if (d.tonight) return; /* switched off for now */
     const title = s.title || (s.id === 'because' ? null : d.label(s));
     if (s.id === 'because') { const ph = h('div', { class: 'nf-rowph' }); rows.append(ph); Promise.resolve(d.run(s)).then(l => { const arr = (l && l.Items) || l || []; if (arr.length) ph.replaceWith(row(d.title || t('because'), arr, d.kind)); else ph.remove(); }).catch(() => ph.remove()); return; }
     lazyRow(rows, title, () => d.run(s), d.kind || 'poster', { unseen: !!d.unseen && cfg('homeSeen') === 'hide', min: d.min, href: d.href || (d.custom ? '#/c/browse/' + s.id + '/' + encodeURIComponent(s.param) : undefined), min: d.min || (d.custom ? 4 : 1) });
@@ -91,7 +97,7 @@ async function settingsView(page) {
   const seg = (opts, key, cb) => h('div', { class: 'pl-seg set-seg' }, opts.map(([v, l]) => h('button', { class: String(cfg(key)) === String(v) ? 'on' : '', onclick: async e => { $$('button', e.currentTarget.parentElement).forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on'); await saveCfg({ [key]: typeof v === 'string' && /^\d+$/.test(v) ? +v : v }); cb && cb(v); } }, l)));
   const X = { row, seg, sw, toggle, go: k => { cur = k; draw(); }, reload: () => { } };
   function sectionsEditor() {
-    const list = h('div', { class: 'set-list' }); let secs = sectionsCfg().map(s => Object.assign({}, s)); const persist = () => saveCfg({ sections: secs });
+    const list = h('div', { class: 'set-list' }); let secs = sectionsCfg().map(s => Object.assign({}, s)); const persist = () => saveCfg({ sections: secs, secKnown: NEW_SECS });
     const names = s => SEC[s.id] ? (SEC[s.id].custom ? SEC[s.id].label(s) + ' · ' + t('custom') : SEC[s.id].label(s)) : s.id;
     function draw_() {
       list.replaceChildren(...secs.map((s, i) => h('div', { class: 'set-sec' + (s.on === false ? ' off' : '') }, h('b', {}, names(s)), h('div', { class: 'set-sec-a' },

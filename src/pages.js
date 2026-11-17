@@ -110,4 +110,4 @@ async function browseListView(page, kind, param) {
   const g = infiniteGrid(wrap, (s, n) => items(Object.assign({ IncludeItemTypes: st.type || 'Movie,Series,BoxSet', SortBy: st.sort, SortOrder: st.order, StartIndex: s, Limit: n }, base)), i => card(i, 'poster'));
 }
 
-async function seerrWatch(x) { try { await cpostSeerr('/watchlist', { tmdbId: +x.id, mediaType: x.mediaType === 'tv' ? 'tv' : 'movie', title: x.title || x.name }); toast(t('wlAdded')); } catch (e) { toast(((e.responseJSON && e.responseJSON.message) || 'Seerr')); } }
+async function seerrWatch(x) { try { await cpostSeerr('/watchlist', { tmdbId: +x.id, mediaType: x.mediaType === 'tv' ? 'tv' : 'movie', title: x.title || x.name }); toast(t('wlAdded')); return true; } catch (e) { toast(((e.responseJSON && e.responseJSON.message) || 'Seerr')); return false; } }

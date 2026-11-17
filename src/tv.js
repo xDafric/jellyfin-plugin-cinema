@@ -27,7 +27,7 @@ function tvInit() {
   const vis2 = e => { const r = e.getBoundingClientRect(); return r.width >= 4 && r.height >= 4 && r.bottom > -2400 && r.top < innerHeight + 2600; };
   const visible = e => { if (e.checkVisibility && !e.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false; return vis2(e); };
   /* the topmost modal layer limits where focus may go */
-  const LAYER_SEL = '.cxd-bg.show, .sp-modal-bg, .nf-pop:not(.hide), .sp-ctx, #cx-menu, .sp-menu, .sr-modal';
+  const LAYER_SEL = '.cxd-bg.show, .sp-modal-bg, .nf-pop:not(.hide), .sp-ctx, #cx-menu, .sp-menu, .dd-menu, .sr-modal';
   const layer = () => { const all = document.querySelectorAll(LAYER_SEL); for (let k = all.length - 1; k >= 0; k--) if (visible(all[k])) return all[k]; return null; };
   /* rectangles are measured once and kept (page coordinates), so a key press never forces a layout */
   let RC = null, rcDirty = true; const SCR = '.nf-scroller, .sp-shelf, .nf-cast, .nf-row-scroll';
