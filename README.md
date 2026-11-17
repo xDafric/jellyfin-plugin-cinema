@@ -8,6 +8,8 @@ A Netflix and Spotify style interface for Jellyfin 12, with a server plugin that
 - Home sections you can reorder and add to, stored per user.
 - Film Quiz (`#/c/quiz`): learn the actors from the films you watched (Jellyfin and Letterboxd) with spaced repetition, several games, levels, streaks and badges. Progress is stored per user.
 - Cinema Wrapped (`#/c/wrapped`): your viewing year as a story with a share image and a home page banner around the turn of the year.
+- Storage assistant (`#/c/storage`, administrators): free space, biggest movies, growth forecast and clean-up suggestions with bulk archive.
+- Requests page with status steps and live download progress, personalised Discover rows (labelled on the home page), "What shall we watch tonight?", and a calendar with download and watch history.
 - Settings with a Features gallery (illustrations, options per feature) and a first-run setup wizard; the server page lists every feature with its defaults.
 
 Needs Jellyfin 12.4. No other plugin is required: Cinema loads its interface itself before the page renders.

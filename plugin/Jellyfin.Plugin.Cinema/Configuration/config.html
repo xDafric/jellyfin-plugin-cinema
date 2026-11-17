@@ -7,61 +7,84 @@
 <body>
 <div id="CinemaConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
     <div data-role="content">
-        <div class="content-primary" style="max-width:1100px">
+        <div class="content-primary" style="max-width:1180px">
             <style>
-                .cin { font-family: "Inter", system-ui, sans-serif; color: #ececf0; }
+                .cin { font-family: "Inter", system-ui, sans-serif; color: #ececf0; padding-bottom: 90px; }
                 .cin * { box-sizing: border-box; }
+                .cin button { font-family: inherit; }
                 .cin-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 22px; }
                 .cin-head h2 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
                 .cin-head small { color: #8d8d95; font-size: 13px; }
                 .cin-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-                .cin-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.07); font-size: 13px; font-weight: 600; }
-                .cin-chip i { width: 9px; height: 9px; border-radius: 50%; background: #5a5a62; } .cin-chip.ok i { background: #34c759; box-shadow: 0 0 0 4px rgba(52,199,89,.18); } .cin-chip.bad i { background: #ff453a; }
-                .cin-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 26px; align-items: start; }
+                .cin-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.07); font-size: 13px; font-weight: 600; cursor: pointer; border: 0; color: inherit; }
+                .cin-chip i { width: 9px; height: 9px; border-radius: 50%; background: #5a5a62; } .cin-chip.ok i { background: #34c759; box-shadow: 0 0 0 4px rgba(52,199,89,.18); } .cin-chip.bad i { background: #ff453a; box-shadow: 0 0 0 4px rgba(255,69,58,.18); }
+                .cin-layout { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 26px; align-items: start; }
                 .cin-nav { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 4px; }
-                .cin-nav button { all: unset; box-sizing: border-box; cursor: pointer; padding: 12px 16px; border-radius: 14px; font-size: 14.5px; font-weight: 500; color: #c9c9d0; transition: background .18s, color .18s; }
+                .cin-nav button { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 14px; font-size: 14.5px; font-weight: 500; color: #c9c9d0; transition: background .18s, color .18s; }
+                .cin-nav button span { width: 22px; text-align: center; font-size: 17px; }
                 .cin-nav button:hover { background: rgba(255,255,255,.07); color: #fff; }
                 .cin-nav button.on { background: #fff; color: #000; font-weight: 600; }
-                .cin-steps { margin: 0; padding-left: 20px; color: #b9b9c1; font-size: 13.5px; line-height: 1.7; } .cin-steps b { color: #fff; }
+                .cin-nav em { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 800; min-width: 20px; text-align: center; padding: 2px 7px; border-radius: 999px; background: #ff9f0a; color: #000; } .cin-nav em:empty { display: none; }
                 .cin-panel { display: none; } .cin-panel.on { display: block; animation: cinfade .25s both; }
                 @keyframes cinfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
                 .cin-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 22px; padding: 22px 24px; margin-bottom: 18px; }
                 .cin-card h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; } .cin-card > p { margin: 0 0 16px; color: #8d8d95; font-size: 13.5px; line-height: 1.5; }
                 .cin-field { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
                 .cin-field label { display: block; font-size: 12px; color: #9a9aa2; margin-bottom: 5px; font-weight: 600; }
-                .cin input[type=text], .cin input[type=password], .cin input[type=number], .cin select, .cin textarea { width: 100%; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 14px; outline: 0; }
+                .cin input[type=text], .cin input[type=password], .cin input[type=number], .cin input[type=search], .cin select { width: 100%; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 14px; outline: none; }
                 .cin input:focus, .cin select:focus { border-color: rgba(255,255,255,.45); }
                 .cin select option { background: #1c1c20; }
                 .cin-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 0; border-top: 1px solid rgba(255,255,255,.06); }
-                .cin-row:first-of-type { border-top: 0; }
-                .cin-row b { display: block; font-size: 14.5px; font-weight: 600; } .cin-row span { display: block; color: #8d8d95; font-size: 12.5px; margin-top: 3px; max-width: 520px; line-height: 1.4; }
+                .cin-row:first-child { border-top: 0; }
+                .cin-row b { display: block; font-size: 14.5px; font-weight: 600; } .cin-row span.d { display: block; color: #8d8d95; font-size: 12.5px; margin-top: 3px; max-width: 540px; line-height: 1.4; }
                 .cin-sw { position: relative; width: 48px; height: 28px; border-radius: 999px; background: #3a3a40; flex: none; cursor: pointer; transition: background .2s; border: 0; padding: 0; }
                 .cin-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
                 .cin-sw.on { background: #34c759; } .cin-sw.on::after { transform: translateX(20px); }
-                .cin-btn { all: unset; box-sizing: border-box; cursor: pointer; padding: 10px 18px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 13.5px; font-weight: 600; transition: background .18s; display: inline-block; }
-                .cin-btn:hover { background: rgba(255,255,255,.2); } .cin-btn.pri { background: #fff; color: #000; } .cin-btn.pri:hover { background: #e4e4e8; }
+                .cin-btn { all: unset; box-sizing: border-box; cursor: pointer; padding: 10px 18px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 13.5px; font-weight: 600; transition: background .18s; display: inline-block; color: #fff; }
+                .cin-btn:hover { background: rgba(255,255,255,.2); } .cin-btn.pri { background: #fff; color: #000; } .cin-btn.pri:hover { background: #e4e4e8; } .cin-btn.sm { padding: 7px 14px; font-size: 12.5px; }
+                .cin-steps { margin: 0; padding-left: 20px; color: #b9b9c1; font-size: 13.5px; line-height: 1.7; } .cin-steps b { color: #fff; }
+                /* status and overview */
+                .cin-ov { display: grid; grid-template-columns: 150px 1fr; gap: 22px; align-items: center; }
+                .cin-ring { position: relative; width: 140px; height: 140px; } .cin-ring svg { width: 140px; height: 140px; transform: rotate(-90deg); } .cin-ring circle { fill: none; stroke-width: 10; stroke-linecap: round; } .cin-ring .bg { stroke: rgba(255,255,255,.1); } .cin-ring .fg { stroke: #34c759; transition: stroke-dashoffset .6s; } .cin-ring div { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; } .cin-ring b { font-size: 30px; font-weight: 900; line-height: 1; } .cin-ring small { color: #8d8d95; font-size: 11.5px; }
+                .cin-todo { display: flex; flex-direction: column; gap: 8px; }
+                .cin-td { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.05); font-size: 14px; } .cin-td i { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px; font-weight: 900; background: #3a3a40; } .cin-td.ok i { background: #34c759; color: #04210f; } .cin-td.warn i { background: #ff9f0a; color: #2a1800; } .cin-td span { flex: 1; } .cin-td small { color: #8d8d95; }
+                .cin-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; } .cin-tile { padding: 16px 18px; border-radius: 18px; background: rgba(255,255,255,.05); } .cin-tile b { display: block; font-size: 26px; font-weight: 900; } .cin-tile span { color: #9a9aa2; font-size: 13px; }
+                /* services */
+                .cin-svc { display: flex; flex-direction: column; gap: 14px; }
+                .cin-svh { display: flex; align-items: flex-start; gap: 14px; } .cin-svh > .cin-svi { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: rgba(0,0,0,.35); } .cin-svh > div { flex: 1; min-width: 0; } .cin-svh h3 { margin: 0; font-size: 18px; } .cin-svh p { margin: 3px 0 0; color: #8d8d95; font-size: 13px; line-height: 1.45; }
+                .cin-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,.07); color: #a8a8b2; flex: none; } .cin-pill i { width: 8px; height: 8px; border-radius: 50%; background: #6f6f78; } .cin-pill.ok { color: #7cf0a3; background: rgba(52,199,89,.14); } .cin-pill.ok i { background: #34c759; } .cin-pill.bad { color: #ffb4ae; background: rgba(255,69,58,.15); } .cin-pill.bad i { background: #ff453a; }
+                .cin-used { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 12px; } .cin-used small { color: #8d8d95; font-weight: 600; margin-right: 4px; } .cin-used a { cursor: pointer; font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,.08); color: #ececf0; text-decoration: none; } .cin-used a:hover { background: rgba(255,255,255,.18); }
                 .cin-test { display: flex; align-items: center; gap: 12px; margin-top: 4px; } .cin-test span { font-size: 13px; color: #9a9aa2; }
+                /* features */
+                .cin-bar2 { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; } .cin-bar2 input[type=search] { max-width: 300px; }
+                .cin-fchips { display: flex; gap: 8px; } .cin-fchips button { all: unset; cursor: pointer; padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.07); font-size: 13px; font-weight: 600; } .cin-fchips button.on { background: #fff; color: #000; }
+                .cin-g { margin-top: 26px; } .cin-gh { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; } .cin-gh > span { width: 42px; height: 42px; display: grid; place-items: center; font-size: 22px; border-radius: 14px; background: rgba(255,255,255,.07); } .cin-gh h3 { margin: 0; font-size: 18px; font-weight: 800; } .cin-gh p { margin: 2px 0 0; color: #8d8d95; font-size: 13px; } .cin-gh em { margin-left: auto; font-style: normal; font-size: 12.5px; color: #8d8d95; font-weight: 700; }
+                .cin-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 14px; align-items: start; }
+                .cin-feat { --h: #e50914; border-radius: 22px; border: 1px solid rgba(255,255,255,.07); background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--h) 24%, #17171a), #17171a 60%); padding: 18px 22px; }
+                .cin-feat.on { border-color: color-mix(in srgb, var(--h) 50%, transparent); }
+                .cin-feat[hidden] { display: none; }
+                .cin-fh { display: flex; align-items: flex-start; gap: 14px; } .cin-fh > div { flex: 1; min-width: 0; } .cin-fh b { display: block; font-size: 16.5px; font-weight: 800; } .cin-fh span.d { display: block; color: #9a9aa4; font-size: 13px; line-height: 1.5; margin-top: 3px; }
+                .cin-fi { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: rgba(0,0,0,.35); } .cin-feat:not(.on) .cin-fi { filter: grayscale(1); opacity: .6; }
+                .cin-deps { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; } .cin-deps i { font-style: normal; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.07); color: #a8a8b2; } .cin-deps i.ok { color: #7cf0a3; background: rgba(52,199,89,.12); } .cin-deps i.bad { color: #ffb4ae; background: rgba(255,69,58,.14); cursor: pointer; } .cin-deps i.soft { opacity: .8; }
+                .cin-sub { margin-top: 12px; padding-top: 2px; border-top: 1px solid rgba(255,255,255,.07); } .cin-feat:not(.on) .cin-sub { opacity: .5; } .cin-sub .cin-row:first-child { border-top: 0; }
+                .cin-feat.flash { animation: cinflash 1.4s; } @keyframes cinflash { 30% { box-shadow: 0 0 0 3px #fff; } }
+                .cin-all { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 18px; background: rgba(255,255,255,.05); margin-bottom: 8px; } .cin-all > div { flex: 1; } .cin-all b { display: block; font-size: 15.5px; } .cin-all span { color: #8d8d95; font-size: 13px; }
+                /* navigation */
+                .cin-navprev { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 14px; border-radius: 16px; background: #0d0d10; border: 1px solid rgba(255,255,255,.07); margin-bottom: 16px; } .cin-navprev b { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,.06); } .cin-navprev b.fixed { background: rgba(255,255,255,.12); }
+                .cin-nvr { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,.06); } .cin-nvr:first-child { border-top: 0; } .cin-nvr > span { font-size: 22px; width: 34px; text-align: center; } .cin-nvr > div { flex: 1; min-width: 0; } .cin-nvr b { display: block; font-size: 14.5px; } .cin-nvr small { color: #8d8d95; font-size: 12.5px; } .cin-nvr.off-feature { opacity: .5; }
+                /* home rows */
                 .cin-secs { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-                .cin-sec { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-radius: 14px; background: rgba(255,255,255,.05); font-size: 14px; font-weight: 500; }
-                .cin-sec.off b { opacity: .45; } .cin-sec div { display: flex; align-items: center; gap: 6px; }
+                .cin-sec { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-radius: 14px; background: rgba(255,255,255,.05); font-size: 14px; font-weight: 500; gap: 10px; }
+                .cin-sec.off b { opacity: .45; } .cin-sec div { display: flex; align-items: center; gap: 6px; } .cin-sec small { color: #8d8d95; font-weight: 600; font-size: 11.5px; margin-left: 8px; }
                 .cin-sec .cin-mini { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.08); display: grid; place-items: center; font-size: 13px; } .cin-sec .cin-mini:hover { background: rgba(255,255,255,.18); }
-                .cin-bar { position: sticky; bottom: 0; margin-top: 10px; padding: 14px 0; display: flex; align-items: center; gap: 14px; background: linear-gradient(to top, #101013 60%, transparent); }
-                .cin-bar span { color: #8d8d95; font-size: 13px; }
-                .cin-colors { display: flex; align-items: center; gap: 10px; } .cin-colors button { all: unset; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; } .cin-colors button.on { border-color: #fff; }
-                .cin-colors input[type=color] { width: 40px; height: 30px; padding: 0; border: 0; background: none; }
-                .cin pre { background: rgba(0,0,0,.4); border-radius: 12px; padding: 12px; font-size: 12px; overflow: auto; max-height: 240px; }
-                .cin-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; align-items: start; margin-bottom: 18px; }
-                .cin-feat { --h: #e50914; border-radius: 22px; border: 1px solid rgba(255,255,255,.07); background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--h) 26%, #17171a), #17171a 60%); padding: 18px 22px; }
-                .cin-feat:has(.cin-fh .cin-sw.on) { border-color: color-mix(in srgb, var(--h) 50%, transparent); }
-                .cin-fh { display: flex; align-items: flex-start; gap: 14px; }
-                .cin-fh > div { flex: 1; min-width: 0; } .cin-fh b { display: block; font-size: 16.5px; font-weight: 800; } .cin-fh span { display: block; color: #9a9aa4; font-size: 13px; line-height: 1.5; margin-top: 3px; }
-                .cin-fi { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: rgba(0,0,0,.35); }
-                .cin-feat:not(:has(.cin-fh .cin-sw.on)) .cin-fi { filter: grayscale(1); opacity: .6; }
-                .cin-sub { margin-top: 12px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,.07); }
-                .cin-feat:not(:has(.cin-fh .cin-sw.on)) .cin-sub { opacity: .45; }
-                .cin-start { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
-                .cin-start > div { padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.05); } .cin-start em { font-style: normal; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #fff; color: #000; font-weight: 800; font-size: 13px; margin-bottom: 8px; } .cin-start b { display: block; font-size: 14.5px; } .cin-start span { display: block; color: #9a9aa4; font-size: 12.5px; line-height: 1.45; margin: 3px 0 8px; }
-                @media (max-width: 800px) { .cin-gal { grid-template-columns: 1fr; } .cin-layout { grid-template-columns: 1fr; } .cin-nav { position: static; flex-direction: row; overflow-x: auto; } .cin-field { grid-template-columns: 1fr; } }
+                .cin-colors { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; } .cin-colors button { all: unset; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; } .cin-colors button.on { border-color: #fff; }
+                .cin-colors input[type=color] { width: 38px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; }
+                .cin pre { background: rgba(0,0,0,.4); border-radius: 12px; padding: 12px; font-size: 12px; overflow: auto; max-height: 280px; }
+                /* floating save bar */
+                .cin-save { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 160%); opacity: 0; pointer-events: none; z-index: 50; display: flex; align-items: center; gap: 14px; padding: 10px 12px 10px 22px; border-radius: 999px; background: #26262c; border: 1px solid rgba(255,255,255,.15); box-shadow: 0 20px 60px rgba(0,0,0,.6); transition: transform .3s cubic-bezier(.2,.8,.2,1); max-width: calc(100vw - 24px); }
+                .cin-save.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; } .cin-save span { font-size: 14px; font-weight: 600; color: #ffcf8a; }
+                .cin-saved { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 0); z-index: 49; padding: 10px 20px; border-radius: 999px; background: #1f6f3a; color: #fff; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .3s; } .cin-saved.show { opacity: 1; }
+                @media (max-width: 800px) { .cin-layout { grid-template-columns: 1fr; } .cin-nav { position: static; flex-direction: row; overflow-x: auto; } .cin-field { grid-template-columns: 1fr; } .cin-gal { grid-template-columns: 1fr; } .cin-ov { grid-template-columns: 1fr; } }
             </style>
             <div class="cin" id="CinRoot">
                 <div class="cin-head">
@@ -70,235 +93,310 @@
                 </div>
                 <div class="cin-layout">
                     <div class="cin-nav" id="CinNav">
-                        <button data-tab="conn" class="on">Connections</button>
-                        <button data-tab="feat">Features</button>
-                        <button data-tab="look">Appearance</button>
-                        <button data-tab="home">Home</button>
-                        <button data-tab="player">Player</button>
-                        <button data-tab="hide">Hidden titles</button>
-                        <button data-tab="adv">Advanced</button>
+                        <button data-tab="start" class="on"><span>🏠</span>Overview<em id="CinBadge"></em></button>
+                        <button data-tab="conn"><span>🔌</span>Connections</button>
+                        <button data-tab="feat"><span>🧩</span>Features</button>
+                        <button data-tab="menu"><span>🧭</span>Navigation</button>
+                        <button data-tab="look"><span>🎨</span>Appearance</button>
+                        <button data-tab="home"><span>🏡</span>Home page</button>
+                        <button data-tab="player"><span>▶️</span>Player</button>
+                        <button data-tab="hide"><span>🙈</span>Hidden titles</button>
+                        <button data-tab="adv"><span>🛠️</span>Advanced</button>
                     </div>
                     <div>
-                        <!-- connections -->
-                        <div class="cin-panel on" data-panel="conn">
-                            <div class="cin-card"><h3>Getting started</h3><p>Four steps to a finished setup.</p>
-                                <div class="cin-start">
-                                    <div><em>1</em><b>Connect your services</b><span>Seerr, Radarr, Sonarr and Aurral are optional. The chips at the top show what is connected.</span></div>
-                                    <div><em>2</em><b>Choose the features</b><span>Quiz, Wrapped, Letterboxd and more can be switched on or off for everyone.</span><button class="cin-btn" data-goto="feat">Open features</button></div>
-                                    <div><em>3</em><b>Set the look</b><span>Accent colour, logo text and card size as defaults for all users.</span><button class="cin-btn" data-goto="look">Open appearance</button></div>
-                                    <div><em>4</em><b>Invite your users</b><span>Everyone sees a short setup wizard on their first visit and can adjust everything in their settings.</span></div>
-                                </div></div>
-                            <div class="cin-card"><h3>Welcome to Cinema</h3><p>Cinema replaces the look of Jellyfin with a streaming-service style interface: Netflix-like home page, a Spotify-like music app, its own video player and a TV mode for Android TV. Everything works with Jellyfin alone. The connections below are optional and each one unlocks extra pages.</p>
-                                <ol class="cin-steps"><li><b>Seerr</b> unlocks Discover, requests, the "requested" marks and the Seerr watchlist.</li><li><b>Radarr and Sonarr</b> unlock download progress and the release calendar.</li><li><b>Aurral</b> unlocks music discovery and album requests.</li><li>Use <b>Test connection</b> under each service. A green dot at the top means it is reachable from the Jellyfin server.</li><li>Save, then reload the web page (Ctrl+F5) once to see the changes.</li></ol></div>
-                            <div class="cin-card"><h3>Seerr</h3><p>Jellyseerr or Overseerr. <b>URL:</b> the address the Jellyfin server can reach, for example http://seerr:5055 inside Docker or http://192.168.1.20:5055. <b>API key:</b> in Seerr open Settings, General, copy the API key. Requests are made as the signed-in Jellyfin user, so the Jellyfin accounts must be imported into Seerr first. The key never reaches the browser; the server forwards requests.</p>
-                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="SeerrUrl" placeholder="http://seerr:5055"></div><div><label>API key</label><input type="password" data-k="SeerrApiKey"></div></div>
-                                <div class="cin-test"><button class="cin-btn" data-test="seerr">Test connection</button><span data-res="seerr"></span></div></div>
-                            <div class="cin-card"><h3>Radarr</h3><p>Movie downloads. Shows the download progress on requested titles and movie release dates in the calendar. API key: Radarr, Settings, General, Security.</p>
-                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="RadarrUrl" placeholder="http://radarr:7878"></div><div><label>API key</label><input type="password" data-k="RadarrApiKey"></div></div>
-                                <div class="cin-test"><button class="cin-btn" data-test="radarr">Test connection</button><span data-res="radarr"></span></div></div>
-                            <div class="cin-card"><h3>Sonarr</h3><p>TV show downloads. Shows the download progress and upcoming episodes in the calendar. API key: Sonarr, Settings, General, Security.</p>
-                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="SonarrUrl" placeholder="http://sonarr:8989"></div><div><label>API key</label><input type="password" data-k="SonarrApiKey"></div></div>
-                                <div class="cin-test"><button class="cin-btn" data-test="sonarr">Test connection</button><span data-res="sonarr"></span></div></div>
-                            <div class="cin-card"><h3>Aurral</h3><p>Music discovery: recommended artists, track previews and album requests. API key: Aurral, Settings, General, API access. Without Aurral the music app still plays your own library.</p>
-                                <div class="cin-field"><div><label>URL</label><input type="text" data-k="AurralUrl" placeholder="http://aurral:3001"></div><div><label>API key</label><input type="password" data-k="AurralApiKey"></div></div>
-                                <div class="cin-test"><button class="cin-btn" data-test="aurral">Test connection</button><span data-res="aurral"></span></div></div>
-                        </div>
-                        <!-- features -->
+                        <div class="cin-panel on" data-panel="start" id="CinStart"></div>
+                        <div class="cin-panel" data-panel="conn" id="CinConn"></div>
                         <div class="cin-panel" data-panel="feat">
-                            <div class="cin-card"><h3>Features</h3><p>Switch features on or off for every user. A disabled feature disappears from the interface, and users can switch the rest off for themselves in their own settings. Each person also gets a short setup wizard the first time they open Cinema.</p></div>
-                            <div class="cin-gal">
-                            <div class="cin-feat" style="--h:#e50914">
-                                <div class="cin-fh"><span class="cin-fi">🖼️</span><div><b>Billboard on the home page</b><span>Large rotating banner with logo, synopsis and a play button. Number and speed are set under Appearance.</span></div><button class="cin-sw" data-sw="FeatHero"></button></div>
-                            </div>
-                            <div class="cin-feat" style="--h:#0a84ff">
-                                <div class="cin-fh"><span class="cin-fi">👁️</span><div><b>Hover preview cards</b><span>A card with synopsis, rating and quick actions when the pointer rests on a poster.</span></div><button class="cin-sw" data-sw="FeatPeek"></button></div>
-                            </div>
-                            <div class="cin-feat" style="--h:#ff6a3d">
-                                <div class="cin-fh"><span class="cin-fi">▶️</span><div><b>Cinema video player</b><span>Our own player with subtitle styling, skip intro, auto next episode and quality choice. Turn off to use Jellyfin's own player everywhere.</span></div><button class="cin-sw" data-sw="FeatOwnPlayer"></button></div>
-                            </div>
-                            <div class="cin-feat" style="--h:#1ed760">
-                                <div class="cin-fh"><span class="cin-fi">🎭</span><div><b>Film Quiz</b><span>Users learn faces, names and films of the actors from the films they watched: daily spaced-repetition training, games, levels, streaks and badges. Progress is stored per user in Jellyfin. The values below are defaults that every user can change for themselves.</span></div><button class="cin-sw" data-sw="FeatQuiz"></button></div><div class="cin-sub"><div class="cin-row"><div><b>New faces per day</b><span>How many new actors the daily training introduces.</span></div><input type="number" min="1" max="50" data-k="QuizNewPerDay" style="width:110px"></div><div class="cin-row"><div><b>Daily goal (XP)</b><span>The ring on the quiz dashboard. Reaching it keeps the streak alive.</span></div><input type="number" min="20" max="1000" data-k="QuizDailyGoalXp" style="width:110px"></div><div class="cin-row"><div><b>Blitz round length (seconds)</b><span></span></div><input type="number" min="15" max="180" data-k="QuizBlitzSeconds" style="width:110px"></div><div class="cin-row"><div><b>Continue after a correct answer</b><span>Jump to the next question by itself.</span></div><button class="cin-sw" data-sw="QuizAutoAdvance"></button></div><div class="cin-row"><div><b>Which actors to learn</b><span>Focus on actors that appear in several watched films.</span></div><select data-k="QuizMinFilms" style="width:200px"><option value="1">Everyone</option><option value="2">2 or more films</option><option value="3">3 or more films</option></select></div></div>
-                            </div>
-                            <div class="cin-feat" style="--h:#ff2d92">
-                                <div class="cin-fh"><span class="cin-fi">🎬</span><div><b>Cinema Wrapped</b><span>The viewing year as a story: hours, favourite genres, the actor seen most, highlights, streaks and a picture to share. Uses Jellyfin watch dates and the Letterboxd diary.</span></div><button class="cin-sw" data-sw="FeatWrapped"></button></div><div class="cin-sub"><div class="cin-row"><div><b>Home page banner</b><span>Season shows the card from mid November to the end of January.</span></div><select data-k="WrappedBanner" style="width:200px"><option value="auto">Season</option><option value="always">Always</option><option value="never">Never</option></select></div><div class="cin-row"><div><b>Include series</b><span>Also count watched episodes of series.</span></div><button class="cin-sw" data-sw="WrappedIncludeShows"></button></div><div class="cin-row"><div><b>Advance automatically</b><span>Slides move on by themselves.</span></div><button class="cin-sw" data-sw="WrappedAutoPlay"></button></div></div>
-                            </div>
-                            <div class="cin-feat" style="--h:#00b020">
-                                <div class="cin-fh"><span class="cin-fi">🟢</span><div><b>Letterboxd watched films</b><span>Films a user logged as watched on Letterboxd show as watched in Jellyfin and are labelled in Discover. Read only: nothing is ever written to Letterboxd. Each user enters their public Letterboxd name in Cinema settings under Connections. Letterboxd has no official API; the public diary feed is used (latest entries) plus an optional export import for the full history. Off by default.</span></div><button class="cin-sw" data-sw="FeatLetterboxd"></button></div>
-                            </div>
-                            <div class="cin-feat" style="--h:#f5b301">
-                                <div class="cin-fh"><span class="cin-fi">📦</span><div><b>Movie archive</b><span>Administrators can archive a movie from its three-dot menu: the file is deleted to free space while title, poster and details stay on an Archive page. Archived movies can be restored later. Off by default.</span></div><button class="cin-sw" data-sw="FeatArchive"></button></div><div class="cin-sub"><div class="cin-row"><div><b>Also clean up Radarr</b><span>Delete the file in Radarr and stop monitoring the movie so it is not downloaded again. Needs the Radarr connection.</span></div><button class="cin-sw" data-sw="ArchiveRadarr"></button></div></div>
-                            </div>
-                            </div>
-                            <div class="cin-card"><h3>More browsing features</h3><p>Smaller parts of the interface.</p>
-                                <div data-feats="InfiniteScroll|Infinite scroll|Load more rows and grids while scrolling.,ItemMenu|Item menu|The three-dot menu with metadata; image and watched actions.,MediaInfo|Media info panel|File; video; audio and subtitle details on detail pages.,Ratings|Rotten Tomatoes and IMDb scores|Needs Seerr.,SeerrSimilar|Similar titles from Seerr|Shows titles you do not own yet."></div></div>
-                            <div class="cin-card"><h3>Pages</h3><p>Entire sections of the interface.</p>
-                                <div data-feats="Discover|Discover|Seerr recommendations with filters and search.,Watchlist|Watchlist|Your saved titles.,Requests|Requests and downloads|Seerr requests with download progress.,Calendar|Release calendar|Needs Radarr or Sonarr.,Music|Music app|The Spotify style music interface.,MusicDiscovery|Music discovery|Aurral discovery; track previews and requests.,PluginMenus|Plugin entries in the account menu|Shows entries other plugins add to Jellyfin's menu."></div></div>
+                            <div class="cin-card"><h3>Features</h3><p>Everything Cinema can do, grouped by area. A feature you switch off disappears for every user. Features that need a service show whether it is connected. The values under <b>Defaults</b> are what every user starts with; users can change them for themselves.</p>
+                                <div class="cin-all"><div><b>Users can change settings themselves</b><span>When off, every user gets exactly the defaults on this page and cannot override them.</span></div><button class="cin-sw" data-sw="AllowUserOverrides"></button></div>
+                                <div class="cin-bar2"><input type="search" id="CinFeatQ" placeholder="Search features…"><div class="cin-fchips" id="CinFeatF"><button class="on" data-f="all">All</button><button data-f="on">On</button><button data-f="off">Off</button><button data-f="need">Needs setup</button></div></div></div>
+                            <div id="CinFeats"></div>
                         </div>
-                        <!-- appearance -->
+                        <div class="cin-panel" data-panel="menu">
+                            <div class="cin-card"><h3>Navigation</h3><p>Choose which pages appear in the navigation bar for everyone. Users can additionally hide pages for themselves. Pages of features that are turned off or whose service is missing never show.</p>
+                                <div class="cin-navprev" id="CinNavPrev"></div>
+                                <div id="CinNavList"></div></div>
+                        </div>
                         <div class="cin-panel" data-panel="look">
-                            <div class="cin-card"><h3>Branding</h3><p>Defaults for every user. Users can change them in their own settings unless you lock them below.</p>
-                                <div class="cin-row"><div><b>Accent color</b><span>Logo, progress bars and highlights.</span></div><div class="cin-colors" id="CinColors"></div></div>
-                                <div class="cin-row"><div><b>Logo text</b><span>Leave empty to use the server name.</span></div><input type="text" data-k="BrandText" style="width:240px" placeholder="Server name"></div>
-                                <div class="cin-row"><div><b>Card size</b><span>Posters and thumbnails.</span></div><select data-k="CardSize" style="width:160px"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
-                                <div class="cin-row"><div><b>Billboard titles</b><span>How many titles rotate.</span></div><input type="number" min="1" max="20" data-k="HeroItems" style="width:110px"></div>
-                                <div class="cin-row"><div><b>Billboard speed (seconds)</b><span>Time before the next title.</span></div><input type="number" min="3" max="60" data-k="HeroIntervalSeconds" style="width:110px"></div>
-                                <div class="cin-row"><div><b>Preview delay (ms)</b><span>Hover time before the preview card opens.</span></div><input type="number" min="0" max="2000" step="20" data-k="PeekDelayMs" style="width:110px"></div>
-                                <div class="cin-row"><div><b>Hidden navigation entries</b><span>Comma separated: watchlist, discover, requests, calendar, music, quiz, wrapped.</span></div><input type="text" data-k="HiddenNav" style="width:260px" placeholder="calendar,requests"></div>
-                                <div class="cin-row"><div><b>Allow users to change settings</b><span>When off, every user gets exactly these defaults.</span></div><button class="cin-sw" data-sw="AllowUserOverrides"></button></div></div>
+                            <div class="cin-card"><h3>Branding</h3><p>Defaults for every user. Users can change them in their own settings unless you lock them on the Features tab.</p>
+                                <div class="cin-row"><div><b>Accent color</b><span class="d">Logo, progress bars and highlights.</span></div><div class="cin-colors" id="CinColors"></div></div>
+                                <div class="cin-row"><div><b>Logo text</b><span class="d">Leave empty to use the server name.</span></div><input type="text" data-k="BrandText" style="width:240px" placeholder="Server name"></div>
+                                <div class="cin-row"><div><b>Card size</b><span class="d">Posters and thumbnails.</span></div><select data-k="CardSize" style="width:160px"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div></div>
                         </div>
-                        <!-- home -->
                         <div class="cin-panel" data-panel="home">
-                            <div class="cin-card"><h3>Default home rows</h3><p>Order and visibility for users who have not made their own layout.</p>
+                            <div class="cin-card"><h3>Default home rows</h3><p>Order and visibility for users who have not made their own layout. Rows marked <b>Discover</b> show titles that are not in the library and are labelled that way on the home page. They need Seerr.</p>
+                                <div class="cin-row"><div><b>Watched and new films</b><span class="d">Default for how the home page treats films users already watched: mark them with a check and new arrivals with a label, hide watched films in browsing rows, or do nothing.</span></div><select data-k="HomeSeenMode" style="width:220px"><option value="badge">Mark them</option><option value="hide">Hide watched films</option><option value="off">Do nothing</option></select></div>
                                 <div class="cin-secs" id="CinSecs"></div>
                                 <div style="margin-top:14px;display:flex;gap:10px"><button class="cin-btn" id="CinSecsReset">Use built-in default</button></div></div>
                         </div>
-                        <!-- player -->
                         <div class="cin-panel" data-panel="player">
-                            <div class="cin-card"><h3>Player defaults</h3><p>Starting values for every user.</p>
+                            <div class="cin-card"><h3>Player defaults</h3><p>Starting values for every user. Turn the Cinema player itself on or off under Features, Playback.</p>
                                 <div class="cin-row"><div><b>Play next episode automatically</b></div><button class="cin-sw" data-sw="PlayerAutoNext"></button></div>
-                                <div class="cin-row"><div><b>Skip intros automatically</b><span>Needs intro detection on the server.</span></div><button class="cin-sw" data-sw="PlayerAutoSkipIntro"></button></div>
-                                <div class="cin-row"><div><b>Default quality</b></div><select data-k="PlayerQuality" style="width:200px"><option value="auto">Auto (original)</option><option value="20">1080p high</option><option value="8">1080p</option><option value="4">720p</option><option value="1.5">480p</option></select></div>
-                                <div class="cin-row"><div><b>Add to Seerr watchlist</b><span>Mirror watchlist additions to Seerr by default.</span></div><button class="cin-sw" data-sw="SeerrWatchlistSync"></button></div></div>
+                                <div class="cin-row"><div><b>Skip intros automatically</b><span class="d">Needs intro detection on the server.</span></div><button class="cin-sw" data-sw="PlayerAutoSkipIntro"></button></div>
+                                <div class="cin-row"><div><b>Default quality</b></div><select data-k="PlayerQuality" style="width:200px"><option value="auto">Auto (original)</option><option value="20">1080p high</option><option value="8">1080p</option><option value="4">720p</option><option value="1.5">480p</option></select></div></div>
+                            <div class="cin-card"><h3>Interface behaviour</h3><p>Defaults for browsing.</p>
+                                <div class="cin-row"><div><b>Billboard titles</b><span class="d">How many titles rotate at the top of the home page.</span></div><input type="number" min="1" max="20" data-k="HeroItems" style="width:110px"></div>
+                                <div class="cin-row"><div><b>Billboard speed (seconds)</b><span class="d">Time before the next title.</span></div><input type="number" min="3" max="60" data-k="HeroIntervalSeconds" style="width:110px"></div>
+                                <div class="cin-row"><div><b>Preview delay (ms)</b><span class="d">Hover time before the preview card opens.</span></div><input type="number" min="0" max="2000" step="20" data-k="PeekDelayMs" style="width:110px"></div></div>
                         </div>
-                        <!-- hidden titles -->
                         <div class="cin-panel" data-panel="hide">
                             <div class="cin-card"><h3>How hidden titles work</h3><p>Give any movie or show the tag <b>hidden</b> (Jellyfin, edit metadata, Tags). Cinema then removes it from every row, search, grid, request list and calendar, and from the Seerr watchlist view. Nothing is deleted and the title can still be played from a direct link.</p>
                                 <ol class="cin-steps"><li>Choose an unlock code below.</li><li>On any device open Cinema settings, About, and tap the version number five times. Enter the code to switch on the <b>extended mode</b>. Hidden titles appear again on that device only.</li><li>The device stays unlocked until you deactivate it in the same dialog. Unlocking again asks for the code.</li><li>In extended mode the three-dot menu of a title shows whether it is hidden and lets you hide or show it.</li></ol></div>
                             <div class="cin-card"><h3>Unlock code</h3><p>Stored only as a salted hash on the server. Use at least 4 characters. Leave it empty and press Set to remove the code (nobody can then unlock the extended mode).</p>
                                 <div class="cin-field"><div><label>New code</label><input type="password" id="CinHideCode" autocomplete="new-password"></div><div style="align-self:end"><button class="cin-btn pri" id="CinHideSet">Set code</button> <span id="CinHideRes" style="margin-left:10px;color:#9a9aa2;font-size:13px"></span></div></div></div>
                         </div>
-                        <!-- advanced -->
                         <div class="cin-panel" data-panel="adv">
                             <div class="cin-card"><h3>Loading</h3><p>How the interface reaches the browser.</p>
-                                <div class="cin-row"><div><b>Load before the page renders</b><span>Cinema adds its script to the web page itself. Turn off only for troubleshooting.</span></div><button class="cin-sw" data-sw="InjectEarly"></button></div>
-                                <div class="cin-row"><div><b>Better song search for music requests</b><span>Looks songs up in a public catalogue (Apple's search API) so well known songs are found by title and artist. Only the typed search words are sent, by the server, never user names or library data. Turn off to use Aurral's own search only.</span></div><button class="cin-sw" data-sw="ExternalSongSearch"></button></div>
-                                <div class="cin-row"><div><b>Share download progress with all users</b><span>When off, only administrators see the queue and calendar.</span></div><button class="cin-sw" data-sw="ShareQueue"></button></div></div>
+                                <div class="cin-row"><div><b>Load before the page renders</b><span class="d">Cinema adds its script to the web page itself. Turn off only for troubleshooting.</span></div><button class="cin-sw" data-sw="InjectEarly"></button></div></div>
                             <div class="cin-card"><h3>Maintenance</h3><p>Interface updates can be pushed without a restart. Reset returns to the script built into this plugin version.</p>
                                 <button class="cin-btn" id="CinResetUi">Restore built-in interface script</button> <span id="CinMaint" style="margin-left:10px;color:#9a9aa2;font-size:13px"></span></div>
                             <div class="cin-card"><h3>Diagnostics</h3><p>Connection and feature state as seen by the server.</p><button class="cin-btn" id="CinDiag">Show</button><pre id="CinDiagOut" style="display:none"></pre></div>
                         </div>
-                        <div class="cin-bar"><button class="cin-btn pri" id="CinSave">Save settings</button><span id="CinSaved"></span></div>
                     </div>
                 </div>
+                <div class="cin-save" id="CinSaveBar"><span>Unsaved changes</span><button class="cin-btn" id="CinDiscard">Discard</button><button class="cin-btn pri" id="CinSave">Save settings</button></div>
+                <div class="cin-saved" id="CinSaved">Saved. Users see changes after a page reload.</div>
             </div>
         </div>
     </div>
     <script type="text/javascript">
         (function () {
+            'use strict';
             var pluginId = '8f3b6a1e-5d2c-4c7a-9e41-3b7d0c1a2f64';
             var page = document.querySelector('#CinemaConfigPage');
-            var cfg = {};
-            var SECTIONS = [['continue', 'Continue watching'], ['nextup', 'Next up'], ['newMovies', 'Recently added movies'], ['newShows', 'Recently added shows'], ['top', 'Top rated'], ['watchlist', 'Watchlist'], ['favs', 'My List'], ['random', 'Picked for you'], ['genres', 'Random genre rows'], ['because', 'Because you watched'], ['seerrTrending', 'Seerr trending'], ['seerrMovies', 'Seerr popular movies'], ['seerrRec', 'Seerr recommendations']];
-            SECTIONS = SECTIONS.concat([['spotlight', 'Spotlight'], ['top10Movies', 'Top 10 movies'], ['top10Shows', 'Top 10 shows'], ['genreTiles', 'Browse by genre tiles'], ['recentEps', 'New episodes'], ['collections', 'Collections'], ['unwatched', 'Unwatched gems']].filter(function (n) { return !SECTIONS.some(function (o) { return o[0] === n[0]; }); }));
-            var DEFAULT_ON = ['continue', 'nextup', 'spotlight', 'top10Movies', 'newMovies', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'watchlist', 'collections', 'top', 'unwatched', 'favs', 'random', 'genres'];
-            var secsDirty = false, secsReset = false;
-            var secs = [];
+            var cfg = {}, dirty = false, secs = [], secsDirty = false, secsReset = false, svcState = {};
             var COLORS = ['#e50914', '#ff6a3d', '#f5b301', '#34c759', '#0a84ff', '#8b5cf6', '#ff2d92', '#ffffff'];
-
+            function $(s, r) { return (r || page).querySelector(s); }
             function $$(s, r) { return Array.prototype.slice.call((r || page).querySelectorAll(s)); }
-            function buildFeats() {
-                $$('[data-feats]').forEach(function (host) {
-                    host.innerHTML = '';
-                    host.getAttribute('data-feats').split(',').forEach(function (spec) {
-                        var p = spec.split('|'); var key = 'Feat' + p[0];
-                        var row = document.createElement('div'); row.className = 'cin-row';
-                        row.innerHTML = '<div><b>' + p[1] + '</b><span>' + (p[2] || '') + '</span></div>';
-                        var b = document.createElement('button'); b.className = 'cin-sw'; b.setAttribute('data-sw', key); row.appendChild(b); host.appendChild(row);
-                    });
+            function el(tag, attrs, html) { var e = document.createElement(tag); Object.keys(attrs || {}).forEach(function (k) { if (k === 'class') e.className = attrs[k]; else e.setAttribute(k, attrs[k]); }); if (html != null) e.innerHTML = html; return e; }
+            function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+            /* ---------- what the plugin knows: services, groups, features, menu entries ---------- */
+            var SERVICES = [
+                { id: 'seerr', name: 'Seerr', ic: '🔭', h: '#bf5af2', url: 'http://seerr:5055', desc: 'Requests and discovery. Requests are made as the signed-in Jellyfin user, so the Jellyfin accounts must be imported into Seerr. The key never reaches the browser.', how: 'Seerr, Settings, General, copy the API key.' },
+                { id: 'radarr', name: 'Radarr', ic: '🎬', h: '#ffc230', url: 'http://radarr:7878', desc: 'Movie downloads. Shows download progress on requested films, release dates in the calendar and lets the archive clean up.', how: 'Radarr, Settings, General, Security, API key.' },
+                { id: 'sonarr', name: 'Sonarr', ic: '📺', h: '#35c5f4', url: 'http://sonarr:8989', desc: 'Series downloads. Shows download progress on requested shows and episode release dates in the calendar.', how: 'Sonarr, Settings, General, Security, API key.' },
+                { id: 'aurral', name: 'Aurral', ic: '🎧', h: '#1ed760', url: 'http://aurral:3001', desc: 'Music discovery and music requests (artists, albums and songs).', how: 'Aurral, Settings, copy the API key.' }
+            ];
+            var GROUPS = [['browse', '🎞️', 'Browsing and home page', 'How the home page and the lists look and behave.'], ['disc', '🔭', 'Discover and requests', 'Find new films and shows, ask for them and follow what is on the way.'], ['music', '🎵', 'Music', 'The music app, discovery and requests.'], ['learn', '🎭', 'Learn and look back', 'Games and statistics built from what people watched.'], ['play', '▶️', 'Playback', 'The video player.'], ['lib', '🗄️', 'Library and connections', 'Letterboxd, the archive and storage.']];
+            function num(k, l, d, min, max) { return { t: 'num', k: k, l: l, d: d, min: min, max: max }; }
+            function sw(k, l, d) { return { t: 'sw', k: k, l: l, d: d }; }
+            function sel(k, l, d, o) { return { t: 'sel', k: k, l: l, d: d, o: o }; }
+            var FEATS = [
+                { k: 'Hero', g: 'browse', i: '🖼️', h: '#e50914', n: 'Billboard on the home page', d: 'Large rotating banner with logo, synopsis and a play button.', o: [num('HeroItems', 'Titles', 'How many titles rotate.', 1, 20), num('HeroIntervalSeconds', 'Seconds per title', '', 3, 60)] },
+                { k: 'Peek', g: 'browse', i: '👁️', h: '#0a84ff', n: 'Hover preview cards', d: 'A card with synopsis, rating and quick actions when the pointer rests on a poster.', o: [num('PeekDelayMs', 'Hover delay (ms)', 'Time before the preview opens.', 0, 2000)] },
+                { k: 'InfiniteScroll', g: 'browse', i: '♾️', h: '#8b5cf6', n: 'Endless home page', d: 'Keeps adding rows by genre, decade and more while scrolling.' },
+                { k: null, g: 'browse', i: '✨', h: '#5e5ce6', n: 'Smart home page', d: 'Watched films get a check mark, new arrivals a label, and Discover rows are tagged so they are never mistaken for the library. Always on.', o: [sel('HomeSeenMode', 'Watched films by default', 'What the home page does with films users already watched.', [['badge', 'Mark them'], ['hide', 'Hide in browsing rows'], ['off', 'Do nothing']])] },
+                { k: 'Tonight', g: 'browse', i: '🍿', h: '#ff9f0a', n: 'What shall we watch tonight?', d: 'Users choose a time and a mood and get three films from the library, based on taste, watchlist and new arrivals. Also a card on the home page.' },
+                { k: 'ItemMenu', g: 'browse', i: '⋯', h: '#8d8d97', n: 'Item menu', d: 'The three-dot menu on films and shows: edit metadata and images, mark as watched, archive and more.' },
+                { k: 'PluginMenus', g: 'browse', i: '🧩', h: '#64d2ff', n: 'Plugin entries in the account menu', d: "Shows the entries other plugins add to Jellyfin's menu." },
+                { k: 'Discover', g: 'disc', i: '🔭', h: '#bf5af2', n: 'Discover', d: 'Seerr recommendations with filters, genres and search, and request buttons.', needs: ['seerr'] },
+                { k: 'Recommendations', g: 'disc', i: '✨', h: '#ff6482', n: 'Personal recommendations', d: 'Recommended for you, more with a favourite actor or director, and a taste profile, based on what the user watched.', needs: ['seerr'] },
+                { k: 'Watchlist', g: 'disc', i: '🔖', h: '#ffd60a', n: 'Watchlist', d: 'Saved titles for every user.', soft: ['seerr'], o: [sw('SeerrWatchlistSync', 'Mirror to the Seerr watchlist', 'Default: watchlist additions are also saved in Seerr. Needs Seerr.')] },
+                { k: 'Requests', g: 'disc', i: '📥', h: '#0a84ff', n: 'Requests and downloads', d: 'Requests with status steps and live download progress.', needs: ['seerr'], soft: ['arr'], o: [sw('ShareQueue', 'Show download progress to everyone', 'When off, only administrators see the queue and the calendar.')] },
+                { k: 'Calendar', g: 'disc', i: '📅', h: '#30d158', n: 'Release calendar', d: 'Upcoming releases and episodes from Radarr and Sonarr.', needs: ['arr'], o: [{ t: 'sw', k: 'FeatCalendarHistory', l: 'History', d: 'Show downloads and watched films in the calendar and the history timeline.', feat: true }] },
+                { k: 'SeerrSimilar', g: 'disc', i: '🎞️', h: '#ff9f0a', n: 'Similar titles from Seerr', d: 'On detail pages, shows similar titles that are not in the library yet.', needs: ['seerr'] },
+                { k: 'Ratings', g: 'disc', i: '🍅', h: '#ff453a', n: 'Rotten Tomatoes and IMDb scores', d: 'Critic and audience scores on detail pages.', needs: ['seerr'] },
+                { k: 'MediaInfo', g: 'disc', i: '📋', h: '#8e8e93', n: 'Media info panel', d: 'File, video, audio and subtitle details on detail pages.' },
+                { k: 'Music', g: 'music', i: '🎵', h: '#1ed760', n: 'Music app', d: 'The Spotify style music app: library, playlists, mixes, queue and a full-screen player.' },
+                { k: 'MusicLyrics', g: 'music', i: '🎤', h: '#ff375f', n: 'Lyrics', d: 'Synced lyrics in the music player.', parent: 'Music' },
+                { k: 'MusicDiscovery', g: 'music', i: '🎧', h: '#bf5af2', n: 'Music discovery', d: 'New music from Aurral: recommendations, editorial playlists and charts.', needs: ['aurral'], parent: 'Music' },
+                { k: 'MusicRequests', g: 'music', i: '🎶', h: '#64d2ff', n: 'Music requests', d: 'Request artists, albums and songs through Aurral.', needs: ['aurral'], parent: 'Music', o: [sw('ExternalSongSearch', 'Better song search', "Looks songs up in a public catalogue (Apple's search API) so well known songs are found by title and artist. Only the typed search words are sent, by the server, never user names or library data. Turn off to use Aurral's own search only.")] },
+                { k: 'Quiz', g: 'learn', i: '🎭', h: '#1ed760', n: 'Film Quiz', d: 'Users learn faces, names and films of the actors from the films they watched: daily spaced-repetition training, games, levels, streaks and badges. Progress is stored per user.', o: [num('QuizNewPerDay', 'New faces per day', 'How many new actors the daily training introduces.', 1, 50), num('QuizDailyGoalXp', 'Daily goal (XP)', 'The ring on the quiz dashboard. Reaching it keeps the streak alive.', 20, 1000), num('QuizBlitzSeconds', 'Blitz round (seconds)', '', 15, 180), sw('QuizAutoAdvance', 'Continue after a correct answer', 'Jump to the next question by itself.'), sel('QuizMinFilms', 'Which actors to learn', 'Focus on actors that appear in several watched films.', [['1', 'Everyone'], ['2', '2 or more films'], ['3', '3 or more films']])] },
+                { k: 'Wrapped', g: 'learn', i: '🎬', h: '#ff2d92', n: 'Cinema Wrapped', d: 'The viewing year as a story: hours, favourite genres, the actor seen most, highlights, streaks and a picture to share.', o: [sel('WrappedBanner', 'Home page banner', 'Season shows the card from mid November to the end of January.', [['auto', 'Season'], ['always', 'Always'], ['never', 'Never']]), sw('WrappedIncludeShows', 'Include series', 'Also count watched episodes of series.'), sw('WrappedAutoPlay', 'Advance automatically', 'Slides move on by themselves.')] },
+                { k: 'OwnPlayer', g: 'play', i: '▶️', h: '#ff6a3d', n: 'Cinema video player', d: "Our own player with subtitle styling, skip intro, auto next episode and quality choice. Turn off to use Jellyfin's own player everywhere. Defaults are on the Player tab." },
+                { k: 'Letterboxd', g: 'lib', i: '🟢', h: '#00b020', n: 'Letterboxd watched films', d: 'Films a user logged as watched on Letterboxd show as watched in Jellyfin and are labelled in Discover. Read only: nothing is ever written to Letterboxd. Each user enters their public Letterboxd name in their settings. Letterboxd has no official API; the public diary feed is used plus an optional export import for the full history. Off by default.' },
+                { k: 'Archive', g: 'lib', i: '📦', h: '#f5b301', n: 'Movie archive', d: 'Administrators can archive a movie from its three-dot menu: the file is deleted to free space while title, poster and details stay on an Archive page. Off by default.', soft: ['radarr'], o: [sw('ArchiveRadarr', 'Also clean up Radarr', 'Delete the file in Radarr and stop monitoring the movie so it is not downloaded again.')] },
+                { k: 'Storage', g: 'lib', i: '💾', h: '#64d2ff', n: 'Storage assistant', d: 'Administrators see free disk space, the biggest movies, a growth forecast and clean-up suggestions, and can archive several movies at once.', soft: ['arr'] }
+            ];
+            /* menu entries: key (as stored in the hidden list), label, icon, the feature that has to be on */
+            var NAVS = [['watchlist', 'Watchlist', '🔖', 'Watchlist', ''], ['discover', 'Discover', '🔭', 'Discover', 'Needs Seerr'], ['requests', 'Requests', '📥', 'Requests', 'Needs Seerr'], ['calendar', 'Calendar', '📅', 'Calendar', 'Needs Radarr or Sonarr'], ['music', 'Music', '🎵', 'Music', ''], ['quiz', 'Film Quiz', '🎭', 'Quiz', ''], ['wrapped', 'Wrapped', '🎬', 'Wrapped', ''], ['tonight', 'What shall we watch tonight?', '🍿', 'Tonight', ''], ['favorites', 'My list', '❤️', null, 'Favourites of each user'], ['bookmarks', 'Bookmarks', '🔖', null, 'Jellyfin Enhanced tab'], ['live', 'Live TV', '📡', null, 'Needs a Live TV setup in Jellyfin'], ['games', 'Games', '🎮', null, 'Jellyfin games tab']];
+            var SECTIONS = [['continue', 'Continue watching'], ['nextup', 'Next up'], ['tonight', 'What shall we watch tonight?'], ['spotlight', 'Spotlight'], ['freshUnseen', 'New and unwatched'], ['top10Movies', 'Top 10 movies'], ['newMovies', 'Recently added movies'], ['forYou', 'Recommended for you', 'Discover'], ['recentEps', 'New episodes'], ['newShows', 'Recently added shows'], ['genreTiles', 'Browse by genre tiles'], ['top10Shows', 'Top 10 shows'], ['actorPicks', 'More with a favourite actor', 'Discover'], ['watchlist', 'Watchlist'], ['collections', 'Collections'], ['top', 'Top rated'], ['unwatched', 'Unwatched gems'], ['dirPicks', 'More from a favourite director', 'Discover'], ['favs', 'My List'], ['random', 'Random picks'], ['genres', 'Random genre rows'], ['because', 'Because you watched (library)'], ['seerrTrending', 'Trending', 'Discover'], ['seerrMovies', 'Popular movies', 'Discover'], ['seerrRec', 'Seerr recommendations', 'Discover']];
+            var DEFAULT_ON = ['continue', 'nextup', 'tonight', 'spotlight', 'freshUnseen', 'top10Movies', 'newMovies', 'forYou', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'];
+
+            /* ---------- state read from the form ---------- */
+            function val(k) { var e = $('[data-k="' + k + '"]'); return e ? e.value.trim() : ''; }
+            function swOn(k) { var b = $('[data-sw="' + k + '"]'); return !!(b && b.classList.contains('on')); }
+            function svcSet(id) { return !!(val(id.charAt(0).toUpperCase() + id.slice(1) + 'Url') && val(id.charAt(0).toUpperCase() + id.slice(1) + 'ApiKey')); }
+            function has(n) { return n === 'arr' ? (svcSet('radarr') || svcSet('sonarr')) : svcSet(n); }
+            function svcName(n) { return n === 'arr' ? 'Radarr or Sonarr' : n.charAt(0).toUpperCase() + n.slice(1); }
+            function featOn(k) { return k == null ? true : swOn('Feat' + k); }
+            function touch() { if (!dirty) { dirty = true; $('#CinSaveBar').classList.add('show'); } derive(); }
+
+            /* ---------- rendering ---------- */
+            function ctl(o) {
+                if (o.t === 'sw') return '<button class="cin-sw" data-sw="' + o.k + '"></button>';
+                if (o.t === 'num') return '<input type="number" min="' + o.min + '" max="' + o.max + '" data-k="' + o.k + '" style="width:110px">';
+                return '<select data-k="' + o.k + '" style="width:210px">' + o.o.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</select>';
+            }
+            function rowHtml(o) { return '<div class="cin-row"><div><b>' + esc(o.l) + '</b>' + (o.d ? '<span class="d">' + esc(o.d) + '</span>' : '') + '</div>' + ctl(o) + '</div>'; }
+            function renderFeats() {
+                var host = $('#CinFeats'); host.innerHTML = '';
+                GROUPS.forEach(function (g) {
+                    var list = FEATS.filter(function (f) { return f.g === g[0]; }); var sec = el('div', { class: 'cin-g', 'data-g': g[0] });
+                    sec.innerHTML = '<div class="cin-gh"><span>' + g[1] + '</span><div><h3>' + g[2] + '</h3><p>' + g[3] + '</p></div><em></em></div>'; var gal = el('div', { class: 'cin-gal' });
+                    list.forEach(function (f) {
+                        var c = el('div', { class: 'cin-feat', style: '--h:' + f.h, 'data-feat': f.k || '', 'data-s': (f.n + ' ' + f.d).toLowerCase() });
+                        var deps = (f.needs || []).map(function (n) { return '<i data-need="' + n + '">' + svcName(n) + '</i>'; }).concat((f.soft || []).map(function (n) { return '<i class="soft" data-soft="' + n + '">' + svcName(n) + ' (optional)</i>'; })).concat(f.parent ? ['<i data-parent="' + f.parent + '">Needs the music app</i>'] : []);
+                        c.innerHTML = '<div class="cin-fh"><span class="cin-fi">' + f.i + '</span><div><b>' + esc(f.n) + '</b><span class="d">' + esc(f.d) + '</span>' + (deps.length ? '<div class="cin-deps">' + deps.join('') + '</div>' : '') + '</div>' + (f.k ? '<button class="cin-sw" data-sw="Feat' + f.k + '"></button>' : '') + '</div>' + (f.o ? '<div class="cin-sub">' + f.o.map(rowHtml).join('') + '</div>' : '');
+                        gal.appendChild(c);
+                    }); sec.appendChild(gal); host.appendChild(sec);
                 });
             }
-            function bindSwitches() { $$('[data-sw]').forEach(function (b) { b.onclick = function () { b.classList.toggle('on'); }; }); }
+            function renderConn() {
+                var host = $('#CinConn'); host.innerHTML = '<div class="cin-card"><h3>Connections</h3><p>Every connection is optional. Cinema works with Jellyfin alone, and each service unlocks more features. The API keys stay on the server and never reach the browser. After saving, press Test connection to check that the Jellyfin server can reach the service.</p></div>';
+                SERVICES.forEach(function (s) {
+                    var Nm = s.id.charAt(0).toUpperCase() + s.id.slice(1); var c = el('div', { class: 'cin-card cin-svc', 'data-svc': s.id });
+                    c.innerHTML = '<div class="cin-svh"><span class="cin-svi">' + s.ic + '</span><div><h3>' + s.name + '</h3><p>' + esc(s.desc) + ' <i>' + esc(s.how) + '</i></p></div><span class="cin-pill" data-pill="' + s.id + '"><i></i><b></b></span></div>' +
+                        '<div class="cin-field"><div><label>URL</label><input type="text" data-k="' + Nm + 'Url" placeholder="' + s.url + '"></div><div><label>API key</label><input type="password" data-k="' + Nm + 'ApiKey" autocomplete="new-password"></div></div>' +
+                        '<div class="cin-test"><button class="cin-btn" data-test="' + s.id + '">Save and test connection</button><span data-res="' + s.id + '"></span></div><div class="cin-used" data-used="' + s.id + '"></div>';
+                    host.appendChild(c);
+                });
+            }
+            function renderNav() {
+                var host = $('#CinNavList'); host.innerHTML = '';
+                NAVS.forEach(function (n) { var r = el('div', { class: 'cin-nvr', 'data-nav': n[0] }); r.innerHTML = '<span>' + n[2] + '</span><div><b>' + n[1] + '</b><small>' + (n[3] ? 'Feature: ' + n[3] + (n[4] ? ' · ' + n[4] : '') : n[4]) + '</small></div><button class="cin-sw" data-navsw="' + n[0] + '"></button>'; host.appendChild(r); });
+            }
             function drawColors() {
-                var host = page.querySelector('#CinColors'); host.innerHTML = '';
-                COLORS.forEach(function (c) { var b = document.createElement('button'); b.style.background = c; if ((cfg.AccentColor || '').toLowerCase() === c) b.className = 'on'; b.onclick = function () { cfg.AccentColor = c; drawColors(); }; host.appendChild(b); });
-                var inp = document.createElement('input'); inp.type = 'color'; inp.value = cfg.AccentColor || '#e50914'; inp.onchange = function () { cfg.AccentColor = inp.value; drawColors(); }; host.appendChild(inp);
+                var host = $('#CinColors'); host.innerHTML = '';
+                COLORS.forEach(function (c) { var b = el('button', { style: 'background:' + c }); if ((cfg.AccentColor || '').toLowerCase() === c) b.className = 'on'; b.onclick = function () { cfg.AccentColor = c; drawColors(); touch(); }; host.appendChild(b); });
+                var inp = el('input', { type: 'color' }); inp.value = cfg.AccentColor || '#e50914'; inp.onchange = function () { cfg.AccentColor = inp.value; drawColors(); touch(); }; host.appendChild(inp);
             }
-            function parseSecs() {
-                var def = DEFAULT_ON.map(function (id) { return { id: id, on: true }; });
-                try { var j = JSON.parse(cfg.DefaultSections || ''); if (j && j.length) return j; } catch (e) { }
-                return def;
-            }
+            function parseSecs() { try { var j = JSON.parse(cfg.DefaultSections || ''); if (j && j.length) return j; } catch (e) { } return DEFAULT_ON.map(function (id) { return { id: id, on: true }; }); }
+            function secInfo(id) { return SECTIONS.filter(function (s) { return s[0] === id; })[0]; }
             function drawSecs(changed) {
-                if (changed) { secsDirty = true; }
-                var host = page.querySelector('#CinSecs'); host.innerHTML = '';
-                var name = function (id) { var f = SECTIONS.filter(function (s) { return s[0] === id; })[0]; return f ? f[1] : id; };
+                if (changed) { secsDirty = true; secsReset = false; touch(); }
+                var host = $('#CinSecs'); host.innerHTML = '';
                 secs.forEach(function (s, i) {
-                    var row = document.createElement('div'); row.className = 'cin-sec' + (s.on === false ? ' off' : '');
-                    row.innerHTML = '<b>' + name(s.id) + '</b>';
-                    var ctl = document.createElement('div');
-                    var mk = function (txt, fn) { var b = document.createElement('button'); b.className = 'cin-mini'; b.textContent = txt; b.onclick = fn; ctl.appendChild(b); };
-                    mk('↑', function () { if (i) { var t = secs[i - 1]; secs[i - 1] = secs[i]; secs[i] = t; secsReset = false; drawSecs(true); } });
+                    var info = secInfo(s.id); var row = el('div', { class: 'cin-sec' + (s.on === false ? ' off' : '') }); row.innerHTML = '<b>' + esc(info ? info[1] : s.id) + (info && info[2] ? '<small>' + info[2] + '</small>' : '') + '</b>';
+                    var c = el('div'); var mk = function (txt, fn) { var b = el('button', { class: 'cin-mini' }, txt); b.onclick = fn; c.appendChild(b); };
+                    mk('↑', function () { if (i) { var t = secs[i - 1]; secs[i - 1] = secs[i]; secs[i] = t; drawSecs(true); } });
                     mk('↓', function () { if (i < secs.length - 1) { var t = secs[i + 1]; secs[i + 1] = secs[i]; secs[i] = t; drawSecs(true); } });
-                    var sw = document.createElement('button'); sw.className = 'cin-sw' + (s.on === false ? '' : ' on'); sw.onclick = function () { s.on = s.on === false; drawSecs(true); }; ctl.appendChild(sw);
-                    row.appendChild(ctl); host.appendChild(row);
+                    var b = el('button', { class: 'cin-sw' + (s.on === false ? '' : ' on') }); b.onclick = function () { s.on = s.on === false; drawSecs(true); }; c.appendChild(b); row.appendChild(c); host.appendChild(row);
                 });
                 var missing = SECTIONS.filter(function (s) { return !secs.some(function (x) { return x.id === s[0]; }); });
-                if (missing.length) {
-                    var sel = document.createElement('select'); sel.style.cssText = 'width:240px;margin-top:8px';
-                    sel.innerHTML = '<option value="">Add a row...</option>' + missing.map(function (m) { return '<option value="' + m[0] + '">' + m[1] + '</option>'; }).join('');
-                    sel.onchange = function () { if (sel.value) { secs.push({ id: sel.value, on: true }); secsReset = false; drawSecs(true); } };
-                    host.appendChild(sel);
-                }
+                if (missing.length) { var se = el('select', { style: 'width:300px;margin-top:8px' }, '<option value="">Add a row…</option>' + missing.map(function (m) { return '<option value="' + m[0] + '">' + esc(m[1]) + (m[2] ? ' (' + m[2] + ')' : '') + '</option>'; }).join('')); se.onchange = function () { if (se.value) { secs.push({ id: se.value, on: true }); drawSecs(true); } }; host.appendChild(se); }
             }
-            function load() {
-                Dashboard.showLoadingMsg();
-                ApiClient.getPluginConfiguration(pluginId).then(function (c) {
-                    cfg = c;
-                    $$('[data-k]').forEach(function (el) { var v = c[el.getAttribute('data-k')]; el.value = v == null ? '' : v; });
-                    $$('[data-sw]').forEach(function (b) { b.classList.toggle('on', !!c[b.getAttribute('data-sw')]); });
-                    secs = parseSecs(); drawColors(); drawSecs(); chips(); Dashboard.hideLoadingMsg();
+
+            /* ---------- everything that depends on the current form state ---------- */
+            function derive() {
+                /* feature cards */
+                var onN = 0, needN = 0;
+                $$('.cin-feat').forEach(function (c) {
+                    var k = c.getAttribute('data-feat'); var on = k ? swOn('Feat' + k) : true; c.classList.toggle('on', on);
+                    var missing = $$('[data-need]', c).filter(function (d) { var ok = has(d.getAttribute('data-need')); d.className = ok ? 'ok' : 'bad'; d.textContent = (ok ? '✓ ' : '✕ ') + svcName(d.getAttribute('data-need')) + (ok ? '' : ' not connected'); return !ok; }).length;
+                    $$('[data-soft]', c).forEach(function (d) { var ok = has(d.getAttribute('data-soft')); d.className = 'soft ' + (ok ? 'ok' : ''); d.textContent = (ok ? '✓ ' : '') + svcName(d.getAttribute('data-soft')) + ' (optional)'; });
+                    var par = $('[data-parent]', c); var pOk = true; if (par) { pOk = swOn('Feat' + par.getAttribute('data-parent')); par.className = pOk ? 'ok' : 'bad'; par.textContent = (pOk ? '✓ ' : '✕ ') + 'Needs the music app'; }
+                    c.setAttribute('data-state', (on ? 'on' : 'off') + (on && (missing || !pOk) ? ' need' : '')); if (on && (missing || !pOk) && k) needN++; if (on && k) onN++;
                 });
+                $$('.cin-g').forEach(function (g) { var cs = $$('.cin-feat', g).filter(function (c) { return c.getAttribute('data-feat'); }); g.querySelector('em').textContent = cs.filter(function (c) { return c.classList.contains('on'); }).length + ' of ' + cs.length + ' on'; });
+                applyFilter();
+                /* connections */
+                SERVICES.forEach(function (s) {
+                    var set = svcSet(s.id), st = svcState[s.id]; var p = $('[data-pill="' + s.id + '"]'); if (p) { p.className = 'cin-pill ' + (!set ? '' : st === 'ok' ? 'ok' : st === 'bad' ? 'bad' : ''); $('b', p).textContent = !set ? 'Not set up' : st === 'ok' ? 'Connected' : st === 'bad' ? 'Not reachable' : 'Set up'; }
+                    var used = $('[data-used="' + s.id + '"]'); if (used) { var fs = FEATS.filter(function (f) { return f.k && ((f.needs || []).indexOf(s.id) >= 0 || (f.needs || []).indexOf('arr') >= 0 && (s.id === 'radarr' || s.id === 'sonarr') || (f.soft || []).indexOf(s.id) >= 0 || ((f.soft || []).indexOf('arr') >= 0 && (s.id === 'radarr' || s.id === 'sonarr'))); }); used.innerHTML = '<small>Used by</small>' + fs.map(function (f) { return '<a data-jump="' + f.k + '">' + esc(f.n) + '</a>'; }).join(''); }
+                });
+                chips();
+                /* navigation */
+                var hid = (cfg.HiddenNav || '').split(',').map(function (x) { return x.trim(); }); var prev = ['Home', 'Movies', 'TV Shows']; var visible = 0;
+                $$('.cin-nvr').forEach(function (r) {
+                    var k = r.getAttribute('data-nav'); var n = NAVS.filter(function (x) { return x[0] === k; })[0]; var b = $('[data-navsw]', r); var shown = b.classList.contains('on'); var featOk = n[3] == null ? true : swOn('Feat' + n[3]); r.classList.toggle('off-feature', !featOk);
+                    if (shown && featOk) { prev.push(n[1].length > 18 ? n[1].slice(0, 16) + '…' : n[1]); visible++; }
+                });
+                var np = $('#CinNavPrev'); if (np) np.innerHTML = prev.map(function (p, i) { return '<b class="' + (i < 3 ? 'fixed' : '') + '">' + esc(p) + '</b>'; }).join('');
+                /* overview */
+                overview(onN, needN);
+            }
+            function overview(onN, needN) {
+                var host = $('#CinStart'); if (!host.getAttribute('data-ready')) return; var conn = SERVICES.filter(function (s) { return svcSet(s.id); }).length; var total = FEATS.filter(function (f) { return f.k; }).length;
+                var attn = []; FEATS.forEach(function (f) { if (!f.k || !swOn('Feat' + f.k)) return; (f.needs || []).forEach(function (n) { if (!has(n)) attn.push({ f: f, n: n }); }); if (f.parent && !swOn('Feat' + f.parent)) attn.push({ f: f, p: f.parent }); });
+                var steps = [[conn > 0, 'Connect your services', conn + ' of 4 connected. All optional.', 'conn'], [true, 'Features reviewed', onN + ' of ' + total + ' features on', 'feat'], [!!(cfg.AccentColor && cfg.AccentColor !== '#e50914') || !!val('BrandText'), 'Make it yours', 'Accent colour and logo text', 'look'], [true, 'Navigation', 'Which pages are in the menu', 'menu']];
+                var done = steps.filter(function (s) { return s[0]; }).length; var C2 = 2 * Math.PI * 60; var pctv = done / steps.length;
+                host.innerHTML = '<div class="cin-card"><h3>Welcome to Cinema</h3><p>A streaming-service style interface for Jellyfin: home page, music app, own video player, film quiz and more. Everything works with Jellyfin alone; the services you connect unlock more. Each user also gets a short setup wizard on their first visit.</p>' +
+                    '<div class="cin-ov"><div class="cin-ring"><svg viewBox="0 0 140 140"><circle class="bg" cx="70" cy="70" r="60"/><circle class="fg" cx="70" cy="70" r="60" stroke-dasharray="' + C2 + '" stroke-dashoffset="' + (C2 * (1 - pctv)) + '"/></svg><div><b>' + done + '/' + steps.length + '</b><small>set up</small></div></div>' +
+                    '<div class="cin-todo">' + steps.map(function (s) { return '<div class="cin-td ' + (s[0] ? 'ok' : '') + '"><i>' + (s[0] ? '✓' : '•') + '</i><span><b>' + s[1] + '</b><br><small>' + s[2] + '</small></span><button class="cin-btn sm" data-goto="' + s[3] + '">Open</button></div>'; }).join('') + '</div></div></div>' +
+                    '<div class="cin-tiles"><div class="cin-tile"><b>' + conn + '/4</b><span>services connected</span></div><div class="cin-tile"><b>' + onN + '</b><span>features on</span></div><div class="cin-tile"><b>' + (total - onN) + '</b><span>features off</span></div><div class="cin-tile"><b>' + attn.length + '</b><span>need attention</span></div></div>' +
+                    (attn.length ? '<div class="cin-card"><h3>Needs attention</h3><p>These features are on but cannot work yet.</p><div class="cin-todo">' + attn.map(function (a) { return '<div class="cin-td warn"><i>!</i><span><b>' + esc(a.f.n) + '</b><br><small>' + (a.p ? 'The music app is off' : svcName(a.n) + ' is not connected') + '</small></span><button class="cin-btn sm" data-goto="' + (a.p ? 'feat' : 'conn') + '">' + (a.p ? 'Features' : 'Connect') + '</button></div>'; }).join('') + '</div></div>' : '');
+                var bd = $('#CinBadge'); if (bd) bd.textContent = attn.length ? String(attn.length) : '';
             }
             function chips() {
-                var host = page.querySelector('#CinChips'); host.innerHTML = '';
-                ['seerr', 'radarr', 'sonarr', 'aurral'].forEach(function (s) {
-                    var chip = document.createElement('span'); chip.className = 'cin-chip'; chip.innerHTML = '<i></i>' + s.charAt(0).toUpperCase() + s.slice(1); host.appendChild(chip);
-                    ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + s)).then(function (r) { chip.className = 'cin-chip ' + (r.ok ? 'ok' : (r.message === 'Not configured' ? '' : 'bad')); chip.title = r.message || ''; }).catch(function () { });
+                var host = $('#CinChips'); host.innerHTML = '';
+                SERVICES.forEach(function (s) { var set = svcSet(s.id), st = svcState[s.id]; var c = el('button', { class: 'cin-chip ' + (!set ? '' : st === 'ok' ? 'ok' : st === 'bad' ? 'bad' : ''), title: !set ? 'Not set up' : (st === 'ok' ? 'Connected' : st === 'bad' ? 'Not reachable' : 'Set up') }, '<i></i>' + s.name); c.onclick = function () { tab('conn'); }; host.appendChild(c); });
+            }
+            function applyFilter() {
+                var q = ($('#CinFeatQ').value || '').trim().toLowerCase(); var f = ($('#CinFeatF .on') || { getAttribute: function () { return 'all'; } }).getAttribute('data-f');
+                $$('.cin-feat').forEach(function (c) { var st = c.getAttribute('data-state') || ''; var hit = (!q || c.getAttribute('data-s').indexOf(q) >= 0) && (f === 'all' || (f === 'on' && st.indexOf('on') === 0) || (f === 'off' && st.indexOf('off') === 0) || (f === 'need' && st.indexOf('need') >= 0)); c.hidden = !hit; });
+                $$('.cin-g').forEach(function (g) { g.hidden = !$$('.cin-feat:not([hidden])', g).length; });
+            }
+            function tab(name) { $$('#CinNav button').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-tab') === name); }); $$('.cin-panel').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-panel') === name); }); window.scrollTo(0, 0); }
+
+            /* ---------- load, save, test ---------- */
+            function load() {
+                Dashboard.showLoadingMsg();
+                return ApiClient.getPluginConfiguration(pluginId).then(function (c) {
+                    cfg = c;
+                    $$('[data-k]').forEach(function (e) { var v = c[e.getAttribute('data-k')]; e.value = v == null ? '' : v; });
+                    $$('[data-sw]').forEach(function (b) { b.classList.toggle('on', !!c[b.getAttribute('data-sw')]); });
+                    var hid = (c.HiddenNav || '').split(',').map(function (x) { return x.trim(); });
+                    $$('[data-navsw]').forEach(function (b) { b.classList.toggle('on', hid.indexOf(b.getAttribute('data-navsw')) < 0); });
+                    secs = parseSecs(); secsDirty = false; secsReset = false; drawColors(); drawSecs(); dirty = false; $('#CinSaveBar').classList.remove('show');
+                    $('#CinStart').setAttribute('data-ready', '1'); derive(); Dashboard.hideLoadingMsg(); testAll();
                 });
-                ApiClient.getJSON(ApiClient.getUrl('Cinema/status')).then(function (s) { page.querySelector('#CinVersion').textContent = 'Version ' + s.version + ' · Server settings'; }).catch(function () { });
+            }
+            function testAll() {
+                ApiClient.getJSON(ApiClient.getUrl('Cinema/status')).then(function (s) { $('#CinVersion').textContent = 'Version ' + s.version + ' · Server settings'; }).catch(function () { });
+                SERVICES.forEach(function (s) {
+                    if (!svcSet(s.id)) { svcState[s.id] = 'unset'; derive(); return; }
+                    ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + s.id)).then(function (r) { svcState[s.id] = r.ok ? 'ok' : 'bad'; derive(); }).catch(function () { svcState[s.id] = 'bad'; derive(); });
+                });
+            }
+            function collect(c) {
+                $$('[data-k]').forEach(function (e) { var k = e.getAttribute('data-k'); var v = e.value; if (e.type === 'number') v = parseInt(v, 10) || 0; else if (typeof c[k] === 'number') v = parseInt(v, 10) || 0; c[k] = typeof v === 'string' ? v.trim() : v; });
+                $$('[data-sw]').forEach(function (b) { c[b.getAttribute('data-sw')] = b.classList.contains('on'); });
+                var known = NAVS.map(function (n) { return n[0]; }); var keep = (c.HiddenNav || '').split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x && known.indexOf(x) < 0; });
+                var hidden = $$('[data-navsw]').filter(function (b) { return !b.classList.contains('on'); }).map(function (b) { return b.getAttribute('data-navsw'); }); c.HiddenNav = keep.concat(hidden).join(',');
+                c.AccentColor = cfg.AccentColor || c.AccentColor;
+                if (secsReset) { c.DefaultSections = ''; } else if (secsDirty) { c.DefaultSections = JSON.stringify(secs); } // only when the rows were edited here: otherwise new built-in rows keep arriving with updates
+                return c;
             }
             function save() {
                 Dashboard.showLoadingMsg();
-                ApiClient.getPluginConfiguration(pluginId).then(function (c) {
-                    $$('[data-k]').forEach(function (el) { var k = el.getAttribute('data-k'); var v = el.value; if (el.type === 'number') v = parseInt(v, 10) || 0; c[k] = typeof v === 'string' ? v.trim() : v; });
-                    $$('[data-sw]').forEach(function (b) { c[b.getAttribute('data-sw')] = b.classList.contains('on'); });
-                    c.AccentColor = cfg.AccentColor || c.AccentColor;
-                    if (secsReset) { c.DefaultSections = ''; } else if (secsDirty) { c.DefaultSections = JSON.stringify(secs); } // only when the rows were edited here: otherwise new built-in rows keep arriving with updates
-                    ApiClient.updatePluginConfiguration(pluginId, c).then(function (r) { Dashboard.processPluginConfigurationUpdateResult(r); cfg = c; page.querySelector('#CinSaved').textContent = 'Saved. Users see changes after a page reload.'; chips(); });
+                return ApiClient.getPluginConfiguration(pluginId).then(function (c) {
+                    collect(c); return ApiClient.updatePluginConfiguration(pluginId, c).then(function (r) { Dashboard.processPluginConfigurationUpdateResult(r); cfg = c; dirty = false; $('#CinSaveBar').classList.remove('show'); var s = $('#CinSaved'); s.classList.add('show'); setTimeout(function () { s.classList.remove('show'); }, 2600); Dashboard.hideLoadingMsg(); testAll(); });
                 });
             }
-            page.querySelector('#CinHideSet').addEventListener('click', function () {
-                var v = page.querySelector('#CinHideCode').value, out = page.querySelector('#CinHideRes');
+
+            /* ---------- events ---------- */
+            page.addEventListener('click', function (e) {
+                var b = e.target.closest('.cin-sw');
+                if (b && (b.hasAttribute('data-sw') || b.hasAttribute('data-navsw'))) { b.classList.toggle('on'); if (b.hasAttribute('data-navsw')) { /* nothing else */ } touch(); return; }
+                var g = e.target.closest('[data-goto]'); if (g) { tab(g.getAttribute('data-goto')); return; }
+                var j = e.target.closest('[data-jump]'); if (j) { tab('feat'); var c = $('.cin-feat[data-feat="' + j.getAttribute('data-jump') + '"]'); if (c) { $('#CinFeatQ').value = ''; applyFilter(); c.scrollIntoView({ block: 'center' }); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); } return; }
+                var nd = e.target.closest('.cin-deps i.bad'); if (nd) { tab('conn'); return; }
+            });
+            page.addEventListener('input', function (e) { if (e.target.hasAttribute && (e.target.hasAttribute('data-k'))) { if (/Url$|ApiKey$/.test(e.target.getAttribute('data-k'))) { var id = e.target.getAttribute('data-k').replace(/Url$|ApiKey$/, '').toLowerCase(); svcState[id] = null; } touch(); } });
+            page.addEventListener('change', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-k')) touch(); });
+            $('#CinNav').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) tab(b.getAttribute('data-tab')); });
+            $('#CinFeatQ').addEventListener('input', applyFilter);
+            $('#CinFeatF').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; $$('#CinFeatF button').forEach(function (x) { x.classList.toggle('on', x === b); }); applyFilter(); });
+            $('#CinSave').onclick = save;
+            $('#CinDiscard').onclick = function () { load(); };
+            $('#CinSecsReset').onclick = function () { secs = DEFAULT_ON.map(function (id) { return { id: id, on: true }; }); secsDirty = false; secsReset = true; drawSecs(); touch(); };
+            page.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-test]'); if (!btn) return; var s = btn.getAttribute('data-test'); var out = $('[data-res="' + s + '"]'); out.textContent = 'Saving and testing…'; out.style.color = '';
+                ApiClient.getPluginConfiguration(pluginId).then(function (c) { $$('[data-k]').forEach(function (x) { var k = x.getAttribute('data-k'); if (/Url$|ApiKey$/.test(k)) c[k] = x.value.trim(); });
+                    return ApiClient.updatePluginConfiguration(pluginId, c); }).then(function () { return ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + s)); }).then(function (r) { svcState[s] = r.ok ? 'ok' : 'bad'; out.textContent = (r.ok ? 'Connected' : 'Failed') + (r.message ? ' (' + r.message + ')' : ''); out.style.color = r.ok ? '#34c759' : '#ff453a'; derive(); }).catch(function () { out.textContent = 'Failed'; out.style.color = '#ff453a'; });
+            });
+            $('#CinHideSet').addEventListener('click', function () {
+                var v = $('#CinHideCode').value, out = $('#CinHideRes');
                 if (v && v.length < 4) { out.textContent = 'At least 4 characters'; return; }
-                ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema/hidden/code'), data: JSON.stringify({ code: v }), contentType: 'application/json', dataType: 'json' }).then(function (r) { out.textContent = r.hasCode ? 'Code saved' : 'Code removed'; page.querySelector('#CinHideCode').value = ''; }).catch(function () { out.textContent = 'Could not save'; });
+                ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema/hidden/code'), data: JSON.stringify({ code: v }), contentType: 'application/json', dataType: 'json' }).then(function (r) { out.textContent = r.hasCode ? 'Code saved' : 'Code removed'; $('#CinHideCode').value = ''; }).catch(function () { out.textContent = 'Failed'; });
             });
-            page.addEventListener('pageshow', function () { buildFeats(); bindSwitches(); load(); setTimeout(bindSwitches, 50); });
-            page.querySelector('#CinNav').addEventListener('click', function (e) {
-                var b = e.target.closest('button'); if (!b) return; var tab = b.getAttribute('data-tab');
-                $$('#CinNav button').forEach(function (x) { x.classList.toggle('on', x === b); });
-                $$('.cin-panel').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-panel') === tab); });
-            });
-            $$('[data-goto]').forEach(function (b) { b.onclick = function () { var n = page.querySelector('#CinNav [data-tab="' + b.getAttribute('data-goto') + '"]'); if (n) n.click(); }; });
-            page.querySelector('#CinSave').onclick = save;
-            page.querySelector('#CinSecsReset').onclick = function () { secs = DEFAULT_ON.map(function (id) { return { id: id, on: true }; }); secsDirty = false; secsReset = true; drawSecs(); };
-            $$('[data-test]').forEach(function (btn) {
-                btn.onclick = function () {
-                    var s = btn.getAttribute('data-test'); var out = page.querySelector('[data-res="' + s + '"]'); out.textContent = 'Saving and testing...';
-                    ApiClient.getPluginConfiguration(pluginId).then(function (c) {
-                        $$('[data-k]').forEach(function (el) { c[el.getAttribute('data-k')] = el.value.trim ? el.value.trim() : el.value; });
-                        ApiClient.updatePluginConfiguration(pluginId, c).then(function () {
-                            ApiClient.getJSON(ApiClient.getUrl('Cinema/test/' + s)).then(function (r) { out.textContent = (r.ok ? 'Connected' : 'Failed') + (r.message ? ' (' + r.message + ')' : ''); out.style.color = r.ok ? '#34c759' : '#ff453a'; chips(); });
-                        });
-                    });
-                };
-            });
-            page.querySelector('#CinResetUi').onclick = function () {
-                ApiClient.ajax({ type: 'DELETE', url: ApiClient.getUrl('Cinema/admin/ui') }).then(function () { page.querySelector('#CinMaint').textContent = 'Restored. Reload the web page.'; });
-            };
-            page.querySelector('#CinDiag').onclick = function () {
-                var pre = page.querySelector('#CinDiagOut'); pre.style.display = 'block';
-                ApiClient.getJSON(ApiClient.getUrl('Cinema/status')).then(function (s) { pre.textContent = JSON.stringify(s, null, 2); });
-            };
+            $('#CinResetUi').onclick = function () { ApiClient.ajax({ type: 'DELETE', url: ApiClient.getUrl('Cinema/admin/ui') }).then(function () { $('#CinMaint').textContent = 'Restored. Reload the web page.'; }); };
+            $('#CinDiag').onclick = function () { var pre = $('#CinDiagOut'); pre.style.display = 'block'; ApiClient.getJSON(ApiClient.getUrl('Cinema/status')).then(function (s) { pre.textContent = JSON.stringify(s, null, 2); }); };
+
+            renderConn(); renderFeats(); renderNav();
+            page.addEventListener('pageshow', function () { load(); });
         })();
     </script>
 </div>

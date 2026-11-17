@@ -9,6 +9,22 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.35.0",
+                             "changelog":  "Configuration rebuilt: the server page groups every feature by area with its dependencies (Seerr, Radarr, Sonarr, Aurral), shows what is missing, has a navigation matrix, overview with setup progress, unsaved-changes bar and per-feature defaults. New switches for music requests, lyrics, recommendations, calendar history and the watched-films default. User settings group all features with dependency hints and search; the setup wizard now walks through the whole product and ends with a plain Finish.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.35.0.zip",
+                             "checksum":  "0746063687692cd2b817b79282971874",
+                             "timestamp":  "2026-12-02T12:00:00Z"
+                         },
+                         {
+                             "version":  "1.1.34.0",
+                             "changelog":  "Storage assistant (disk space, biggest files, growth forecast, bulk archive suggestions), redesigned requests page (status steps, live download progress with time left, filters, actions), personalised recommendations and Discover rows labelled on the home page, new/watched badges, What shall we watch tonight, calendar with download and watch history.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.34.0.zip",
+                             "checksum":  "577bc9e0540b12ee8d9e032ded9dad84",
+                             "timestamp":  "2026-12-01T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.33.0",
                              "changelog":  "Cinema Wrapped: your viewing year as a story (hours, genres, actor of the year, highlights, streaks, share image) with a home page banner. Film Quiz and Wrapped are fully configurable (server defaults and per user). New Features gallery in settings with illustrations and options per feature, a first-run setup wizard, per-user menu entries, and a redesigned server features page with a getting started guide.",
                              "targetAbi":  "12.4.0.0",

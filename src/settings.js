@@ -2,17 +2,22 @@
 const SEC = {
   continue: { label: () => t('continue'), run: () => api('Users/' + uid() + '/Items/Resume', { Limit: 20, MediaTypes: 'Video', Fields: F_BASE, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }), kind: 'thumb' },
   nextup: { label: () => t('nextup'), run: () => api('Shows/NextUp', { userId: uid(), Limit: 50, Fields: F_BASE, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }).then(r => { const hide = new Set(CFGU.nuHide || []); r.Items = r.Items.filter(i => !hide.has(i.SeriesId) && !(i.ParentIndexNumber === 1 && i.IndexNumber === 1)).slice(0, 20); return r; }), kind: 'thumb' },
-  newMovies: { label: () => t('newMovies'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster', href: '#/c/movies' },
-  newShows: { label: () => t('newShows'), run: () => items({ IncludeItemTypes: 'Series', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster', href: '#/c/shows' },
-  top: { label: () => t('top'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 20, MinCommunityRating: 7 }), kind: 'thumb' },
+  newMovies: { label: () => t('newMovies'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster', href: '#/c/movies', unseen: true },
+  newShows: { label: () => t('newShows'), run: () => items({ IncludeItemTypes: 'Series', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster', href: '#/c/shows', unseen: true },
+  top: { label: () => t('top'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 20, MinCommunityRating: 7 }), kind: 'thumb', unseen: true },
   watchlist: { label: () => t('watchlist'), run: () => items({ IncludeItemTypes: 'Movie,Series', Filters: 'Likes', Limit: 30 }), kind: 'poster', href: '#/c/watchlist' },
   favs: { label: () => t('favs'), run: () => items({ IncludeItemTypes: 'Movie,Series', Filters: 'IsFavorite', Limit: 30 }), kind: 'poster', href: '#/c/list' },
-  random: { label: () => t('random'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'Random', Limit: 20 }), kind: 'thumb' },
+  random: { label: () => t('random'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'Random', Limit: 20 }), kind: 'thumb', unseen: true },
   because: { label: () => t('because'), kind: 'poster', run: async () => { const r = await items({ IncludeItemTypes: 'Movie,Series', Filters: 'IsPlayed', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 1 }); const last = r.Items[0]; if (!last) return []; SEC.because.title = t('because') + ' ' + last.Name; return api('Items/' + last.Id + '/Similar', { userId: uid(), limit: 20, Fields: F_BASE }); } },
   top10Movies: { label: () => t('top10Movies'), run: () => items({ IncludeItemTypes: 'Movie', SortBy: 'CommunityRating,SortName', SortOrder: 'Descending', Limit: 10, MinCommunityRating: 6.5, Fields: F_BASE }), kind: 'top10' },
   top10Shows: { label: () => t('top10Shows'), run: () => items({ IncludeItemTypes: 'Series', SortBy: 'CommunityRating,SortName', SortOrder: 'Descending', Limit: 10, Fields: F_BASE }), kind: 'top10' },
   spotlight: { label: () => t('spotlight'), run: () => items({ IncludeItemTypes: 'Movie,Series', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 12, HasOverview: true, Fields: F_BASE + ',Overview' }).then(r => { r.Items = r.Items.filter(i => i.BackdropImageTags && i.BackdropImageTags.length || i.ParentBackdropImageTags); return r; }), kind: 'spotlight' },
   genreTiles: { label: () => t('genreTiles'), tiles: true },
+  forYou: { label: () => t('rcForYou') + ' (' + t('rcDiscoverTag') + ')', forYou: true },
+  actorPicks: { label: () => t('rcMoreWith') + ' … (' + t('rcDiscoverTag') + ')', picks: 'actor' },
+  dirPicks: { label: () => t('rcMoreFrom') + ' … (' + t('rcDiscoverTag') + ')', picks: 'director' },
+  freshUnseen: { label: () => t('rcFresh'), run: () => items({ IncludeItemTypes: 'Movie,Series', Filters: 'IsUnplayed', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster' },
+  tonight: { label: () => t('tnTitle'), tonight: true },
   recentEps: { label: () => t('recentEps'), run: () => api('Users/' + uid() + '/Items/Latest', { IncludeItemTypes: 'Episode', Limit: 24, Fields: F_BASE, GroupItems: false, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }), kind: 'thumb' },
   collections: { label: () => t('collections'), run: () => items({ IncludeItemTypes: 'BoxSet', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster', min: 2 },
   unwatched: { label: () => t('unwatched'), run: () => items({ IncludeItemTypes: 'Movie', Filters: 'IsUnplayed', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 20, MinCommunityRating: 7 }), kind: 'thumb' },
@@ -25,7 +30,7 @@ const SEC = {
   collection: { label: p => p.title || t('collection'), custom: true, run: p => items({ ParentId: p.param, SortBy: 'PremiereDate', Limit: 40 }), kind: 'poster' },
   library: { label: p => p.title || 'Library', custom: true, run: p => items({ ParentId: p.param, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster' }
 };
-const DEFAULT_SECTIONS = ['continue', 'nextup', 'spotlight', 'top10Movies', 'newMovies', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'watchlist', 'collections', 'top', 'unwatched', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
+const DEFAULT_SECTIONS = ['continue', 'nextup', 'tonight', 'spotlight', 'freshUnseen', 'top10Movies', 'newMovies', 'forYou', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
 const sectionsCfg = () => { const c = cfg('sections'); return c && c.length ? c : DEFAULT_SECTIONS; };
 
 async function homeView2(page) {
@@ -41,9 +46,12 @@ async function homeView2(page) {
     if (d.tiles) return genreTilesRow(rows);
     if (d.seerr) return seerrRow(rows, s.title || d.label(s), d.seerr);
     if (d.seerrRec) return seerrRecRow(rows);
+    if (d.forYou) return forYouRow(rows);
+    if (d.picks) return peopleRow(rows, d.picks);
+    if (d.tonight) { if (cfg('tonight')) tonightBanner(rows); return; }
     const title = s.title || (s.id === 'because' ? null : d.label(s));
     if (s.id === 'because') { const ph = h('div', { class: 'nf-rowph' }); rows.append(ph); Promise.resolve(d.run(s)).then(l => { const arr = (l && l.Items) || l || []; if (arr.length) ph.replaceWith(row(d.title || t('because'), arr, d.kind)); else ph.remove(); }).catch(() => ph.remove()); return; }
-    lazyRow(rows, title, () => d.run(s), d.kind || 'poster', { min: d.min, href: d.href || (d.custom ? '#/c/browse/' + s.id + '/' + encodeURIComponent(s.param) : undefined), min: d.min || (d.custom ? 4 : 1) });
+    lazyRow(rows, title, () => d.run(s), d.kind || 'poster', { unseen: !!d.unseen && cfg('homeSeen') === 'hide', min: d.min, href: d.href || (d.custom ? '#/c/browse/' + s.id + '/' + encodeURIComponent(s.param) : undefined), min: d.min || (d.custom ? 4 : 1) });
   };
   first.forEach(render);
   if (rest.length) rest.forEach((s_, i) => setTimeout(() => { if (rows.isConnected) render(s_); }, 350 + i * 220));
@@ -51,7 +59,7 @@ async function homeView2(page) {
 }
 function seerrRow(container, title, path) {
   const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
-  waitSeerr().then(async ok => { if (!ok) return ph.remove(); const [lm, rm, r] = await Promise.all([libMap(), reqMap(), seerrGet(path, { page: 1 })]); const arr = (r.results || []).map(x => Object.assign(x, { mediaType: x.mediaType || (path.includes('/tv') ? 'tv' : 'movie') })); if (arr.length) ph.replaceWith(row(title, arr, 'poster', { make: x => dCard(x, lm, rm), href: '#/c/discover' })); else ph.remove(); }).catch(() => ph.remove());
+  waitSeerr().then(async ok => { if (!ok) return ph.remove(); const [lm, rm, r] = await Promise.all([libMap(), reqMap(), seerrGet(path, { page: 1 })]); const arr = (r.results || []).map(x => Object.assign(x, { mediaType: x.mediaType || (path.includes('/tv') ? 'tv' : 'movie') })); if (arr.length) ph.replaceWith(row(title, arr, 'poster', { make: x => dCard(x, lm, rm), href: '#/c/discover', tag: t('rcDiscoverTag') })); else ph.remove(); }).catch(() => ph.remove());
 }
 function seerrRecRow(container) {
   const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
@@ -61,7 +69,7 @@ function seerrRecRow(container) {
     const pick = r.Items.find(i => (i.ProviderIds || {}).Tmdb); if (!pick) return ph.remove();
     const [lm, rm, rec] = await Promise.all([libMap(), reqMap(), seerrGet('/movie/' + pick.ProviderIds.Tmdb + '/recommendations', { page: 1 })]);
     const arr = (rec.results || []).map(x => Object.assign(x, { mediaType: 'movie' })).filter(x => dStatus(x, lm, rm).k !== 'own');
-    if (arr.length) ph.replaceWith(row(t('seerrRec') + ' ' + pick.Name, arr, 'poster', { make: x => dCard(x, lm, rm) })); else ph.remove();
+    if (arr.length) ph.replaceWith(row(t('seerrRec') + ' ' + pick.Name, arr, 'poster', { make: x => dCard(x, lm, rm), tag: t('rcDiscoverTag') })); else ph.remove();
   })().catch(() => ph.remove());
 }
 
@@ -91,7 +99,7 @@ async function settingsView(page) {
         SEC[s.id] && SEC[s.id].custom ? h('button', { 'aria-label': 'Remove', onclick: () => { secs.splice(i, 1); persist(); draw_(); } }, ic('close')) : null))));
     }
     draw_();
-    const types = [['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')], ['top10Movies', t('top10Movies')], ['top10Shows', t('top10Shows')], ['spotlight', t('spotlight')], ['genreTiles', t('genreTiles')], ['recentEps', t('recentEps')], ['collections', t('collections')], ['unwatched', t('unwatched')], ['decade', t('decade')]];
+    const types = [['forYou', t('rcForYou') + ' (' + t('rcDiscoverTag') + ')'], ['actorPicks', t('rcMoreWith') + ' … (' + t('rcDiscoverTag') + ')'], ['dirPicks', t('rcMoreFrom') + ' … (' + t('rcDiscoverTag') + ')'], ['freshUnseen', t('rcFresh')], ['tonight', t('tnTitle')], ['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')], ['top10Movies', t('top10Movies')], ['top10Shows', t('top10Shows')], ['spotlight', t('spotlight')], ['genreTiles', t('genreTiles')], ['recentEps', t('recentEps')], ['collections', t('collections')], ['unwatched', t('unwatched')], ['decade', t('decade')]];
     const typeSel = h('select', {}, types.filter(([k]) => !secs.some(s => s.id === k && !SEC[k].custom)).map(([k, l]) => h('option', { value: k }, l)));
     const valSel = h('select', {});
     async function fillVals() { valSel.replaceChildren(); valSel.style.display = ''; const k = typeSel.value;
@@ -154,34 +162,6 @@ async function settingsView(page) {
 const reqInfoCache = {};
 async function reqMeta(md) { const k = md.mediaType + ':' + md.tmdbId; if (!reqInfoCache[k]) reqInfoCache[k] = seerrGet('/' + (md.mediaType === 'tv' ? 'tv' : 'movie') + '/' + md.tmdbId).catch(() => ({})); return reqInfoCache[k]; }
 function dlPct(md) { const ds = (md.downloadStatus || []).concat(md.downloadStatus4k || []); if (!ds.length) return null; const size = ds.reduce((a, d) => a + (d.size || 0), 0), left = ds.reduce((a, d) => a + (d.sizeLeft || 0), 0); return size ? Math.max(0, Math.min(100, Math.round((1 - left / size) * 100))) : null; }
-async function requestsView(page) {
-  const wrap = h('div', { class: 'nf-page-pad' }, h('h1', {}, t('requests'))); page.append(wrap);
-  if (!(await waitSeerr())) { wrap.append(h('div', { class: 'nf-empty' }, 'Seerr is not available.')); return; }
-  let filter = 'all'; const user = await me(); const admin = user.Policy && user.Policy.IsAdministrator;
-  const chips = h('div', { class: 'nf-seasons' }, [['all', t('all')], ['pending', t('rqPending')], ['processing', t('rqProcessing')], ['available', t('rqAvailable')]].map(([v, l]) => h('button', { class: 'nf-chip' + (v === filter ? ' on' : ''), onclick: e => { filter = v; $$('.nf-chip', chips).forEach(c => c.classList.remove('on')); e.currentTarget.classList.add('on'); load(); } }, l)));
-  const body = h('div', { class: 'nf-grid req-grid' }); wrap.append(chips, body); queueSection(wrap);
-  async function load() {
-    body.replaceChildren(h('div', { class: 'spinner', style: 'grid-column:1/-1' }));
-    let r; try { r = await seerrGet('/request', { take: 60, skip: 0, filter, sort: 'added' }); } catch (e) { body.replaceChildren(h('div', { class: 'nf-empty', style: 'grid-column:1/-1' }, t('noRes'))); return; }
-    const res = r.results || []; if (!res.length) { body.replaceChildren(h('div', { class: 'nf-empty', style: 'grid-column:1/-1' }, t('empty'))); return; }
-    body.replaceChildren(); const lm = await libMap();
-    res.forEach(async q => {
-      const md = q.media || {}; const slot = h('div', { class: 'nf-card poster req' }); body.append(slot);
-      const meta = await reqMeta(md); const title = meta.title || meta.name || '#' + md.tmdbId; const src = TM(meta.posterPath, 'w500');
-      const pct_ = dlPct(md); let label, cls;
-      if (q.status === 3) { label = t('rqDeclined'); cls = 'bad'; } else if (q.status === 1) { label = t('rqWaiting'); cls = 'wait'; } else if (md.status === 5) { label = t('inLib'); cls = 'own'; } else if (md.status === 4) { label = t('rqPartial'); cls = 'own'; } else if (pct_ != null) { label = t('rqDownloading') + ' ' + pct_ + '%'; cls = 'dl'; } else { label = t('rqApproved'); cls = 'wait'; }
-      const lib = lm[(md.mediaType) + ':' + md.tmdbId];
-      const im = h('div', { class: 'im' }, src ? h('div', Object.assign({ class: 'bgi' }, bg(src))) : h('div', { class: 'ph' }, title), h('span', { class: 'dmark ' + cls }, label));
-      if (pct_ != null && md.status !== 5) im.append(h('div', { class: 'prog' }, h('i', { style: 'width:' + pct_ + '%' })));
-      const who = (q.requestedBy && (q.requestedBy.displayName || q.requestedBy.jellyfinUsername || q.requestedBy.username)) || '';
-      const acts = admin && q.status === 1 ? h('div', { class: 'req-acts' }, h('button', { class: 'btn white', onclick: async e => { e.stopPropagation(); try { await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl(SEERR + '/request/' + q.id + '/approve') }); toast('✓'); load(); } catch (er) { toast('⚠'); } } }, t('approve')), h('button', { class: 'btn grey', onclick: async e => { e.stopPropagation(); try { await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl(SEERR + '/request/' + q.id + '/decline') }); toast('✓'); load(); } catch (er) { toast('⚠'); } } }, t('decline'))) : null;
-      slot.append(im, h('div', { class: 'title ell' }, title), h('div', { class: 'title ell', style: 'margin-top:2px;font-size:11.5px;opacity:.7' }, who + (q.createdAt ? ' · ' + new Date(q.createdAt).toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US') : '')), acts || '');
-      slot.addEventListener('click', () => { if (lib) go(itemHash(lib)); else if (md.tmdbId) { md.mediaType = md.mediaType || (meta.name ? 'tv' : 'movie'); openSeerrInfo({ id: md.tmdbId, mediaType: md.mediaType }); } });
-    });
-  }
-  load();
-}
-
 /* endless tail of the home page: all genres, then decades, then more picks */
 async function endlessRows(rows, page) {
   const sentinel = h('div', { style: 'height:2px' }); page.append(sentinel);

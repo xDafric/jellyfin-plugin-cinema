@@ -1,6 +1,7 @@
 /* ---------- Cinema plugin services: Seerr modal, Radarr/Sonarr queue + calendar, Aurral music ---------- */
 const plug = () => C.status || {};
-const aurralOn = () => !!(C.status && C.status.aurral) && feat('musicDiscovery');
+const aurralOn = () => !!(C.status && C.status.aurral) && cfg('musicDiscovery');
+const aurralReq = () => aurralOn() && cfg('musicRequests');
 const usePluginSeerr = () => !!plug().seerr;
 const cget = (path, params) => Promise.resolve(HID.on ? null : hxReady()).then(() => api('Cinema' + path, params)).then(d => hxSeerr(d));
 async function cpost(path, body) { return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema' + path), data: JSON.stringify(body || {}), contentType: 'application/json', dataType: 'json' }); }
@@ -74,34 +75,6 @@ async function queueSection(container) {
   q.forEach(i => box.append(h('div', { class: 'dl-row' }, h('div', { class: 'dl-t' }, h('b', { class: 'ell' }, i.title || '?'), i.subtitle ? h('span', { class: 'ell' }, i.subtitle) : null, h('span', {}, [i.source, i.client, i.timeleft].filter(Boolean).join(' · '))), h('div', { class: 'dl-p' }, h('div', { class: 'prog' }, h('i', { style: 'width:' + (i.progress || 0) + '%' })), h('b', {}, Math.round(i.progress || 0) + '%')))));
   (container.querySelector('h1') || { after: x => container.prepend(x) }).after(box);
 }
-async function calendarView(page) {
-  const wrap = h('div', { class: 'nf-page-pad' }, h('h1', {}, t('calendar'))); page.append(wrap);
-  if (!(plug().radarr || plug().sonarr)) { wrap.append(h('div', { class: 'nf-empty' }, t('arrOff'))); return; }
-  let cur = new Date(); cur.setDate(1);
-  const head = h('div', { class: 'cal-head' }); const grid = h('div', { class: 'cal-grid' }); wrap.append(head, grid);
-  const lm = await libMap();
-  async function draw() {
-    const first = new Date(cur), last = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
-    const start = new Date(first); const dow = (start.getDay() + 6) % 7; start.setDate(start.getDate() - dow);
-    const end = new Date(last); end.setDate(end.getDate() + (6 - ((end.getDay() + 6) % 7)));
-    head.replaceChildren(h('button', { class: 'btn round', onclick: () => { cur.setMonth(cur.getMonth() - 1); draw(); } }, ic('left')), h('b', {}, cur.toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { month: 'long', year: 'numeric' })), h('button', { class: 'btn round', onclick: () => { cur.setMonth(cur.getMonth() + 1); draw(); } }, ic('right')), h('button', { class: 'btn grey', style: 'margin-left:auto', onclick: () => { cur = new Date(); cur.setDate(1); draw(); } }, t('today')));
-    grid.replaceChildren(h('div', { class: 'spinner', style: 'grid-column:1/-1' }));
-    let ev = []; try { ev = await cget('/arr/calendar', { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }); } catch (e) { }
-    const byDay = {}; ev.forEach(e => { if (!e.date) return; const k = e.date.slice(0, 10); (byDay[k] = byDay[k] || []).push(e); });
-    grid.replaceChildren(...['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((d, i) => h('div', { class: 'cal-dow' }, L === 'de' ? d : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i])));
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      const cell = h('div', { class: 'cal-day' + (d.getMonth() !== cur.getMonth() ? ' other' : '') + (k === new Date().toISOString().slice(0, 10) ? ' today' : '') }, h('span', { class: 'n' }, d.getDate()));
-      (byDay[k] || []).slice(0, 6).forEach(e => {
-        const own = lm[(e.source === 'radarr' ? 'movie' : 'tv') + ':' + e.tmdbId];
-        cell.append(h('div', { class: 'cal-ev ' + (e.hasFile || own ? 'have' : e.kind), title: (e.title || '') + (e.subtitle ? ' · ' + e.subtitle : ''), onclick: () => { if (own) go(itemHash(own)); else if (e.tmdbId) openSeerrInfo({ id: e.tmdbId, mediaType: e.source === 'radarr' ? 'movie' : 'tv' }); } }, e.poster ? h('div', Object.assign({ class: 'p' }, bg(e.poster))) : null, h('span', { class: 'ell' }, e.title), h('small', { class: 'ell' }, e.subtitle || t('cal_' + e.kind))));
-      });
-      grid.append(cell);
-    }
-  }
-  draw();
-}
-
 /* ----- Aurral: music search + requests ----- */
 const aget = (path, params) => api('Cinema/aurral/' + path.replace(/^\//, ''), params);
 const apost = (path, body) => ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema/aurral/' + path.replace(/^\//, '')), data: JSON.stringify(body || {}), contentType: 'application/json', dataType: 'json' });
@@ -112,6 +85,7 @@ const aImg = o => { const u = pk(o, ['image', 'imageUrl', 'cover', 'coverUrl', '
 function aurralTile(o, kind) {
   const name = aName(o); const sub = kind === 'artist' ? t('artist') : [pk(o, ['artistName', 'artist']) || '', pk(o, ['year', 'releaseYear']) || String(o.releaseDate || '').slice(0, 4)].filter(Boolean).join(' · ');
   const el = tile({ name, sub: sub + ' · ' + t('notOwned'), img: aImg(o), round: kind === 'artist', href: '#', play: null });
+  if (!aurralReq()) { el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el; }
   const btn = h('button', { class: 'pbtn show', 'aria-label': t('request'), onclick: async e => { e.stopPropagation(); btn.classList.add('busy'); try { await requestAurral(o, kind); toast('✓ ' + t('requested')); } catch (er) { toast('⚠ ' + ((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } btn.classList.remove('busy'); } }, ic('plus'));
   el.append(btn); el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el;
 }

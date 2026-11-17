@@ -26,7 +26,7 @@ async function discoverView2(page) {
   const sSel = h('select', { onchange: e => { st.sort = e.target.value; refresh(); } }, [['popularity', t('sortPop')], ['rating', t('sortRating')], ['newest', t('sortNew')]].map(([v, l]) => h('option', { value: v }, l)));
   const hide = h('input', { type: 'checkbox', onchange: e => { st.hideOwned = e.target.checked; refresh(); } });
   let qT; const q = h('input', { type: 'text', placeholder: t('dcSearch'), oninput: e => { clearTimeout(qT); qT = setTimeout(() => { st.q = e.target.value.trim(); refresh(); }, 400); } });
-  const hideSeen = LB.n ? h('label', { class: 'dc-tg' }, h('input', { type: 'checkbox', onchange: e => { st.hideSeen = e.target.checked; refresh(); } }), h('i'), h('span', {}, t('lbHideSeen'))) : null;
+  const hideSeen = h('label', { class: 'dc-tg' }, h('input', { type: 'checkbox', onchange: e => { st.hideSeen = e.target.checked; refresh(); } }), h('i'), h('span', {}, t('rcHideSeen')));
   const bar = h('div', { class: 'dc-bar' }, typeChips, h('div', { class: 'dc-sel' }, gSel), h('div', { class: 'dc-sel' }, sSel), h('label', { class: 'dc-tg' }, hide, h('i'), h('span', {}, t('hideOwned'))), hideSeen, h('div', { class: 'dc-q' }, ic('search', 'ic-s'), q));
   wrap.append(bar);
   /* genre tiles (Netflix-style "browse by genre") */
@@ -34,6 +34,7 @@ async function discoverView2(page) {
   const GCOL = ['#e50914', '#7a3cff', '#0a8f6a', '#e08a00', '#1f6feb', '#c2185b', '#00838f', '#8e24aa', '#d84315', '#2e7d32'];
   mergeGenres().forEach((g, i) => tiles.append(h('button', { class: 'dc-tile', 'data-id': g.id, style: '--c:' + GCOL[i % GCOL.length], onclick: () => { st.type = genres.movie.some(x => x.id === g.id) ? 'movie' : 'tv'; $$('.dc-seg', typeChips).forEach((c, k) => c.classList.toggle('on', ['all', 'movie', 'tv'][k] === st.type)); fillGenres(); gSel.value = g.id; st.genre = String(g.id); st.genreName = g.name; $$('.dc-tile', tiles).forEach(x => x.classList.toggle('on', x.dataset.id === String(g.id))); refresh(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, h('b', {}, g.name))));
   const tilesWrap = h('div', { class: 'dc-tiles-w' }, h('h2', { class: 'nf-sect-title', style: 'margin:0 0 12px' }, t('browseGenre')), tiles); wrap.append(tilesWrap);
+  const taste = tasteBar(name => { const g = mergeGenres().find(x => x.name === name); const tl = g && tiles.querySelector('[data-id="' + g.id + '"]'); if (tl) tl.click(); }); wrap.append(taste);
   const personal = h('div', { class: 'nf-rows', style: 'margin-top:10px' }); wrap.append(personal);
   const gridHost = h('div', { class: 'nf-page-pad', style: 'padding-top:0' }); wrap.append(gridHost);
   let grid = null;
@@ -41,8 +42,8 @@ async function discoverView2(page) {
   /* personalised rows (only when no filter is active) */
   function buildPersonal() {
     personal.replaceChildren();
+    richPersonal(personal, make, lm, rm);
     lazyRow(personal, t('trending'), () => seerrGet('/discover/trending', { page: 1 }).then(r => (r.results || []).filter(x => x.mediaType === 'movie' || x.mediaType === 'tv')), 'poster', { make });
-    personalRows(personal, make, lm, rm);
     lazyRow(personal, t('popMovies'), () => seerrGet('/discover/movies', { page: 1 }).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: 'movie' }))), 'poster', { make });
     lazyRow(personal, t('popShows'), () => seerrGet('/discover/tv', { page: 1 }).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: 'tv' }))), 'poster', { make });
     lazyRow(personal, t('upMovies'), () => seerrGet('/discover/movies/upcoming', { page: 1 }).then(r => (r.results || []).map(x => Object.assign(x, { mediaType: 'movie' }))), 'poster', { make });
@@ -61,12 +62,12 @@ async function discoverView2(page) {
         list = rs.flat(); if (st.type === 'all') list.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)); more = rs.some(r => r.length >= 20);
       }
       if (st.hideOwned) list = list.filter(x => !own(x));
-      if (st.hideSeen) list = list.filter(x => !lbSeen(x));
+      if (st.hideSeen) list = list.filter(x => !rcSeen(x, lm));
       return { Items: list, done: !more };
     };
   }
   function refresh() {
-    gridHost.replaceChildren(); personal.style.display = filtered() ? 'none' : ''; tilesWrap.style.display = filtered() ? 'none' : ''; heroHolder.style.display = filtered() ? 'none' : '';
+    gridHost.replaceChildren(); personal.style.display = taste.style.display = filtered() ? 'none' : ''; tilesWrap.style.display = filtered() ? 'none' : ''; heroHolder.style.display = filtered() ? 'none' : '';
     gridHost.style.paddingTop = filtered() ? '10px' : '0'; wrap.style.paddingTop = filtered() ? '88px' : '0';
     gridHost.append(h('h2', { style: 'margin:10px 0 16px;font-size:26px;font-weight:800;letter-spacing:-.02em' }, st.q ? t('results') + ' “' + st.q + '”' : st.genreName ? st.genreName : filtered() ? t('discover') : t('moreToExplore')));
     grid = infiniteGrid(gridHost, fetcher(), make, 40);
