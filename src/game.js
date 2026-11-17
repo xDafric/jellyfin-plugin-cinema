@@ -47,7 +47,7 @@ const gBlitzS = () => Math.max(15, +cfg('quizBlitz') || 60);
 const G_MODES = ['blitz', 'memory', 'type', 'cast', 'cards'];
 const gModeOn = k => { const m = cfg('quizModes'); return !m || m[k] !== false; };
 const gDay = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 864e5);
-const gDef = () => ({ v: 1, ts: 0, xp: 0, a: {}, days: {}, streak: 0, bestStreak: 0, last: 0, badges: {}, n: 0, ok: 0, typed: 0, bestCombo: 0, bestBlitz: 0, bestMemory: 0, films: [], sessions: 0, perfect: 0, newDay: 0, newN: 0, night: 0 });
+const gDef = () => ({ v: 1, ts: 0, xp: 0, a: {}, days: {}, streak: 0, bestStreak: 0, last: 0, badges: {}, n: 0, ok: 0, typed: 0, bestCombo: 0, bestBlitz: 0, bestMemory: 0, films: [], sessions: 0, perfect: 0, newDay: 0, newN: 0, night: 0, fav: {} });
 const gLS = () => { try { return JSON.parse(localStorage.getItem('cx-game-' + uid()) || 'null'); } catch (e) { return null; } };
 function gLoad() {
   if (GM.st) return Promise.resolve(GM.st); if (GM.p) return GM.p;
@@ -94,6 +94,7 @@ const G_BADGES = [
   ['memory', '🧠', 'Fotogedächtnis', 'Photographic memory', 'Memory in unter 45 Sekunden', 'Memory in under 45 seconds', st => st.bestMemory > 0 && st.bestMemory <= 45],
   ['typed25', '⌨️', 'Ohne Spickzettel', 'No cheat sheet', '25 Namen richtig getippt', '25 names typed correctly', st => st.typed >= 25],
   ['typed100', '✍️', 'Abspann-Leser', 'Credits reader', '100 Namen richtig getippt', '100 names typed correctly', st => st.typed >= 100],
+  ['fans', '❤️', 'Fanclub', 'Fan club', 'Fünf Schauspielern folgen', 'Follow five actors', st => Object.keys(st.fav || {}).length >= 5],
   ['casts10', '🎭', 'Ensemble', 'Ensemble', 'Die Besetzung von 10 Filmen geübt', 'Practised the cast of 10 films', st => (st.films || []).length >= 10],
   ['night', '🌙', 'Spätvorstellung', 'Late show', 'Nach Mitternacht gespielt', 'Played after midnight', st => st.night >= 1],
   ['lv5', '🥉', 'Filmfan', 'Film fan', 'Level 5 erreicht', 'Reached level 5', st => gLvl(st.xp) >= 5],
@@ -110,7 +111,7 @@ const gRoleOk = r => !!r && r.length < 48 && !/^(self|himself|herself|themselves
 const GPM = { p: null, at: 0 };
 function gPlayed(force) {
   if (!force && GPM.p && Date.now() - GPM.at < 300000) return GPM.p; GPM.at = Date.now();
-  return GPM.p = items({ IncludeItemTypes: 'Movie', Filters: 'IsPlayed', Fields: 'People,ProviderIds,OriginalTitle,Genres,RunTimeTicks,CommunityRating,ProductionYear', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 4000, EnableImageTypes: 'Primary', ImageTypeLimit: 1 }).catch(() => { GPM.p = null; return { Items: [] }; });
+  return GPM.p = items({ IncludeItemTypes: 'Movie', Filters: 'IsPlayed', Fields: 'People,ProviderIds,OriginalTitle,Genres,RunTimeTicks,CommunityRating,ProductionYear', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 4000, EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1 }).catch(() => { GPM.p = null; return { Items: [] }; });
 }
 function gPool(force) {
   if (!force && GM.pool && Date.now() - GM.poolAt < 600000) return Promise.resolve(GM.pool);
@@ -120,26 +121,26 @@ function gPool(force) {
 }
 async function gBuild() {
   const films = new Map(), actors = new Map(), tmSeen = new Set(), nameSeen = new Set();
-  const addActor = (f, name, img, role, order, pid) => {
+  const addActor = (f, name, img, role, order, pid, tid) => {
     const k = lbNorm(name); if (!k || !img) return;
-    let a = actors.get(k); if (!a) actors.set(k, a = { k, name, img, pid: null, films: [], roles: {}, score: 0, last: 0 });
-    if (pid && !a.pid) { a.pid = pid; a.img = img; } // prefer the Jellyfin picture
+    let a = actors.get(k); if (!a) actors.set(k, a = { k, name, img, pid: null, tid: 0, films: [], roles: {}, score: 0, last: 0 });
+    if (tid && !a.tid) a.tid = tid; if (pid && !a.pid) { a.pid = pid; a.img = img; } // prefer the Jellyfin picture
     if (a.films.includes(f.id)) return;
     a.films.push(f.id); a.roles[f.id] = role || ''; a.score += order < 3 ? 1 : order < 6 ? .7 : .45; a.last = Math.max(a.last, f.date || 0); f.cast.push(k);
   };
   const r = await gPlayed();
   for (const it of r.Items || []) {
     const u = ud(it); const tm = +((it.ProviderIds || {}).Tmdb) || 0;
-    const f = { id: 'j' + it.Id, jf: it.Id, tmdb: tm, title: it.Name, year: it.ProductionYear || 0, poster: imgUrl(it, 'Primary', 300), date: u.LastPlayedDate ? Date.parse(u.LastPlayedDate) || 0 : 0, cast: [], src: 'jf' };
+    const f = { id: 'j' + it.Id, jf: it.Id, tmdb: tm, title: it.Name, year: it.ProductionYear || 0, poster: imgUrl(it, 'Primary', 300), bd: (it.BackdropImageTags || []).length ? imgUrl(it, 'Backdrop', 780) : '', date: u.LastPlayedDate ? Date.parse(u.LastPlayedDate) || 0 : 0, cast: [], src: 'jf' };
     if (tm) tmSeen.add(tm);
     [it.Name, it.OriginalTitle, tm && LBEN[tm] && LBEN[tm][0], tm && LBEN[tm] && LBEN[tm][2]].filter(Boolean).forEach(n => nameSeen.add(lbNorm(n) + '|' + f.year));
     films.set(f.id, f);
     (it.People || []).filter(p => p.Type === 'Actor').slice(0, 10).forEach((p, i) => addActor(f, p.Name, p.PrimaryImageTag ? U(p.Id, 'Primary', 400, p.PrimaryImageTag) : '', p.Role, i, p.Id));
   }
   for (const c of (cfg('quizLb') === false ? [] : Object.values(GTM))) {
-    if (!c || !c[4]) continue; const [tm, title, year, poster, cast, date] = c; if (tmSeen.has(tm) || films.has('t' + tm)) continue;
-    const f = { id: 't' + tm, tmdb: tm, title, year, poster: TM(poster, 'w342'), date: date || 0, cast: [], src: 'lb' };
-    films.set(f.id, f); cast.forEach(([name, prof, role], i) => addActor(f, name, TM(prof, 'w185'), role, i));
+    if (!c || !c[4]) continue; const [tm, title, year, poster, cast, date, bdp] = c; if (tmSeen.has(tm) || films.has('t' + tm)) continue;
+    const f = { id: 't' + tm, tmdb: tm, title, year, poster: TM(poster, 'w342'), bd: bdp ? TM(bdp, 'w780') : '', date: date || 0, cast: [], src: 'lb' };
+    films.set(f.id, f); cast.forEach(([name, prof, role, tid], i) => addActor(f, name, TM(prof, 'w185'), role, i, null, tid));
   }
   for (const f of [...films.values()]) if (!f.cast.length) films.delete(f.id);
   let list = [...actors.values()].sort((a, b) => b.score - a.score || b.films.length - a.films.length);
@@ -164,8 +165,8 @@ function gEnrich(onProgress) {
         let tm = +e.tmdb || 0;
         if (!tm) { const s = await seerrGet('/search', { query: e.title, page: 1, language: 'en' }); const y = +e.year || 0; const hit = (s.results || []).filter(x => x.mediaType === 'movie').find(x => !y || Math.abs((+String(x.releaseDate || '').slice(0, 4) || 0) - y) <= 1); tm = hit ? +hit.id : 0; }
         if (!tm) { GTM[key] = 0; return; } if (P.tmSeen.has(tm)) { GTM[key] = [tm]; return; }
-        const d = await seerrGet('/movie/' + tm); const cast = ((d.credits || {}).cast || []).filter(c => c.profilePath).sort((a, b) => (a.order || 0) - (b.order || 0)).slice(0, 8).map(c => [c.name, c.profilePath, c.character || '']);
-        GTM[key] = [tm, d.title || e.title, +String(d.releaseDate || '').slice(0, 4) || e.year || 0, d.posterPath || '', cast, e.date ? Date.parse(e.date + 'T20:00:00') || 0 : 0]; added++;
+        const d = await seerrGet('/movie/' + tm); const cast = ((d.credits || {}).cast || []).filter(c => c.profilePath).sort((a, b) => (a.order || 0) - (b.order || 0)).slice(0, 8).map(c => [c.name, c.profilePath, c.character || '', c.id]);
+        GTM[key] = [tm, d.title || e.title, +String(d.releaseDate || '').slice(0, 4) || e.year || 0, d.posterPath || '', cast, e.date ? Date.parse(e.date + 'T20:00:00') || 0 : 0, d.backdropPath || '']; added++;
       } catch (er) { /* try again next time */ }
     };
     const worker = async () => { while (i < todo.length) { await one(todo[i++]); done++; if (onProgress) onProgress(done, todo.length); } };
@@ -196,10 +197,6 @@ const gPick = (arr, n, skip) => { const out = []; for (const x of shuffleArr(arr
 const gFace = (a, cls) => h('div', Object.assign({ class: 'gm-face ' + (cls || '') }, bg(a.img)));
 const gStars = (box, cls) => h('span', { class: 'gm-stars ' + (cls || ''), title: box ? box + '/5' : t('gNever') }, [1, 2, 3, 4, 5].map(i => h('i', { class: i <= box ? 'on' : '' })));
 const gFilmsOf = (P, a, n) => a.films.map(id => P.films.get(id)).filter(Boolean).sort((x, y) => (y.date || 0) - (x.date || 0)).slice(0, n || 99);
-function gKnownFrom(P, a, n) {
-  const fs = gFilmsOf(P, a, n || 3); if (!fs.length) return null;
-  return h('div', { class: 'gm-known' }, h('small', {}, t('gKnownFrom')), h('div', { class: 'gm-kf' }, fs.map(f => h('div', { class: 'gm-kfi' }, h('div', Object.assign({ class: 'gm-kp' }, bg(f.poster))), h('div', {}, h('b', {}, f.title + (f.year ? ' (' + f.year + ')' : '')), a.roles[f.id] ? h('span', {}, a.roles[f.id]) : null)))));
-}
 function gLev(a, b) { if (a === b) return 0; const m = a.length, n = b.length; if (!m || !n) return m || n; let prev = Array.from({ length: n + 1 }, (_, j) => j); for (let i = 1; i <= m; i++) { const cur = [i]; for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; } return prev[n]; }
 /* 2 = exact, 1 = close enough (typo or only the surname), 0 = wrong */
 function gNameMatch(input, name) {
@@ -233,15 +230,17 @@ function gQuestion(P, a, mode) {
 /* ----- a round ----- */
 async function gPlay(kind, opts) {
   opts = opts || {}; if (GM.play) GM.play.close();
-  const [st, P] = await Promise.all([gLoad(), gPool()]);
+  const [st, P] = await Promise.all([gLoad(), gPool()]); gMergeFavs(P, st);
   if (P.list.length < 8) { toast(t('gTooFew')); return; }
   const d = gDay(); const S = { kind, st, P, i: 0, ok: 0, n: 0, xp: 0, combo: 0, best: 0, badges: [], lvl0: gLvl(st.xp), t0: Date.now(), q: [], requeued: new Set(), film: null };
   const A = st.a; const seen = P.list.filter(a => A[a.k]);
   if (kind === 'train' || kind === 'cards') {
-    const due = P.list.filter(a => A[a.k] && A[a.k][0] > 0 && A[a.k][1] <= d).sort((x, y) => A[x.k][1] - A[y.k][1] || A[x.k][0] - A[y.k][0]).slice(0, 15);
+    const favFirst = (x, y) => (gIsFav(st, y) ? 1 : 0) - (gIsFav(st, x) ? 1 : 0);
+    const due = P.list.filter(a => A[a.k] && A[a.k][0] > 0 && A[a.k][1] <= d).sort((x, y) => A[x.k][1] - A[y.k][1] || A[x.k][0] - A[y.k][0]).sort(favFirst).slice(0, 15);
     const newLeft = opts.extraNew ? 5 : Math.max(0, gNewN() - (st.newDay === d ? st.newN : 0));
-    const fresh = P.fresh.filter(a => gIsNew(st, a)).slice(0, Math.min(newLeft, Math.max(3, 18 - due.length)));
+    let fresh = P.fresh.filter(a => gIsNew(st, a)).sort(favFirst).slice(0, Math.min(newLeft, Math.max(3, 18 - due.length)));
     let base = shuffleArr(due);
+    if (opts.fav) { base = shuffleArr(P.list.filter(a => gIsFav(st, a))).slice(0, 15); fresh = base.filter(a => gIsNew(st, a)); base = base.filter(a => !gIsNew(st, a)); }
     if (!due.length && !fresh.length || opts.practice) base = seen.slice().sort((x, y) => (A[y.k][4] - A[y.k][3] * .3) - (A[x.k][4] - A[x.k][3] * .3) || A[x.k][0] - A[y.k][0]).slice(0, 12);
     S.q = base.map(a => kind === 'cards' ? { a, mode: 'card' } : { a });
     fresh.forEach((a, j) => { const at = Math.min(S.q.length, j * 2 + 1); S.q.splice(at, 0, { a, mode: 'intro' }); S.q.splice(Math.min(S.q.length, at + 3), 0, kind === 'cards' ? { a, mode: 'card' } : { a, mode: 'face2name' }); });
@@ -308,7 +307,7 @@ function gRender(S, q) {
     card.classList.add(ok ? 'is-ok' : 'is-bad');
     if (S.kind === 'blitz') { S.auto = setTimeout(next, ok ? 280 : 900); return; }
     fb.replaceChildren(h('div', { class: 'gm-fbh' }, h('b', { class: ok ? 'ok' : 'bad' }, ok ? (almost ? t('gAlmost') : t('gRight')) : t('gWrong')), h('span', { class: 'gm-fxp' }, '+' + xp + ' XP'), S.combo >= 3 ? h('span', { class: 'gm-hcombo' }, '🔥 ' + S.combo) : null),
-      h('div', { class: 'gm-fbp' }, gFace(a, 'sm'), h('div', {}, h('div', { class: 'gm-fbn' }, (ok ? '' : t('gItWas') + ' ') , h('b', {}, a.name), gStars(gBox(st, a.k), 'sm')), gKnownFrom(P, a, 3))),
+      h('div', { class: 'gm-fbp' }, gFace(a, 'sm'), h('div', {}, h('div', { class: 'gm-fbn' }, (ok ? '' : t('gItWas') + ' ') , h('b', {}, a.name), gStars(gBox(st, a.k), 'sm'), gHeart(a, 'sm')), gKnownFrom(P, a, 3))),
       h('button', { class: 'btn white gm-next', onclick: next }, t('gNext'), h('kbd', {}, '⏎')));
     card.append(fb); fb.classList.add('show'); requestAnimationFrame(() => { const b = $('.gm-next', fb); if (b) b.focus({ preventScroll: true }); });
     S.onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } };
@@ -325,7 +324,7 @@ function gRender(S, q) {
   const filmOpt = o => [h('div', Object.assign({ class: 'gm-poster' }, bg(o.film.poster))), h('span', { class: 'gm-ft' }, o.film.title + (o.film.year ? ' (' + o.film.year + ')' : ''))];
   if (q.mode === 'intro') {
     const s = st.a[a.k]; if (!s) { if (st.newDay !== gDay()) { st.newDay = gDay(); st.newN = 0; } st.newN++; st.a[a.k] = [0, gDay(), 0, 0, 0, gDay()]; gSave(); }
-    card.append(h('div', { class: 'gm-tag new' }, '✨ ' + t('gNewFace')), gFace(a, 'xl'), h('h2', { class: 'gm-name' }, a.name), h('p', { class: 'gm-q' }, t('gRemember')), gKnownFrom(P, a, 4), h('button', { class: 'btn white gm-next', onclick: next }, t('gGotIt'), h('kbd', {}, '⏎')));
+    card.append(h('div', { class: 'gm-tag new' }, '✨ ' + t('gNewFace')), gFace(a, 'xl'), h('div', { class: 'gm-nrow' }, h('h2', { class: 'gm-name' }, a.name), gHeart(a)), h('p', { class: 'gm-q' }, t('gRemember')), gKnownFrom(P, a, 4), h('button', { class: 'btn white gm-next', onclick: next }, t('gGotIt'), h('kbd', {}, '⏎')));
     S.onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } }; requestAnimationFrame(() => { const b = $('.gm-next', card); if (b) b.focus({ preventScroll: true }); });
   } else if (q.mode === 'face2name') {
     card.append(h('p', { class: 'gm-q' }, t('gWho')), gFace(a, 'xl'), choose(q.opts, o => h('span', {}, o.a.name)));
@@ -334,8 +333,8 @@ function gRender(S, q) {
   } else if (q.mode === 'face2film') {
     card.append(h('div', { class: 'gm-row' }, gFace(a, 'md'), h('div', {}, h('p', { class: 'gm-q' }, t('gWhichFilm')), h('h2', { class: 'gm-name' }, a.name))), choose(q.opts, filmOpt, 'gm-films'));
   } else if (q.mode === 'film2face' || q.mode === 'role') {
-    const f = q.film;
-    card.append(h('div', { class: 'gm-row' }, h('div', Object.assign({ class: 'gm-poster lg' }, bg(f.poster))), h('div', {}, q.mode === 'role' ? [h('p', { class: 'gm-q' }, t('gWhoPlayed')), h('h2', { class: 'gm-name' }, '„' + q.role + '“'), h('p', { class: 'gm-q' }, t('gIn') + ' ' + f.title + (f.year ? ' (' + f.year + ')' : ''))] : [h('p', { class: 'gm-q' }, t('gWhoIn')), h('h2', { class: 'gm-name' }, f.title + (f.year ? ' (' + f.year + ')' : '') + '?')])), choose(q.opts, faceOpt, 'gm-faces'));
+    const f = q.film; const scene = h('div', { class: 'gm-scene' }); if (q.mode === 'role' || cfg('quizScenes') !== false) gFillScene(scene, a, f.tmdb, f.bd);
+    card.append(scene, h('div', { class: 'gm-row' }, h('div', Object.assign({ class: 'gm-poster lg' }, bg(f.poster))), h('div', {}, q.mode === 'role' ? [h('p', { class: 'gm-q' }, t('gWhoPlayed')), h('h2', { class: 'gm-name' }, '„' + q.role + '“'), h('p', { class: 'gm-q' }, t('gIn') + ' ' + f.title + (f.year ? ' (' + f.year + ')' : ''))] : [h('p', { class: 'gm-q' }, t('gWhoIn')), h('h2', { class: 'gm-name' }, f.title + (f.year ? ' (' + f.year + ')' : '') + '?')])), choose(q.opts, faceOpt, 'gm-faces'));
   } else if (q.mode === 'type') {
     let hinted = false, answered = false;
     const inp = h('input', { class: 'gm-input', type: 'text', placeholder: t('gTypeQ') + '…', autocomplete: 'off', spellcheck: 'false' });
@@ -414,18 +413,10 @@ function gHeat(st) {
   const cells = []; for (let x = start; x <= d; x++) { const v = st.days[x] || 0; cells.push(h('i', { class: 'l' + (v === 0 ? 0 : v < 40 ? 1 : v < gGoal() ? 2 : v < 250 ? 3 : 4), title: new Date((x * 864e5) + new Date().getTimezoneOffset() * 60000).toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US') + ' · ' + v + ' XP' })); }
   return h('div', { class: 'gm-heat' }, cells);
 }
-function gActorDialog(a) {
-  const st = GM.st, P = GM.pool; const s = st.a[a.k]; const d = cxDialog(a.name, { wide: true });
-  const next = s && s[0] > 0 ? (s[1] <= gDay() ? t('gDueNow') : t('gInDays').replace('{n}', s[1] - gDay())) : t('gNever');
-  d.body.replaceChildren(h('div', { class: 'gm-ad' }, gFace(a, 'xl'), h('div', {}, h('h2', {}, a.name), gStars(s ? s[0] : 0),
-    h('dl', { class: 'nf-facts' }, h('dt', {}, t('gSeenIn')), h('dd', {}, a.films.length + ' ' + t('gFilmsN')), h('dt', {}, t('gRightWrong')), h('dd', {}, s ? s[3] + ' / ' + s[4] : '–'), h('dt', {}, t('gNextReview')), h('dd', {}, next)))),
-    h('div', { class: 'nf-grid gm-adf' }, gFilmsOf(P, a).map(f => h('div', { class: 'nf-card poster', onclick: () => { if (f.jf) { d.close(); go('#/c/item/' + f.jf); } else if (f.tmdb && typeof openSeerrInfo === 'function') openSeerrInfo({ id: f.tmdb, mediaType: 'movie' }); } }, h('div', { class: 'im' }, h('div', Object.assign({ class: 'bgi' }, bg(f.poster))), f.src === 'lb' ? h('span', { class: 'dmark seen' }, t('gFromLb')) : null), h('div', { class: 'title ell' }, f.title), a.roles[f.id] ? h('small', { class: 'gm-role ell' }, a.roles[f.id]) : null))));
-  d.foot.replaceChildren(a.pid ? h('a', { class: 'btn grey', href: '#/c/person/' + a.pid, onclick: () => d.close() }, ic('user'), t('gProfile')) : null, h('button', { class: 'btn white', onclick: d.close }, 'OK'));
-}
 async function quizView(page) {
   const wrap = h('div', { class: 'nf-page-pad gm-page' }); page.append(wrap);
   wrap.append(h('div', { class: 'spinner', style: 'margin:80px auto 16px' }), h('p', { class: 'gm-loading' }, t('gLoading')));
-  const [st, P] = await Promise.all([gLoad(), gPool()]);
+  const [st, P] = await Promise.all([gLoad(), gPool()]); gMergeFavs(P, st);
   const film = parse().q.get('film');
   gDash(wrap, st, P);
   if (film) { history.replaceState(null, '', '#/c/quiz'); gPlay('cast', { film }); }
@@ -470,6 +461,7 @@ function gDash(wrap, st, P) {
             h('button', { class: 'btn grey sm', onclick: () => gPlay('cast', { film: f.id }) }, ic('play'), t('gCastBtn'))));
       }))));
   }
+  gFavSection(wrap, st, P);
   /* games */
   const mode = (k, e, title, sub, extra) => !gModeOn(k) ? null : h('button', { class: 'gm-mode m-' + k, onclick: () => gPlay(k) }, h('span', { class: 'e' }, e), h('b', {}, title), h('small', {}, sub), extra ? h('span', { class: 'gm-rec' }, extra) : null);
   wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gModes')), h('div', { class: 'gm-modes' },
@@ -484,7 +476,7 @@ function gDash(wrap, st, P) {
   /* tricky ones + regulars */
   const trouble = P.list.filter(a => A[a.k] && A[a.k][4] > 0).sort((x, y) => (A[y.k][4] / (A[y.k][2] || 1)) - (A[x.k][4] / (A[x.k][2] || 1)) || A[y.k][4] - A[x.k][4]).slice(0, 8);
   const regulars = P.list.slice().sort((x, y) => y.films.length - x.films.length).filter(a => a.films.length >= 2).slice(0, 10);
-  const pcard = (a, sub) => h('button', { class: 'gm-pc', onclick: () => gActorDialog(a) }, gFace(a, 'pc'), h('b', { class: 'ell' }, a.name), h('small', {}, sub), gStars(gBox(st, a.k), 'sm'));
+  const pcard = (a, sub) => gActorCard(a, st, sub);
   const two = h('div', { class: 'gm-two' });
   if (regulars.length) two.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gRegulars')), h('p', { class: 'gm-secp' }, t('gRegularsSub')), h('div', { class: 'gm-pcs' }, regulars.map(a => pcard(a, a.films.length + ' ' + t('gFilmsN'))))));
   if (trouble.length) two.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gTrouble')), h('p', { class: 'gm-secp' }, t('gTroubleSub')), h('div', { class: 'gm-pcs' }, trouble.map(a => pcard(a, A[a.k][3] + ' / ' + A[a.k][4])))));
@@ -497,10 +489,10 @@ function gDash(wrap, st, P) {
   let filter = 'all', q = '', shown = 60;
   const grid = h('div', { class: 'gm-coll' });
   const more = h('button', { class: 'btn grey gm-more', onclick: () => { shown += 120; draw(); } }, t('gMore'));
-  const chips = h('div', { class: 'gm-filt' }, [['all', t('gAll')], ['new', t('gFilterNew')], ['learn', t('gFilterLearn')], ['master', t('gFilterMaster')]].map(([k, l]) => h('button', { class: 'nf-chip' + (k === filter ? ' on' : ''), onclick: e => { filter = k; $$('.nf-chip', chips).forEach(c => c.classList.toggle('on', c === e.currentTarget)); shown = 60; draw(); } }, l)),
+  const chips = h('div', { class: 'gm-filt' }, [['all', t('gAll')], ['fav', t('gFilterFav')], ['new', t('gFilterNew')], ['learn', t('gFilterLearn')], ['master', t('gFilterMaster')]].map(([k, l]) => h('button', { class: 'nf-chip' + (k === filter ? ' on' : ''), onclick: e => { filter = k; $$('.nf-chip', chips).forEach(c => c.classList.toggle('on', c === e.currentTarget)); shown = 60; draw(); } }, l)),
     h('input', { type: 'search', class: 'gm-find', placeholder: t('gSearch'), oninput: e => { q = lbNorm(e.target.value); shown = 60; draw(); } }));
   function draw() {
-    const list = P.list.filter(a => { const b = gBox(st, a.k); if (filter === 'new' && !gIsNew(st, a)) return false; if (filter === 'learn' && (gIsNew(st, a) || b >= 5)) return false; if (filter === 'master' && b < 5) return false; return !q || a.k.includes(q); });
+    const list = P.list.filter(a => { const b = gBox(st, a.k); if (filter === 'fav' && !gIsFav(st, a)) return false; if (filter === 'new' && !gIsNew(st, a)) return false; if (filter === 'learn' && (gIsNew(st, a) || b >= 5)) return false; if (filter === 'master' && b < 5) return false; return !q || a.k.includes(q); });
     grid.replaceChildren(...list.slice(0, shown).map(a => pcard(a, a.films.length + ' ' + t('gFilmsN'))));
     more.hidden = list.length <= shown;
   }

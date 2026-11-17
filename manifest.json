@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.36.0",
+                             "changelog":  "Film Quiz: follow actors (trained first, new and upcoming films of the actors you follow on the quiz page and home page), best known films and the full filmography of every actor with watched, in-library and requestable status, the role shown for every film, and scene pictures (with the actor when a TMDB key is set on the server, otherwise the film backdrop). Follow button on person pages.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.36.0.zip",
+                             "checksum":  "66f648cbfd83c4f35499b3ad3ce9a377",
+                             "timestamp":  "2026-12-03T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.35.0",
                              "changelog":  "Configuration rebuilt: the server page groups every feature by area with its dependencies (Seerr, Radarr, Sonarr, Aurral), shows what is missing, has a navigation matrix, overview with setup progress, unsaved-changes bar and per-feature defaults. New switches for music requests, lyrics, recommendations, calendar history and the watched-films default. User settings group all features with dependency hints and search; the setup wizard now walks through the whole product and ends with a plain Finish.",
                              "targetAbi":  "12.4.0.0",
