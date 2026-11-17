@@ -116,7 +116,7 @@ function buildPlayer() {
   const bMute = h('button', { class: 'pl-btn', onclick: () => { P.audio.muted = !P.audio.muted; vol.set(P.audio.muted ? 0 : P.audio.volume); } }, ic('vol'));
   const upMute = () => bMute.replaceChildren(ic(P.audio.muted || P.audio.volume === 0 ? 'volx' : 'vol')); P.audio.addEventListener('volumechange', upMute);
   const bL = h('button', { class: 'pl-btn', onclick: toggleLyrics, 'aria-label': t('lyrics') }, ic('mic'));
-  const right = h('div', { class: 'pl-r' }, bL, bQ, bMute, vol);
+  const right = h('div', { class: 'pl-r' }, cfg('musicLyrics') ? bL : null, bQ, bMute, vol);
   const bar = h('div', { class: 'sp-player' }, left, center, right);
 
   /* mobile mini + full */

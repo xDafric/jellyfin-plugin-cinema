@@ -1,13 +1,13 @@
 /* ---------- Recommendations that know what you watched, labelled Discover rows for the home page, and "What shall we watch tonight?" ---------- */
 Object.assign(TX.en, {
-  rcNew: 'New', rcDiscoverTag: 'Discover', rcDiscoverHint: 'Not in your library yet', rcForYou: 'Picked for you', rcFresh: 'New and unwatched', rcMoreWith: 'More with', rcMoreFrom: 'More from', rcWhyLike: 'Like', rcTaste: 'Your taste', rcTasteHint: 'Based on {n} watched films. Tap a genre to explore it.', rcNewIn: 'New in', rcHideSeen: 'Hide watched',
+  rcNew: 'New', rcDiscoverTag: 'Discover', rcDiscoverHint: 'Not in your library yet', rcForYou: 'Recommended for you', rcFresh: 'New and unwatched', rcMoreWith: 'More with', rcMoreFrom: 'More from', rcWhyLike: 'Like', rcTaste: 'Your taste', rcTasteHint: 'Based on {n} watched films. Tap a genre to explore it.', rcNewIn: 'New in', rcHideSeen: 'Hide watched',
   rcSeenSet: 'Watched and new films on the home page', rcSeenBadge: 'Mark them', rcSeenHide: 'Hide watched films', rcSeenOff: 'Do nothing', rcSeenHint: 'Watched films get a check mark and new arrivals a "New" label. Or hide watched films in browsing rows.',
   tnTitle: 'What shall we watch tonight?', tnSub: 'Tell us how much time and what mood you have, and we pick three films from your library.', tnTime: 'Time', tnMood: 'Mood', tnAny: 'Any', tnShort: 'Short (up to 100 min)', tnMid: '100 to 140 min', tnLong: 'Long (140 min and more)',
   tnThrill: 'Thrilling', tnFunny: 'Funny', tnEmo: 'Emotional', tnLight: 'Light', tnThink: 'Thoughtful', tnAction: 'Action', tnScary: 'Scary', tnFamily: 'Family', tnOnlyNew: 'Only films I have not seen', tnAgain: 'Pick again', tnSurprise: 'Surprise me', tnSkip: 'Not tonight', tnPlay: 'Watch now', tnEnds: 'Done at {t}', tnNone: 'Nothing fits. Try another mood or time, or include films you have seen.',
   tnWhyWl: 'On your watchlist', tnWhyNew: 'Just added', tnWhyTaste: 'Fits your taste', tnWhyRated: 'Highly rated', tnWhyUnseen: 'You have not seen it', tnWhyClassic: 'A rewatch candidate', tnResume: 'You were in the middle of', tnLeft: 'left', tnBannerSub: 'Three picks from your library, based on time and mood.', tnGo: 'Choose'
 });
 Object.assign(TX.de, {
-  rcNew: 'Neu', rcDiscoverTag: 'Entdecken', rcDiscoverHint: 'Noch nicht in deiner Bibliothek', rcForYou: 'Für dich ausgesucht', rcFresh: 'Neu und ungesehen', rcMoreWith: 'Mehr mit', rcMoreFrom: 'Mehr von', rcWhyLike: 'Wie', rcTaste: 'Dein Geschmack', rcTasteHint: 'Basierend auf {n} gesehenen Filmen. Tippe ein Genre an, um es zu erkunden.', rcNewIn: 'Neu in', rcHideSeen: 'Gesehene ausblenden',
+  rcNew: 'Neu', rcDiscoverTag: 'Entdecken', rcDiscoverHint: 'Noch nicht in deiner Bibliothek', rcForYou: 'Empfohlen für dich', rcFresh: 'Neu und ungesehen', rcMoreWith: 'Mehr mit', rcMoreFrom: 'Mehr von', rcWhyLike: 'Wie', rcTaste: 'Dein Geschmack', rcTasteHint: 'Basierend auf {n} gesehenen Filmen. Tippe ein Genre an, um es zu erkunden.', rcNewIn: 'Neu in', rcHideSeen: 'Gesehene ausblenden',
   rcSeenSet: 'Gesehene und neue Filme auf der Startseite', rcSeenBadge: 'Markieren', rcSeenHide: 'Gesehene ausblenden', rcSeenOff: 'Nichts tun', rcSeenHint: 'Gesehene Filme bekommen ein Häkchen, neue Filme das Label „Neu". Oder blende gesehene Filme in den Stöber-Reihen aus.',
   tnTitle: 'Was schauen wir heute?', tnSub: 'Sag uns, wie viel Zeit und welche Stimmung du hast, und wir suchen drei Filme aus deiner Bibliothek aus.', tnTime: 'Zeit', tnMood: 'Stimmung', tnAny: 'Egal', tnShort: 'Kurz (bis 100 Min.)', tnMid: '100 bis 140 Min.', tnLong: 'Lang (ab 140 Min.)',
   tnThrill: 'Spannend', tnFunny: 'Lustig', tnEmo: 'Emotional', tnLight: 'Leicht', tnThink: 'Nachdenklich', tnAction: 'Action', tnScary: 'Gruselig', tnFamily: 'Familie', tnOnlyNew: 'Nur Filme, die ich nicht kenne', tnAgain: 'Nochmal auswählen', tnSurprise: 'Überrasch mich', tnSkip: 'Heute nicht', tnPlay: 'Jetzt ansehen', tnEnds: 'Fertig um {t}', tnNone: 'Nichts passt. Versuche eine andere Stimmung oder Zeit, oder nimm auch Filme dazu, die du schon kennst.',
@@ -51,11 +51,13 @@ async function recoForYou() {
     .map(c => Object.assign(c.x, { _why: t('rcWhyLike') + ' ' + c.seeds.slice(0, 2).join(', ') })); RC.fy = out; RC.fyAt = Date.now(); return out;
 }
 function forYouRow(container) {
+  if (!cfg('recommendations')) return;
   const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
   (async () => { if (!(await waitSeerr())) return ph.remove(); const [list, lm, rm] = await Promise.all([recoForYou(), libMap(), reqMap()]); if (list.length < 4) return ph.remove(); ph.replaceWith(row(t('rcForYou'), list, 'poster', { make: x => dCard(x, lm, rm), tag: t('rcDiscoverTag'), href: '#/c/discover' })); })().catch(() => ph.remove());
 }
 /* ----- more with the actor / director you watched most ----- */
 function peopleRow(container, kind) {
+  if (!cfg('recommendations')) return;
   const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
   (async () => {
     if (!(await waitSeerr())) return ph.remove(); const D = await recoInit(); const top = Object.values(D.people[kind]).filter(p => p.n >= 2).sort((a, b) => b.n - a.n).slice(0, 4); if (!top.length) return ph.remove();
@@ -69,6 +71,7 @@ function peopleRow(container, kind) {
 }
 /* rich personal block for the Discover page */
 async function richPersonal(container, make, lm, rm) {
+  if (!cfg('recommendations')) return;
   try {
     const D = await recoInit(); const genres = await dcGenres();
     forYouRow(container); peopleRow(container, 'actor'); peopleRow(container, 'director');
@@ -79,7 +82,7 @@ async function richPersonal(container, make, lm, rm) {
   } catch (e) { console.warn('[cinema] personal rows', e); }
 }
 function tasteBar(onPick) {
-  const host = h('div', { class: 'rc-taste' });
+  const host = h('div', { class: 'rc-taste' }); if (!cfg('recommendations')) return host;
   recoInit().then(D => { const top = Object.entries(D.gc).sort((a, b) => b[1] - a[1]).slice(0, 6); if (!top.length) return; const tot = Object.values(D.gc).reduce((a, b) => a + b, 0);
     host.append(h('div', {}, h('b', {}, t('rcTaste')), h('small', {}, t('rcTasteHint').replace('{n}', D.total))), h('div', { class: 'rc-chips' }, top.map(([g, n]) => h('button', { class: 'nf-chip', onclick: () => onPick(g) }, g, h('em', {}, Math.round(n / tot * 100) + '%'))))); }).catch(() => { });
   return host;

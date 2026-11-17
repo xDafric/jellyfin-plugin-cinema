@@ -75,7 +75,7 @@ function buildTop() {
   const more = h('div', { class: 'nf-menu-wrap nf-more' });
   const mkPop = items_ => h('div', { class: 'nf-pop hide' }, items_.map(([k, label, href, cls, ico]) => h('a', { 'data-cx': 1, 'data-k': k, class: cls || '', href: typeof href === 'function' ? '#' : href, onclick: e => { if (typeof href === 'function') { e.preventDefault(); go(href()); } } }, ico ? ic(ico, 'ic-s') : null, label)));
   const moreItems = [navOn('quiz') ? ['quiz', t('gTitle'), '#/c/quiz', 'm-opt', 'star'] : null, navOn('wrapped') ? ['wrapped', t('wrTitle'), '#/c/wrapped', '', 'film'] : null, navOn('tonight') ? ['tonight', t('tnTitle'), '#/c/tonight', '', 'play'] : null, ['requests', t('requests'), '#/c/requests', 'm-opt', 'plus'], ['calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'm-opt', 'cal'], ['favorites', t('mylist'), '#/c/list', '', 'list'], ['bookmarks', t('bookmarks'), () => tabHref('bookmarks'), '', 'star'], ['live', 'Live TV', '#/livetv', '', 'tv'], ['games', 'Games', '#/games', '', 'film']];
-  moreItems.splice(0, moreItems.length, ...moreItems.filter(Boolean));
+  moreItems.splice(0, moreItems.length, ...moreItems.filter(x => x && navOn(x[0])));
   const popMore = mkPop(moreItems); const popMore2 = mkPop(moreItems.map(x => x.slice())); popMore2.classList.add('up'); uiRoot.append(popMore2);
   more.append(h('button', { class: 'nf-pillbtn', onclick: e => { e.stopPropagation(); closePops(popMore); popMore.classList.toggle('hide'); } }, t('more'), ic('down', 'ic-s')), popMore);
   const sInput = h('input', { type: 'text', placeholder: t('search') + '…', autocomplete: 'off' });
@@ -85,7 +85,7 @@ function buildTop() {
   const av = h('div', { class: 'nf-avatar' }, 'U');
   const umItem = (iconNode, label, href, fn, cls) => h('a', { 'data-cx': 1, class: 'um-item ' + (cls || ''), href: href || '#', onclick: e => { if (!href || href === '#') e.preventDefault(); closePops(); fn && fn(e); } }, h('span', { class: 'um-ic' }, iconNode), h('span', { class: 'um-l' }, label), ic('right', 'um-ch'));
   const umAv = h('div', { class: 'um-av' }, 'U'), umName = h('div', { class: 'um-name' }, '');
-  const mobileItems = [['discover', t('discover'), '#/c/discover', 'star'], ['watchlist', 'Watchlist', '#/c/watchlist', 'plus'], ['favorites', t('mylist'), '#/c/list', 'list'], ['requests', t('requests'), '#/c/requests', 'queue'], ['calendar', t('calendar'), (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'cal'], ['quiz', t('gTitle'), '#/c/quiz', 'star'], ['wrapped', t('wrTitle'), '#/c/wrapped', 'film'], ['tonight', t('tnTitle'), '#/c/tonight', 'play'], ['live', 'Live TV', '#/livetv', 'tv']].filter(x => (x[0] !== 'quiz' && x[0] !== 'wrapped' && x[0] !== 'tonight') || navOn(x[0])).map(([k, label, href, i]) => umItem(ic(i, 'ic-s'), label, href, null, 'm-only'));
+  const mobileItems = [['discover', t('discover'), '#/c/discover', 'star'], ['watchlist', 'Watchlist', '#/c/watchlist', 'plus'], ['favorites', t('mylist'), '#/c/list', 'list'], ['requests', t('requests'), '#/c/requests', 'queue'], ['calendar', t('calendar'), (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'cal'], ['quiz', t('gTitle'), '#/c/quiz', 'star'], ['wrapped', t('wrTitle'), '#/c/wrapped', 'film'], ['tonight', t('tnTitle'), '#/c/tonight', 'play'], ['live', 'Live TV', '#/livetv', 'tv']].filter(x => navOn(x[0])).map(([k, label, href, i]) => umItem(ic(i, 'ic-s'), label, href, null, 'm-only'));
   const skinSw = h('button', { class: 'set-switch' + (skinOn() ? ' on' : ''), 'aria-label': t('pskin'), onclick: e => { e.stopPropagation(); setSkin(!skinOn()); skinSw.classList.toggle('on', skinOn()); } }, h('i'));
   const plugSlot = h('div', { class: 'um-sec plug-slot', 'data-cx': 1 });
   const popUser = h('div', { class: 'nf-pop nf-user hide' },
@@ -95,7 +95,7 @@ function buildTop() {
     plugSlot,
     h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('logout', 'ic-s'), t('logout'), '#', () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } }, 'um-danger')));
   async function fillPlugins() {
-    if (!feat('pluginMenus')) return;
+    if (!cfg('pluginMenus')) return;
     const list = (Date.now() - HARV.at < 60000 && HARV.items.length) ? HARV.items : await harvestMenus();
     plugSlot.replaceChildren(); if (!list.length) return;
     plugSlot.append(h('div', { class: 'um-h', 'data-cx': 1 }, t('pluginsH')));

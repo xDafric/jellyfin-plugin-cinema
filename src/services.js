@@ -1,6 +1,7 @@
 /* ---------- Cinema plugin services: Seerr modal, Radarr/Sonarr queue + calendar, Aurral music ---------- */
 const plug = () => C.status || {};
-const aurralOn = () => !!(C.status && C.status.aurral) && feat('musicDiscovery');
+const aurralOn = () => !!(C.status && C.status.aurral) && cfg('musicDiscovery');
+const aurralReq = () => aurralOn() && cfg('musicRequests');
 const usePluginSeerr = () => !!plug().seerr;
 const cget = (path, params) => Promise.resolve(HID.on ? null : hxReady()).then(() => api('Cinema' + path, params)).then(d => hxSeerr(d));
 async function cpost(path, body) { return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema' + path), data: JSON.stringify(body || {}), contentType: 'application/json', dataType: 'json' }); }
@@ -84,6 +85,7 @@ const aImg = o => { const u = pk(o, ['image', 'imageUrl', 'cover', 'coverUrl', '
 function aurralTile(o, kind) {
   const name = aName(o); const sub = kind === 'artist' ? t('artist') : [pk(o, ['artistName', 'artist']) || '', pk(o, ['year', 'releaseYear']) || String(o.releaseDate || '').slice(0, 4)].filter(Boolean).join(' · ');
   const el = tile({ name, sub: sub + ' · ' + t('notOwned'), img: aImg(o), round: kind === 'artist', href: '#', play: null });
+  if (!aurralReq()) { el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el; }
   const btn = h('button', { class: 'pbtn show', 'aria-label': t('request'), onclick: async e => { e.stopPropagation(); btn.classList.add('busy'); try { await requestAurral(o, kind); toast('✓ ' + t('requested')); } catch (er) { toast('⚠ ' + ((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } btn.classList.remove('busy'); } }, ic('plus'));
   el.append(btn); el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el;
 }

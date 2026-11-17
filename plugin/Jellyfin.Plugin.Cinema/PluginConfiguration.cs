@@ -69,6 +69,21 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>"What shall we watch tonight?" picker.</summary>
     public bool FeatTonight { get; set; } = true;
 
+    /// <summary>Personalised recommendations: "Picked for you", more with a favourite actor or director, taste bar.</summary>
+    public bool FeatRecommendations { get; set; } = true;
+
+    /// <summary>Download and watch history in the calendar.</summary>
+    public bool FeatCalendarHistory { get; set; } = true;
+
+    /// <summary>Request artists, albums and songs through Aurral.</summary>
+    public bool FeatMusicRequests { get; set; } = true;
+
+    /// <summary>Lyrics in the music player.</summary>
+    public bool FeatMusicLyrics { get; set; } = true;
+
+    /// <summary>Default for watched films on the home page: badge, hide or off.</summary>
+    public string HomeSeenMode { get; set; } = "badge";
+
     // ---- defaults for every user (users can override unless AllowUserOverrides is off) ----
     public bool AllowUserOverrides { get; set; } = true;
 

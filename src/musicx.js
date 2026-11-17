@@ -54,7 +54,7 @@ async function mExtAlbum(n, id, q) {
   const tracks = await toTrackItems((tr || []).map(x => Object.assign({ artistName: artist, albumName: title, durationMs: x.length }, x)));
   const ctx = { id: 'ext-' + id, noAlbum: true, noCover: true };
   const reqBtn = h('button', { class: 'sp-pillbtn', onclick: async () => { try { await requestAurral({ id, title, artistName: artist }, 'album'); toast('✓ ' + t('requested')); } catch (e) { toast('⚠ ' + ((e.responseJSON && (e.responseJSON.error || e.responseJSON.message)) || e.statusText || 'error')); } } }, t('requestAlbum'));
-  n.append(actionsBar(tracks.filter(x => x._preview || !x._ext), ctx, reqBtn), trackList(tracks, ctx));
+  n.append(actionsBar(tracks.filter(x => x._preview || !x._ext), ctx, aurralReq() ? reqBtn : null), trackList(tracks, ctx));
 }
 /* artist page: releases the library does not have yet */
 async function aurralArtistExtras(n, ar) {
@@ -105,7 +105,7 @@ async function aurralPopular(n, ar, popBox) {
 }
 /* request single songs: finds the songs inside the artist's biggest releases (when the query names an artist) and inside matching albums */
 async function aurralTrackSearchOld(node, q) {
-  if (!aurralOn() || q.length < 2) return;
+  if (!aurralReq() || q.length < 2) return;
   const toks = norm(q).split(' ').filter(Boolean); if (!toks.length) return; const qset = new Set(toks);
   const artistOf = o => o.artistName || (o.artist && (o.artist.name || o.artist)) || ((o['artist-credit'] || [])[0] || {}).name || '';
   try {
@@ -133,7 +133,7 @@ async function aurralTrackSearchOld(node, q) {
 }
 /* song search over a public catalogue (server side), popularity ranked */
 async function aurralTrackSearch(node, q) {
-  if (!aurralOn() || q.length < 2) return;
+  if (!aurralReq() || q.length < 2) return;
   let list = null; try { list = await cget('/music/search', { q }); } catch (e) { list = null; }
   if (!Array.isArray(list) || !list.length) return aurralTrackSearchOld(node, q);
   try {

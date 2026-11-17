@@ -176,7 +176,7 @@ public class CinemaController : ControllerBase
                 hero = c.FeatHero, peek = c.FeatPeek, discover = c.FeatDiscover, watchlist = c.FeatWatchlist, requests = c.FeatRequests,
                 calendar = c.FeatCalendar, music = c.FeatMusic, musicDiscovery = c.FeatMusicDiscovery, ownPlayer = c.FeatOwnPlayer,
                 letterboxd = c.FeatLetterboxd, archive = c.FeatArchive, archiveRadarr = c.ArchiveRadarr, mediaInfo = c.FeatMediaInfo, ratings = c.FeatRatings, seerrSimilar = c.FeatSeerrSimilar, infiniteScroll = c.FeatInfiniteScroll,
-                pluginMenus = c.FeatPluginMenus, itemMenu = c.FeatItemMenu, quiz = c.FeatQuiz, wrapped = c.FeatWrapped, storage = c.FeatStorage, tonight = c.FeatTonight
+                pluginMenus = c.FeatPluginMenus, itemMenu = c.FeatItemMenu, quiz = c.FeatQuiz, wrapped = c.FeatWrapped, storage = c.FeatStorage, tonight = c.FeatTonight, recommendations = c.FeatRecommendations, calendarHistory = c.FeatCalendarHistory, musicRequests = c.FeatMusicRequests, musicLyrics = c.FeatMusicLyrics
             },
             defaults = new
             {
@@ -185,7 +185,7 @@ public class CinemaController : ControllerBase
                 pl_autoNext = c.PlayerAutoNext, pl_autoSkip = c.PlayerAutoSkipIntro, pl_quality = c.PlayerQuality,
                 hiddenNav = c.HiddenNav, sections = c.DefaultSections,
                 quizNew = c.QuizNewPerDay, quizGoal = c.QuizDailyGoalXp, quizBlitz = c.QuizBlitzSeconds, quizAuto = c.QuizAutoAdvance, quizMin = c.QuizMinFilms,
-                wrappedBanner = c.WrappedBanner, wrappedShows = c.WrappedIncludeShows, wrappedAuto = c.WrappedAutoPlay
+                wrappedBanner = c.WrappedBanner, wrappedShows = c.WrappedIncludeShows, wrappedAuto = c.WrappedAutoPlay, homeSeen = c.HomeSeenMode
             }
         });
     }
