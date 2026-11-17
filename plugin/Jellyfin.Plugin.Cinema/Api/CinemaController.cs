@@ -170,6 +170,7 @@ public class CinemaController : ControllerBase
             radarr = !string.IsNullOrWhiteSpace(c.RadarrUrl) && !string.IsNullOrWhiteSpace(c.RadarrApiKey),
             sonarr = !string.IsNullOrWhiteSpace(c.SonarrUrl) && !string.IsNullOrWhiteSpace(c.SonarrApiKey),
             aurral = !string.IsNullOrWhiteSpace(c.AurralUrl) && !string.IsNullOrWhiteSpace(c.AurralApiKey),
+            tmdb = !string.IsNullOrWhiteSpace(c.TmdbApiKey),
             admin = IsAdmin,
             features = new
             {
@@ -199,6 +200,25 @@ public class CinemaController : ControllerBase
             return Forbid();
         }
 
+        if (service.Equals("tmdb", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(Cfg.TmdbApiKey))
+            {
+                return Ok(new { ok = false, message = "Not configured" });
+            }
+
+            try
+            {
+                using var tr = new HttpRequestMessage(HttpMethod.Get, "https://api.themoviedb.org/3/configuration?api_key=" + Uri.EscapeDataString(Cfg.TmdbApiKey));
+                using var tresp = await Client().SendAsync(tr, ct).ConfigureAwait(false);
+                return Ok(new { ok = tresp.IsSuccessStatusCode, status = (int)tresp.StatusCode, message = tresp.ReasonPhrase });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { ok = false, message = ex.Message });
+            }
+        }
+
         var (url, key, path, header) = service.ToLowerInvariant() switch
         {
             "seerr" => (Cfg.SeerrUrl, Cfg.SeerrApiKey, "/api/v1/status", "X-Api-Key"),
@@ -222,6 +242,43 @@ public class CinemaController : ControllerBase
         catch (Exception ex)
         {
             return Ok(new { ok = false, message = ex.Message });
+        }
+    }
+
+    // ---------------------------------------------------------------- TMDB (optional, scene pictures)
+
+    private static readonly System.Text.RegularExpressions.Regex TmdbAllowed = new(
+        @"^(person/\d+/(tagged_images|images)|movie/\d+/images|tv/\d+/images)$",
+        System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>Read-only picture lookups at TMDB. The key stays on the server and only a few picture paths are allowed.</summary>
+    [HttpGet("tmdb/{**path}")]
+    [Authorize]
+    public async Task<IActionResult> Tmdb(string path, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(Cfg.TmdbApiKey))
+        {
+            return StatusCode(503, new { error = "TMDB is not configured" });
+        }
+
+        if (!TmdbAllowed.IsMatch(path))
+        {
+            return NotFound();
+        }
+
+        var page = int.TryParse(Request.Query["page"], out var pg) && pg is > 0 and < 10 ? pg : 1;
+        var url = "https://api.themoviedb.org/3/" + path + "?api_key=" + Uri.EscapeDataString(Cfg.TmdbApiKey) + "&page=" + page + "&include_image_language=en,null";
+        try
+        {
+            using var resp = await Client().GetAsync(url, ct).ConfigureAwait(false);
+            var bytes = await resp.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
+            Response.Headers["Cache-Control"] = "private, max-age=86400";
+            Response.StatusCode = (int)resp.StatusCode;
+            return new FileContentResult(bytes, "application/json");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, new { error = ex.Message });
         }
     }
 

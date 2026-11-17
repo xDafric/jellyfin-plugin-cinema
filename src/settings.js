@@ -17,6 +17,7 @@ const SEC = {
   actorPicks: { label: () => t('rcMoreWith') + ' … (' + t('rcDiscoverTag') + ')', picks: 'actor' },
   dirPicks: { label: () => t('rcMoreFrom') + ' … (' + t('rcDiscoverTag') + ')', picks: 'director' },
   freshUnseen: { label: () => t('rcFresh'), run: () => items({ IncludeItemTypes: 'Movie,Series', Filters: 'IsUnplayed', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 24 }), kind: 'poster' },
+  followPicks: { label: () => t('gFavNew') + ' (' + t('rcDiscoverTag') + ')', follow: true },
   tonight: { label: () => t('tnTitle'), tonight: true },
   recentEps: { label: () => t('recentEps'), run: () => api('Users/' + uid() + '/Items/Latest', { IncludeItemTypes: 'Episode', Limit: 24, Fields: F_BASE, GroupItems: false, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }), kind: 'thumb' },
   collections: { label: () => t('collections'), run: () => items({ IncludeItemTypes: 'BoxSet', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster', min: 2 },
@@ -30,7 +31,7 @@ const SEC = {
   collection: { label: p => p.title || t('collection'), custom: true, run: p => items({ ParentId: p.param, SortBy: 'PremiereDate', Limit: 40 }), kind: 'poster' },
   library: { label: p => p.title || 'Library', custom: true, run: p => items({ ParentId: p.param, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster' }
 };
-const DEFAULT_SECTIONS = ['continue', 'nextup', 'tonight', 'spotlight', 'freshUnseen', 'top10Movies', 'newMovies', 'forYou', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
+const DEFAULT_SECTIONS = ['continue', 'nextup', 'tonight', 'spotlight', 'freshUnseen', 'top10Movies', 'newMovies', 'forYou', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'followPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
 const sectionsCfg = () => { const c = cfg('sections'); return c && c.length ? c : DEFAULT_SECTIONS; };
 
 async function homeView2(page) {
@@ -47,6 +48,7 @@ async function homeView2(page) {
     if (d.seerr) return seerrRow(rows, s.title || d.label(s), d.seerr);
     if (d.seerrRec) return seerrRecRow(rows);
     if (d.forYou) return forYouRow(rows);
+    if (d.follow) return followRow(rows);
     if (d.picks) return peopleRow(rows, d.picks);
     if (d.tonight) { if (cfg('tonight')) tonightBanner(rows); return; }
     const title = s.title || (s.id === 'because' ? null : d.label(s));
@@ -99,7 +101,7 @@ async function settingsView(page) {
         SEC[s.id] && SEC[s.id].custom ? h('button', { 'aria-label': 'Remove', onclick: () => { secs.splice(i, 1); persist(); draw_(); } }, ic('close')) : null))));
     }
     draw_();
-    const types = [['forYou', t('rcForYou') + ' (' + t('rcDiscoverTag') + ')'], ['actorPicks', t('rcMoreWith') + ' … (' + t('rcDiscoverTag') + ')'], ['dirPicks', t('rcMoreFrom') + ' … (' + t('rcDiscoverTag') + ')'], ['freshUnseen', t('rcFresh')], ['tonight', t('tnTitle')], ['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')], ['top10Movies', t('top10Movies')], ['top10Shows', t('top10Shows')], ['spotlight', t('spotlight')], ['genreTiles', t('genreTiles')], ['recentEps', t('recentEps')], ['collections', t('collections')], ['unwatched', t('unwatched')], ['decade', t('decade')]];
+    const types = [['forYou', t('rcForYou') + ' (' + t('rcDiscoverTag') + ')'], ['actorPicks', t('rcMoreWith') + ' … (' + t('rcDiscoverTag') + ')'], ['dirPicks', t('rcMoreFrom') + ' … (' + t('rcDiscoverTag') + ')'], ['freshUnseen', t('rcFresh')], ['followPicks', t('gFavNew') + ' (' + t('rcDiscoverTag') + ')'], ['tonight', t('tnTitle')], ['genre', t('secGenre')], ['collection', t('collection')], ['library', t('secLibrary')], ['because', t('because')], ['seerrTrending', 'Seerr: ' + t('trending')], ['seerrMovies', 'Seerr: ' + t('popMovies')], ['seerrRec', t('seerrRec')], ['top10Movies', t('top10Movies')], ['top10Shows', t('top10Shows')], ['spotlight', t('spotlight')], ['genreTiles', t('genreTiles')], ['recentEps', t('recentEps')], ['collections', t('collections')], ['unwatched', t('unwatched')], ['decade', t('decade')]];
     const typeSel = h('select', {}, types.filter(([k]) => !secs.some(s => s.id === k && !SEC[k].custom)).map(([k, l]) => h('option', { value: k }, l)));
     const valSel = h('select', {});
     async function fillVals() { valSel.replaceChildren(); valSel.style.display = ''; const k = typeSel.value;

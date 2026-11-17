@@ -125,7 +125,7 @@ function featCatalog(X) {
       X.row(t('qNew'), t('qNewH'), X.seg([[5, '5'], [10, '10'], [20, '20'], [30, '30']], 'quizNew'), 'quizNew'), X.row(t('qGoal'), t('qGoalH'), X.seg([[50, '50'], [100, '100'], [200, '200'], [300, '300']], 'quizGoal'), 'quizGoal'),
       X.row(t('qBlitz'), '', X.seg([[30, '30 s'], [60, '60 s'], [90, '90 s']], 'quizBlitz'), 'quizBlitz'), X.toggle(t('qAuto'), 'quizAuto', t('qAutoH')),
       X.row(t('qMin'), t('qMinH'), X.seg([[1, t('qMinAll')], [2, t('qMin2')], [3, t('qMin3')]], 'quizMin'), 'quizMin'),
-      lbOn() ? X.toggle(t('qLb'), 'quizLb', t('qLbH')) : null, X.row(t('qGames'), t('qGamesH'), modeChips()),
+      lbOn() ? X.toggle(t('qLb'), 'quizLb', t('qLbH')) : null, X.row(t('qFamous'), t('qFamousH'), X.seg([['both', t('qFamousBoth')], ['seen', t('qFamousSeen')]], 'quizFamous'), 'quizFamous'), X.toggle(t('qScenes'), 'quizScenes', t('qScenesH')), X.row(t('qGames'), t('qGamesH'), modeChips()),
       X.row(t('qReset'), t('qResetH'), h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { if (!confirm(t('qResetAsk'))) return; await gLoad(); Object.assign(GM.st, gDef(), { ts: Date.now() }); await gFlush(); toast('✓ ' + t('qResetOk')); } }, t('qResetDo')))] },
     { id: 'wrapped', g: 'learn', ic: '🎬', hue: '#ff2d92', name: 'ftWrN', desc: 'ftWrD', art: 'wrapped', key: 'wrapped', feat: 'wrapped', open: '#/c/wrapped', opts: () => [
       X.row(t('wrBanner'), t('wrBannerH'), X.seg([['auto', t('wrBSeason')], ['always', t('wrBAlways')], ['never', t('wrBNever')]], 'wrappedBanner'), 'wrappedBanner'), X.toggle(t('wrShowsL'), 'wrappedShows', t('wrShowsH')), X.toggle(t('wrAutoL'), 'wrappedAuto', t('wrAutoH'))] },

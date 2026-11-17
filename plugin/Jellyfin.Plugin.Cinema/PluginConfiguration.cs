@@ -21,6 +21,9 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public string AurralApiKey { get; set; } = string.Empty;
 
+    /// <summary>Optional TMDB v3 API key. Only used to fetch scene pictures of an actor in a film for the film quiz.</summary>
+    public string TmdbApiKey { get; set; } = string.Empty;
+
     // ---- loading ----
     public bool InjectEarly { get; set; } = true;
 

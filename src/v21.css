@@ -1,0 +1,37 @@
+/* ---------- Quiz: follow, filmography, scenes ---------- */
+.gm-nrow { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.gm-ad .gm-nrow { justify-content: flex-start; margin-bottom: 8px; } .gm-ad .gm-nrow h2 { margin: 0; }
+.gm-heart { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 21px; line-height: 1; background: rgba(255,255,255,.08); color: #c9c9d1; transition: transform .15s, background .15s, color .15s; flex: none; }
+.gm-heart:hover { background: rgba(255,255,255,.16); transform: scale(1.08); }
+.gm-heart.on { color: #ff4d6d; background: rgba(255,77,109,.18); animation: gm-pop .4s cubic-bezier(.2,1.6,.4,1); }
+.gm-heart.sm { width: 28px; height: 28px; font-size: 16px; }
+.gm-follow.on { color: #ff4d6d; } .gm-follow { margin-top: 14px; }
+.gm-pc { position: relative; } .gm-pc.fav { box-shadow: inset 0 0 0 1px rgba(255,77,109,.45); } .gm-pcf { position: absolute; top: 8px; right: 10px; color: #ff4d6d; font-size: 14px; }
+.gm-favh { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; } .gm-favh h2 { margin: 0; }
+.gm-sec .nf-row { margin: 18px calc(-1 * var(--pad)) 0; }
+
+/* "known from" with roles, scenes and famous films */
+.gm-kfi { position: relative; overflow: hidden; background-size: cover; background-position: center right; cursor: default; }
+.gm-kfi > * { position: relative; z-index: 1; }
+.gm-kfi.has-scene::before { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(90deg, rgba(23,23,27,.97) 38%, rgba(23,23,27,.55)); }
+.gm-kfi.has-scene.tagged { box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+.gm-kfi.fam { cursor: pointer; } .gm-kfi.fam:hover { background-color: rgba(255,255,255,.1); } .gm-kfi.seen em { color: #7cf0a3; }
+.gm-kfi em { display: block; font-style: normal; font-size: 11.5px; font-weight: 700; margin-top: 2px; }
+.gm-role2 { display: block; color: #ffd27a !important; font-weight: 600; }
+.gm-fam { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px; } .gm-fam > small { color: #8d8d97; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.gm-intro .gm-fam, .gm-card.flipped .gm-fam { align-items: center; } .gm-intro .gm-fam .gm-kf, .gm-card.flipped .gm-fam .gm-kf { justify-content: center; }
+.gm-scene { display: none; width: min(560px, 100%); aspect-ratio: 16/7; border-radius: 18px; background: #1c1c21 center / cover; box-shadow: 0 16px 50px rgba(0,0,0,.5); margin-bottom: 4px; }
+.gm-scene.has-scene { display: block; animation: gm-in .4s both; } .gm-scene.tagged { box-shadow: 0 16px 50px rgba(0,0,0,.5), 0 0 0 2px rgba(255,255,255,.2); }
+
+/* the actor dialog */
+.gm-frtools { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; } .gm-frtools .gm-filt { margin: 0; }
+.gm-frl { display: flex; flex-direction: column; gap: 8px; }
+.gm-fr { position: relative; display: flex; align-items: center; gap: 14px; padding: 8px 14px 8px 8px; border-radius: 16px; background: rgba(255,255,255,.05); overflow: hidden; cursor: pointer; transition: background .15s; } .gm-fr:hover { background: rgba(255,255,255,.1); }
+.gm-fr > * { position: relative; z-index: 1; }
+.gm-frs { position: absolute !important; z-index: 0 !important; inset: 0 0 0 38%; background: center / cover; opacity: 0; transition: opacity .4s; -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%); mask-image: linear-gradient(90deg, transparent, #000 45%); } .gm-frs.has-scene { opacity: .6; } .gm-frs.tagged { opacity: .85; }
+.gm-frr { font-style: normal; width: 26px; text-align: center; font-size: 22px; font-weight: 900; color: #6f6f78; flex: none; }
+.gm-frp { width: 52px; aspect-ratio: 2/3; border-radius: 8px; background: #2a2a30 center / cover; flex: none; }
+.gm-frt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; } .gm-frt b { font-size: 15.5px; } .gm-frt .gm-role2 { font-size: 13px; }
+.gm-fst { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #8d8d97; } .gm-fst.seen { color: #7cf0a3; } .gm-fst.lib { color: #9ccaff; } .gm-fst.req { color: #ffcf8a; } .gm-fst i { font-style: normal; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,.1); color: #c9c9d1; font-weight: 600; }
+.gm-frtools .gm-find { margin-left: auto; }
+@media (max-width: 820px) { .gm-frs { inset: 0 0 0 20%; } .gm-nrow { flex-wrap: wrap; } }
