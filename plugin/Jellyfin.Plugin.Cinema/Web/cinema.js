@@ -5096,6 +5096,9 @@ function tvInit() {
   };
 }
 
+/* the app asks pages to give memory back when the system runs low */
+window.cxTvTrim = () => { try { hidePeek(); C.libCache = null; if (typeof resetSeerrCache === 'function') resetSeerrCache(); } catch (e) { } };
+
 /* ---------- boot ---------- */
 C.playAlbum = async it => { const tr = await tracksOf({ ParentId: it.Id, SortBy: 'ParentIndexNumber,IndexNumber,SortName' }); playList(tr, 0, { ctx: { id: it.Id } }); };
 if (!document.getElementById('cx-style')) { const st = document.createElement('style'); st.id = 'cx-style'; st.textContent = CSS_TEXT; (document.head || document.documentElement).append(st); }
@@ -5115,5 +5118,8 @@ const iv = setInterval(() => {
 }, 400);
 document.addEventListener('viewshow', () => { if (ready) route(); });
 window.cinemaUI = { dev: { get C() { return C; }, lb: () => ({ lbReadExport, LB, onboard: () => onboardWizard(true), wrapped: y => wrData(y || new Date().getFullYear()).then(wrStory), lbLoad, lbSync, lbSeen, ARCH, archLoad, CFG: () => CFGU, save: saveCfg, archiveDialog }), seerrModal: x => seerrModal(x), setSeerrBase(b) { SEERR = b; }, calendarView: p => calendarView(p), harvest: () => harvestMenus(), HARV: () => HARV }, native(id) { C.allowNative = true; location.hash = '#/details?id=' + id; }, get player() { return P; }, skin(on) { setSkin(on !== false); }, off() { localStorage.setItem('cinema-off', '1'); location.reload(); }, on() { localStorage.removeItem('cinema-off'); location.reload(); } };
+
+/* tab icon: the Cinema mark instead of the stock one */
+(function () { try { const u = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect rx="224" fill="#111113"/><rect x="215" y="215" width="273" height="273" rx="68" fill="#ffffff"/><rect x="535" y="215" width="273" height="273" rx="68" fill="#5a5a62"/><rect x="215" y="535" width="273" height="273" rx="68" fill="#5a5a62"/><rect x="535" y="535" width="273" height="273" rx="68" fill="#e50914"/></svg>'); document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]').forEach(l => l.remove()); const l = document.createElement('link'); l.rel = 'icon'; l.type = 'image/svg+xml'; l.href = u; document.head.append(l); } catch (e) { } })();
 
 })();
