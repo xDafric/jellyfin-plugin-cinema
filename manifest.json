@@ -6,8 +6,16 @@
         "overview":  "A modern replacement front end: Netflix-style home, Spotify-style music, watchlist, Seerr requests and discovery, download progress, release calendar and music requests through Aurral.",
         "owner":  "Dafric",
         "category":  "General",
-        "imageUrl":  "",
+        "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
+                         {
+                             "version":  "1.1.45.0",
+                             "changelog":  "New app icon (four tiles) as tab icon and catalogue image.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.45.0.zip",
+                             "checksum":  "84f2bd73fb7b9c5034090c3ad180b342",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
                          {
                              "version":  "1.1.44.0",
                              "changelog":  "Polish: requests progress bar and filter tabs, dropdown menus close on navigation, correct artist match for popular songs, shorter home row titles, calmer person dialog, cleaner admin request dialog.",
