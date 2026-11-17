@@ -60,22 +60,22 @@ async function storageView(page) {
   const wrap = h('div', { class: 'nf-page-pad st-page' }, h('h1', {}, t('stTitle')), h('p', { class: 'gm-secp' }, t('stIntro'))); page.append(wrap);
   if (!(C.status && C.status.admin)) { wrap.append(h('div', { class: 'nf-empty' }, t('stAdminOnly'))); return; }
   wrap.append(h('div', { class: 'spinner', style: 'margin:60px auto 12px' }), h('p', { class: 'gm-loading' }, t('stLoading')));
-  let D; try { D = await stLoad(true); } catch (e) { wrap.append(h('div', { class: 'nf-empty' }, '⚠ ' + (e.message || e))); return; }
+  let D; try { D = await stLoad(true); } catch (e) { wrap.append(h('div', { class: 'nf-empty' }, (e.message || e))); return; }
   wrap.querySelector('.spinner').remove(); wrap.querySelector('.gm-loading').remove();
   /* disks */
   const disks = h('div', { class: 'st-disks' });
   const perMonth = D.perMonth; let worstMonths = null;
   D.disks.sort((a, b) => a.free / a.total - b.free / b.total).forEach(d => {
     const used = 1 - d.free / d.total; const months = perMonth > 0 ? d.free / perMonth : null; if (months != null && (worstMonths == null || months < worstMonths)) worstMonths = months;
-    disks.append(h('div', { class: 'st-disk' + (used > .9 ? ' crit' : used > .75 ? ' warn' : '') }, h('div', { class: 'st-dh' }, h('b', { class: 'ell' }, d.name || d.path), h('small', {}, d.src)), h('div', { class: 'st-bar' }, h('i', { style: 'width:' + Math.round(used * 100) + '%' })), h('div', { class: 'st-df' }, h('b', {}, fmtBytes(d.free)), ' ' + t('stFree') + ' ' + fmtBytes(d.total), h('span', {}, Math.round(used * 100) + '% ' + t('stUsed'))), h('small', { class: 'ell' }, d.path || '')));
+    disks.append(h('div', { class: 'st-disk' + (used > .9 ? ' crit' : used > .75 ? ' warn' : '') }, h('div', { class: 'st-dh' }, h('b', { class: 'ell' }, d.name || d.path), h('small', {}, d.src)), h('div', { class: 'st-bar' }, h('i', { style: 'width:' + Math.round(used * 100) + '%' })), h('div', { class: 'st-df' }, h('b', {}, fmtBytes(d.free)), t('stFree') + ' ' + fmtBytes(d.total), h('span', {}, Math.round(used * 100) + '% ' + t('stUsed'))), h('small', { class: 'ell' }, d.path || '')));
   });
   wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('stDisks')), D.disks.length ? disks : h('div', { class: 'nf-empty', style: 'padding:24px 0' }, t('stNoDisks')),
-    worstMonths != null ? h('p', { class: 'st-fc' }, '⏳ ' + (worstMonths < 1 ? t('stFullNow') : t('stFull').replace('{n}', Math.round(worstMonths)))) : null));
+    worstMonths != null ? h('p', { class: 'st-fc' }, (worstMonths < 1 ? t('stFullNow') : t('stFull').replace('{n}', Math.round(worstMonths)))) : null));
   /* numbers */
   const big = D.movies.slice().sort((a, b) => b.size - a.size)[0];
   const tile = (v, l, sub) => h('div', { class: 'gm-tile2' }, h('b', { class: 'ell' }, v), h('small', {}, l), sub ? h('small', { class: 'ell' }, sub) : null);
   wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('stLibrary')), h('div', { class: 'gm-stats' }, tile(D.movies.length.toLocaleString(), t('stFilms')), tile(fmtBytes(D.total), t('stTotal')), tile(fmtBytes(D.total / Math.max(1, D.movies.length)), t('stAvg')), big ? tile(fmtBytes(big.size), t('stBiggest'), big.it.Name) : null, tile('+' + fmtBytes(D.perMonth), t('stPace'), t('stPerMonth'))),
-    h('h3', {}, t('stRes')), h('div', { class: 'st-res' }, h('div', { class: 'st-resbar' }, D.res.map(x => h('i', { class: 'r' + x.k.replace('?', 'u'), style: 'flex:' + x.b, title: x.k + ' · ' + x.n + ' · ' + fmtBytes(x.b) }))), h('div', { class: 'st-resl' }, D.res.map(x => h('span', {}, h('i', { class: 'r' + x.k.replace('?', 'u') }), h('b', {}, x.k), ' ' + x.n + ' · ' + fmtBytes(x.b))))), h('p', { class: 'gm-secp', style: 'margin-top:14px' }, t('stSeries'))));
+    h('h3', {}, t('stRes')), h('div', { class: 'st-res' }, h('div', { class: 'st-resbar' }, D.res.map(x => h('i', { class: 'r' + x.k.replace('?', 'u'), style: 'flex:' + x.b, title: x.k + ' · ' + x.n + ' · ' + fmtBytes(x.b) }))), h('div', { class: 'st-resl' }, D.res.map(x => h('span', {}, h('i', { class: 'r' + x.k.replace('?', 'u') }), h('b', {}, x.k), x.n + ' · ' + fmtBytes(x.b))))), h('p', { class: 'gm-secp', style: 'margin-top:14px' }, t('stSeries'))));
   /* lists with selection */
   let tab = 'clean', sortBy = 'size'; const list = h('div', { class: 'st-list' });
   const bar = h('div', { class: 'st-selbar' }); const selInfo = () => { const picked = D.movies.filter(m => ST.sel.has(m.it.Id)); const sz = picked.reduce((a, m) => a + m.size, 0); bar.classList.toggle('show', picked.length > 0); bar.replaceChildren(h('b', {}, t('stSelected').replace('{n}', picked.length)), h('span', {}, t('stFrees').replace('{s}', fmtBytes(sz))), h('button', { class: 'btn grey', onclick: () => { ST.sel.clear(); drawList(); selInfo(); } }, t('stSelNone')), h('button', { class: 'btn white', onclick: () => stBulk(picked, () => { ST.sel.clear(); stLoad(true).then(nd => { D = nd; drawList(); selInfo(); }); }) }, ic('download'), t('stArchive'))); };
@@ -98,7 +98,7 @@ function stBulk(picked, done) {
   const go_ = h('button', { class: 'btn white', onclick: async () => {
     go_.disabled = true; useRadarr.disabled = true; let ok = 0, freed = 0, fail = 0; const rows = new Map();
     status.replaceChildren(...picked.map(m => { const r = h('div', { class: 'st-bl' }, h('span', {}, '…'), h('b', { class: 'ell' }, m.it.Name), h('small', {}, fmtBytes(m.size))); rows.set(m.it.Id, r); return r; }));
-    for (const m of picked) { const r = rows.get(m.it.Id); r.firstChild.textContent = '⏳'; r.scrollIntoView({ block: 'nearest' }); try { const full = await getItem(m.it.Id); await archiveCore(full, useRadarr.checked); ok++; freed += m.size; r.firstChild.textContent = '✓'; r.classList.add('ok'); } catch (e) { fail++; r.firstChild.textContent = '⚠'; r.classList.add('bad'); r.title = String(e.message || e); } }
+    for (const m of picked) { const r = rows.get(m.it.Id); r.firstChild.textContent = ''; r.scrollIntoView({ block: 'nearest' }); try { const full = await getItem(m.it.Id); await archiveCore(full, useRadarr.checked); ok++; freed += m.size; r.firstChild.textContent = ''; r.classList.add('ok'); } catch (e) { fail++; r.firstChild.textContent = ''; r.classList.add('bad'); r.title = String(e.message || e); } }
     ARCH.at = 0; archLoad(true); C.libCache = null; resetSeerrCache(); d.foot.replaceChildren(h('b', { style: 'margin-right:auto' }, t('stBulkDone').replace('{n}', ok).replace('{s}', fmtBytes(freed)) + (fail ? ' · ' + t('stBulkFail').replace('{n}', fail) : '')), h('button', { class: 'btn white', onclick: () => { d.close(); done(); } }, 'OK'));
   } }, ic('download'), t('stBulkGo').replace('{s}', fmtBytes(total)));
   d.body.replaceChildren(h('p', { class: 'cxd-hint', style: 'margin-top:0' }, t('stBulkIntro')), h('label', { class: 'arch-opt' }, useRadarr, h('span', {}, radarrOk ? t('archRadarr') : t('archRadarrOff'))), h('p', { class: 'cxd-hint arch-warn' }, t('archWarn')), status);

@@ -40,7 +40,7 @@ async function syncWatchlist() {
       if (!isWatch(it)) { await ApiClient.updateUserItemRating(uid(), it.Id, true); added++; } seen.add(q.id);
     }
     if (seen.size !== (CFGU.wlSeen || []).length) await saveCfg({ wlSeen: [...seen].slice(-600) });
-    if (added) { toast('✓ ' + t('wlSynced') + (added > 1 ? ' (' + added + ')' : '')); C.libCache = null; if (/watchlist/.test(location.hash)) route(); }
+    if (added) { toast(t('wlSynced') + (added > 1 ? ' (' + added + ')' : '')); C.libCache = null; if (/watchlist/.test(location.hash)) route(); }
   } catch (e) { console.warn('[cinema] watchlist sync', e); } finally { WLSYNC.busy = false; }
 }
 async function watchlistView(page) {
@@ -110,4 +110,4 @@ async function browseListView(page, kind, param) {
   const g = infiniteGrid(wrap, (s, n) => items(Object.assign({ IncludeItemTypes: st.type || 'Movie,Series,BoxSet', SortBy: st.sort, SortOrder: st.order, StartIndex: s, Limit: n }, base)), i => card(i, 'poster'));
 }
 
-async function seerrWatch(x) { try { await cpostSeerr('/watchlist', { tmdbId: +x.id, mediaType: x.mediaType === 'tv' ? 'tv' : 'movie', title: x.title || x.name }); toast(t('wlAdded')); } catch (e) { toast('⚠ ' + ((e.responseJSON && e.responseJSON.message) || 'Seerr')); } }
+async function seerrWatch(x) { try { await cpostSeerr('/watchlist', { tmdbId: +x.id, mediaType: x.mediaType === 'tv' ? 'tv' : 'movie', title: x.title || x.name }); toast(t('wlAdded')); } catch (e) { toast(((e.responseJSON && e.responseJSON.message) || 'Seerr')); } }

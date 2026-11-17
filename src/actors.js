@@ -63,11 +63,11 @@ function gFillScene(el, a, filmTmdb, fallback) {
 function gFollow(a, on) {
   const st = GM.st; st.fav = st.fav || {}; if (on === undefined) on = !st.fav[a.k];
   if (on) st.fav[a.k] = { n: a.name, i: a.img, p: a.pid || 0, t: a.tid || 0, at: Date.now() }; else delete st.fav[a.k]; a.fav = on;
-  st.badges && gBadgesCheck(st).forEach(b => toast('🏅 ' + gBadgeTxt(b)[0])); gSave(); GA.newAt = 0; return on;
+  st.badges && gBadgesCheck(st).forEach(b => toast(gBadgeTxt(b)[0])); gSave(); GA.newAt = 0; return on;
 }
 function gHeart(a, cls) {
-  const b = h('button', { class: 'gm-heart ' + (cls || ''), 'aria-label': t('gFavFollow'), onclick: e => { e.stopPropagation(); const on = gFollow(a); set(on); toast(on ? '♥ ' + a.name : '♡ ' + a.name); } });
-  const set = on => { b.classList.toggle('on', on); b.textContent = on ? '♥' : '♡'; b.title = on ? t('gFavFollowing') : t('gFavFollow'); }; set(gIsFav(GM.st, a)); return b;
+  const b = h('button', { class: 'gm-heart ' + (cls || ''), 'aria-label': t('gFavFollow'), onclick: e => { e.stopPropagation(); const on = gFollow(a); set(on); toast(on ? '♥ ' + a.name : a.name); } });
+  const set = on => { b.classList.toggle('on', on); b.textContent = on ? '♥' : ''; b.title = on ? t('gFavFollowing') : t('gFavFollow'); }; set(gIsFav(GM.st, a)); return b;
 }
 /* followed actors that are not in the pool (followed from a person page): quiz them with their face */
 function gMergeFavs(P, st) {
@@ -80,7 +80,7 @@ function gActorCard(a, st, sub) { const fav = gIsFav(st, a); return h('button', 
 function gFamousStrip(a, n) {
   if (cfg('quizFamous') === 'seen' || !hasSeerr()) return null; const box = h('div', { class: 'gm-fam' });
   (async () => { const cr = await gCredits(a); const top = gTopFamous(cr, n || 5); if (!top.length || !box.isConnected) return; const ctx = await gCtx();
-    box.append(h('small', {}, t('gFamous')), h('div', { class: 'gm-kf' }, top.map(c => { const s = gCredState(c, ctx); return h('div', { class: 'gm-kfi fam' + (s.seen ? ' seen' : ''), onclick: e => { e.stopPropagation(); if (s.own) go(itemHash(s.own)); else openSeerrInfo({ id: c.id, mediaType: c.mt }); } }, h('div', Object.assign({ class: 'gm-kp' }, bg(TM(c.poster, 'w154')))), h('div', {}, h('b', {}, c.title + (c.year ? ' (' + c.year + ')' : '')), c.role ? h('span', { class: 'gm-role2' }, t('gAsRole') + ' ' + c.role) : null, s.seen ? h('em', {}, '✓ ' + t('gStWatched')) : null)); }))); })().catch(() => { });
+    box.append(h('small', {}, t('gFamous')), h('div', { class: 'gm-kf' }, top.map(c => { const s = gCredState(c, ctx); return h('div', { class: 'gm-kfi fam' + (s.seen ? ' seen' : ''), onclick: e => { e.stopPropagation(); if (s.own) go(itemHash(s.own)); else openSeerrInfo({ id: c.id, mediaType: c.mt }); } }, h('div', Object.assign({ class: 'gm-kp' }, bg(TM(c.poster, 'w154')))), h('div', {}, h('b', {}, c.title + (c.year ? ' (' + c.year + ')' : '')), c.role ? h('span', { class: 'gm-role2' }, t('gAsRole') + ' ' + c.role) : null, s.seen ? h('em', {}, t('gStWatched')) : null)); }))); })().catch(() => { });
   return box;
 }
 function gKnownFrom(P, a, n) {
@@ -91,7 +91,7 @@ function gKnownFrom(P, a, n) {
 
 /* ----- the actor dialog: watched, best known, everything ----- */
 function gFilmRow(o, a, close) {
-  const sc = h('div', { class: 'gm-frs' }); const stT = o.seen ? ['seen', '✓ ' + t('gStWatched')] : o.own ? ['lib', '📚 ' + t('gStLib')] : o.req ? ['req', '⏳ ' + t('gStReq')] : ['none', '＋ ' + t('gStNone')];
+  const sc = h('div', { class: 'gm-frs' }); const stT = o.seen ? ['seen', t('gStWatched')] : o.own ? ['lib', t('gStLib')] : o.req ? ['req', t('gStReq')] : ['none', '＋ ' + t('gStNone')];
   const el = h('div', { class: 'gm-fr', onclick: () => { if (o.own) { close(); go(itemHash(o.own)); } else if (o.tmdb) openSeerrInfo({ id: o.tmdb, mediaType: o.mt || 'movie' }); } },
     o.rank ? h('em', { class: 'gm-frr' }, String(o.rank)) : null, h('div', Object.assign({ class: 'gm-frp' }, bg(o.poster))),
     h('div', { class: 'gm-frt' }, h('b', { class: 'ell' }, o.title + (o.year ? ' (' + o.year + ')' : '')), o.role ? h('span', { class: 'gm-role2' }, t('gAsRole') + ' ' + o.role) : null, h('div', { class: 'gm-fst ' + stT[0] }, stT[1], o.mt === 'tv' ? h('i', {}, t('shows')) : null)), sc);
@@ -131,8 +131,8 @@ async function gFollowNew() {
 }
 function gFavSection(wrap, st, P) {
   const favs = Object.keys(st.fav || {}).filter(k => P.actors.get(k) || st.fav[k].i); const sec = h('section', { class: 'gm-sec' });
-  if (!favs.length) { sec.append(h('h2', {}, '♡ ' + t('gFavs')), h('p', { class: 'gm-secp' }, t('gFavNone'))); wrap.append(sec); return; }
-  sec.append(h('div', { class: 'gm-favh' }, h('h2', {}, '♥ ' + t('gFavs') + ' · ' + favs.length), h('button', { class: 'nf-chip', onclick: () => gPlay('train', { fav: true }) }, ic('play', 'ic-s'), ' ' + t('gFavTrain'))), h('div', { class: 'gm-pcs' }, favs.map(k => { const a = P.actors.get(k) || gFavActor(k); return gActorCard(a, st, a.films && a.films.length ? a.films.length + ' ' + t('gFilmsN') : t('gFavN')); })));
+  if (!favs.length) { sec.append(h('h2', {}, t('gFavs')), h('p', { class: 'gm-secp' }, t('gFavNone'))); wrap.append(sec); return; }
+  sec.append(h('div', { class: 'gm-favh' }, h('h2', {}, '♥ ' + t('gFavs') + ' · ' + favs.length), h('button', { class: 'nf-chip', onclick: () => gPlay('train', { fav: true }) }, ic('play', 'ic-s'), t('gFavTrain'))), h('div', { class: 'gm-pcs' }, favs.map(k => { const a = P.actors.get(k) || gFavActor(k); return gActorCard(a, st, a.films && a.films.length ? a.films.length + ' ' + t('gFilmsN') : t('gFavN')); })));
   const strip = h('div', {}); sec.append(strip); wrap.append(sec);
   if (hasSeerr()) Promise.all([gFollowNew(), gCtx()]).then(([list, ctx]) => { if (!list.length || !strip.isConnected) return; strip.append(row(t('gFavNew'), list, 'poster', { make: x => dCard(x, ctx.lm, ctx.rm), tag: t('rcDiscoverTag') })); }).catch(() => { });
 }
@@ -144,6 +144,6 @@ function followRow(container) {
 /* follow button on a person page */
 function gPersonFollow(p) {
   if (!cfg('quiz')) return null; const a = { k: lbNorm(p.Name), name: p.Name, img: imgUrl(p, 'Primary', 300), pid: p.Id, tid: +((p.ProviderIds || {}).Tmdb) || 0 }; if (!a.img) return null;
-  const b = h('button', { class: 'btn grey gm-follow' }, '♡ ' + t('gFavFollow')); const set = on => { b.classList.toggle('on', on); b.textContent = (on ? '♥ ' + t('gFavFollowing') : '♡ ' + t('gFavFollow')); };
-  gLoad().then(() => set(gIsFav(GM.st, a))); b.onclick = async () => { await gLoad(); const on = gFollow(a); set(on); toast(on ? '♥ ' + p.Name : '♡ ' + p.Name); }; return b;
+  const b = h('button', { class: 'btn grey gm-follow' }, t('gFavFollow')); const set = on => { b.classList.toggle('on', on); b.textContent = (on ? '♥ ' + t('gFavFollowing') : t('gFavFollow')); };
+  gLoad().then(() => set(gIsFav(GM.st, a))); b.onclick = async () => { await gLoad(); const on = gFollow(a); set(on); toast(on ? '♥ ' + p.Name : p.Name); }; return b;
 }

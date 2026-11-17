@@ -12,7 +12,7 @@ function closeModal(m) { m.remove(); }
 async function seerrModal(x) {
   const mt = x.mediaType === 'tv' ? 'tv' : 'movie';
   const bgEl = h('div', { class: 'sp-modal-bg', onclick: e => { if (e.target === bgEl) closeModal(bgEl); } }); const box = h('div', { class: 'sr-modal' }, h('div', { class: 'spinner', style: 'margin:80px auto' })); bgEl.append(box); getUI().append(bgEl);
-  let d; try { d = await seerrGet('/' + mt + '/' + x.id); } catch (e) { box.replaceChildren(h('div', { class: 'nf-empty' }, '⚠ ' + e.message)); return; }
+  let d; try { d = await seerrGet('/' + mt + '/' + x.id); } catch (e) { box.replaceChildren(h('div', { class: 'nf-empty' }, e.message)); return; }
   const admin = !!((await me()).Policy || {}).IsAdministrator;
   const lm = await libMap(), rm = await reqMap(); d.mediaType = mt; d.id = x.id; const st = dStatus(Object.assign({}, d, { mediaType: mt, id: x.id, mediaInfo: d.mediaInfo }), lm, rm);
   const title = d.title || d.name; const year = (d.releaseDate || d.firstAirDate || '').slice(0, 4);
@@ -29,12 +29,12 @@ async function seerrModal(x) {
   const btn = h('button', { class: 'btn white' }, ic('plus'), t('request'));
   btn.onclick = async () => {
     btn.disabled = true; btn.textContent = '…';
-    try { const body = { mediaType: mt, mediaId: x.id }; if (mt === 'tv') body.seasons = [...picked]; if (adv.serverId != null) body.serverId = adv.serverId; if (adv.profileId != null) body.profileId = adv.profileId; if (adv.rootFolder) body.rootFolder = adv.rootFolder; await cpostSeerr('/request', body); toast('✓ ' + t('requested')); resetSeerrCache(); closeModal(bgEl); }
-    catch (e) { toast('⚠ ' + ((e.responseJSON && e.responseJSON.message) || e.statusText || 'error')); btn.disabled = false; btn.replaceChildren(ic('plus'), t('request')); }
+    try { const body = { mediaType: mt, mediaId: x.id }; if (mt === 'tv') body.seasons = [...picked]; if (adv.serverId != null) body.serverId = adv.serverId; if (adv.profileId != null) body.profileId = adv.profileId; if (adv.rootFolder) body.rootFolder = adv.rootFolder; await cpostSeerr('/request', body); toast(t('requested')); resetSeerrCache(); closeModal(bgEl); }
+    catch (e) { toast(((e.responseJSON && e.responseJSON.message) || e.statusText || 'error')); btn.disabled = false; btn.replaceChildren(ic('plus'), t('request')); }
   };
   if (st.k === 'own') { status.append(h('span', { class: 'dmark own' }, ic('check', 'ic-s'), t('inLib'))); if (st.item) btn.replaceWith(h('button', { class: 'btn white', onclick: () => { closeModal(bgEl); playVideo(st.item); } }, ic('play'), t('play'))); else btn.remove(); }
   else if (st.k === 'req' && mt === 'movie') { status.append(h('span', { class: 'dmark req' }, ic('star', 'ic-s'), t('requested'))); btn.remove(); }
-  const seasonBox = mt === 'tv' && seasons.length ? h('div', { class: 'sr-seasons' }, seasons.map(s => h('label', { class: 'nf-chip' + (have.has(s.seasonNumber) ? ' dis' : picked.has(s.seasonNumber) ? ' on' : ''), onclick: e => { e.preventDefault(); if (have.has(s.seasonNumber)) return; picked.has(s.seasonNumber) ? picked.delete(s.seasonNumber) : picked.add(s.seasonNumber); e.currentTarget.classList.toggle('on'); } }, (L === 'de' ? 'Staffel ' : 'Season ') + s.seasonNumber + (s.episodeCount ? ' · ' + s.episodeCount : '') + (have.has(s.seasonNumber) ? ' ✓' : '')))) : null;
+  const seasonBox = mt === 'tv' && seasons.length ? h('div', { class: 'sr-seasons' }, seasons.map(s => h('label', { class: 'nf-chip' + (have.has(s.seasonNumber) ? ' dis' : picked.has(s.seasonNumber) ? ' on' : ''), onclick: e => { e.preventDefault(); if (have.has(s.seasonNumber)) return; picked.has(s.seasonNumber) ? picked.delete(s.seasonNumber) : picked.add(s.seasonNumber); e.currentTarget.classList.toggle('on'); } }, (L === 'de' ? 'Staffel ' : 'Season ') + s.seasonNumber + (s.episodeCount ? ' · ' + s.episodeCount : '') + (have.has(s.seasonNumber) ? ' ' : '')))) : null;
   const ratings = h('div', { class: 'rt-row' });
   seerrGet('/' + mt + '/' + x.id + (mt === 'movie' ? '/ratingscombined' : '/ratings')).then(r => { const rt = r.rt || r; const im = r.imdb; if (rt && rt.criticsScore != null) ratings.append(h('span', { class: 'rt-chip' }, 'Rotten Tomatoes ', h('b', {}, rt.criticsScore + '%'), rt.audienceScore != null ? h('small', {}, t('audience') + ' ' + rt.audienceScore + '%') : null)); if (im && im.criticsScore != null) ratings.append(h('span', { class: 'rt-chip' }, 'IMDb ', h('b', {}, im.criticsScore))); }).catch(() => { });
   if (d.voteAverage) ratings.append(h('span', { class: 'rt-chip' }, 'TMDB ', h('b', {}, d.voteAverage.toFixed(1)), d.voteCount ? h('small', {}, (d.voteCount / 1000).toFixed(1) + 'k') : null));
@@ -86,7 +86,7 @@ function aurralTile(o, kind) {
   const name = aName(o); const sub = kind === 'artist' ? t('artist') : [pk(o, ['artistName', 'artist']) || '', pk(o, ['year', 'releaseYear']) || String(o.releaseDate || '').slice(0, 4)].filter(Boolean).join(' · ');
   const el = tile({ name, sub: sub + ' · ' + t('notOwned'), img: aImg(o), round: kind === 'artist', href: '#', play: null });
   if (!aurralReq()) { el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el; }
-  const btn = h('button', { class: 'pbtn show', 'aria-label': t('request'), onclick: async e => { e.stopPropagation(); btn.classList.add('busy'); try { await requestAurral(o, kind); toast('✓ ' + t('requested')); } catch (er) { toast('⚠ ' + ((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } btn.classList.remove('busy'); } }, ic('plus'));
+  const btn = h('button', { class: 'pbtn show', 'aria-label': t('request'), onclick: async e => { e.stopPropagation(); btn.classList.add('busy'); try { await requestAurral(o, kind); toast(t('requested')); } catch (er) { toast(((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } btn.classList.remove('busy'); } }, ic('plus'));
   el.append(btn); el.onclick = null; el.addEventListener('click', e => e.preventDefault()); return el;
 }
 async function requestAurral(o, kind) {

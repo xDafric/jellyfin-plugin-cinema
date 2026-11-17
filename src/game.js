@@ -76,30 +76,30 @@ const gMasteredN = st => Object.values(st.a).filter(s => s[0] >= 5).length;
 
 /* badges */
 const G_BADGES = [
-  ['first', '🎬', 'Erste Klappe', 'First take', 'Die erste richtige Antwort', 'Your first correct answer', st => st.ok >= 1],
-  ['ok100', '🍿', 'Popcorn-Kenner', 'Popcorn pro', '100 richtige Antworten', '100 correct answers', st => st.ok >= 100],
-  ['ok500', '🎞️', 'Filmrolle', 'Film reel', '500 richtige Antworten', '500 correct answers', st => st.ok >= 500],
-  ['ok2000', '🏛️', 'Cinemathek', 'Cinematheque', '2000 richtige Antworten', '2000 correct answers', st => st.ok >= 2000],
-  ['combo10', '🔥', 'Lauf', 'On a roll', '10 richtige in Folge', '10 correct in a row', st => st.bestCombo >= 10],
-  ['combo25', '☄️', 'Unaufhaltsam', 'Unstoppable', '25 richtige in Folge', '25 correct in a row', st => st.bestCombo >= 25],
-  ['m10', '⭐', 'Bekannte Gesichter', 'Familiar faces', '10 Schauspieler gemeistert', '10 actors mastered', st => gMasteredN(st) >= 10],
-  ['m50', '🌟', 'Who\'s who', 'Who\'s who', '50 Schauspieler gemeistert', '50 actors mastered', st => gMasteredN(st) >= 50],
-  ['m150', '💫', 'Wandelndes IMDb', 'Walking IMDb', '150 Schauspieler gemeistert', '150 actors mastered', st => gMasteredN(st) >= 150],
-  ['s3', '📅', 'Dranbleiben', 'Keep going', '3 Tage in Folge gespielt', 'Played 3 days in a row', st => st.bestStreak >= 3],
-  ['s7', '🗓️', 'Wochenkarte', 'Weekly pass', '7 Tage in Folge gespielt', 'Played 7 days in a row', st => st.bestStreak >= 7],
-  ['s30', '🏆', 'Dauerkarte', 'Season ticket', '30 Tage in Folge gespielt', 'Played 30 days in a row', st => st.bestStreak >= 30],
-  ['perfect', '💯', 'Ohne Patzer', 'Flawless', 'Ein Training mit mindestens 10 Fragen ohne Fehler', 'A training of 10+ questions without a mistake', st => st.perfect >= 1],
-  ['blitz15', '⚡', 'Schnellschuss', 'Quick draw', '15 Punkte in einer Blitzrunde', '15 points in one blitz round', st => st.bestBlitz >= 15],
-  ['blitz30', '🌩️', 'Blitzgescheit', 'Lightning mind', '30 Punkte in einer Blitzrunde', '30 points in one blitz round', st => st.bestBlitz >= 30],
-  ['memory', '🧠', 'Fotogedächtnis', 'Photographic memory', 'Memory in unter 45 Sekunden', 'Memory in under 45 seconds', st => st.bestMemory > 0 && st.bestMemory <= 45],
-  ['typed25', '⌨️', 'Ohne Spickzettel', 'No cheat sheet', '25 Namen richtig getippt', '25 names typed correctly', st => st.typed >= 25],
-  ['typed100', '✍️', 'Abspann-Leser', 'Credits reader', '100 Namen richtig getippt', '100 names typed correctly', st => st.typed >= 100],
-  ['fans', '❤️', 'Fanclub', 'Fan club', 'Fünf Schauspielern folgen', 'Follow five actors', st => Object.keys(st.fav || {}).length >= 5],
-  ['casts10', '🎭', 'Ensemble', 'Ensemble', 'Die Besetzung von 10 Filmen geübt', 'Practised the cast of 10 films', st => (st.films || []).length >= 10],
-  ['night', '🌙', 'Spätvorstellung', 'Late show', 'Nach Mitternacht gespielt', 'Played after midnight', st => st.night >= 1],
-  ['lv5', '🥉', 'Filmfan', 'Film fan', 'Level 5 erreicht', 'Reached level 5', st => gLvl(st.xp) >= 5],
-  ['lv10', '🥈', 'Kritiker', 'Critic', 'Level 10 erreicht', 'Reached level 10', st => gLvl(st.xp) >= 10],
-  ['lv20', '🥇', 'Filmhistoriker', 'Film historian', 'Level 20 erreicht', 'Reached level 20', st => gLvl(st.xp) >= 20]
+  ['first', '', 'Erste Klappe', 'First take', 'Die erste richtige Antwort', 'Your first correct answer', st => st.ok >= 1],
+  ['ok100', '', 'Popcorn-Kenner', 'Popcorn pro', '100 richtige Antworten', '100 correct answers', st => st.ok >= 100],
+  ['ok500', '', 'Filmrolle', 'Film reel', '500 richtige Antworten', '500 correct answers', st => st.ok >= 500],
+  ['ok2000', '', 'Cinemathek', 'Cinematheque', '2000 richtige Antworten', '2000 correct answers', st => st.ok >= 2000],
+  ['combo10', '', 'Lauf', 'On a roll', '10 richtige in Folge', '10 correct in a row', st => st.bestCombo >= 10],
+  ['combo25', '', 'Unaufhaltsam', 'Unstoppable', '25 richtige in Folge', '25 correct in a row', st => st.bestCombo >= 25],
+  ['m10', '', 'Bekannte Gesichter', 'Familiar faces', '10 Schauspieler gemeistert', '10 actors mastered', st => gMasteredN(st) >= 10],
+  ['m50', '', 'Who\'s who', 'Who\'s who', '50 Schauspieler gemeistert', '50 actors mastered', st => gMasteredN(st) >= 50],
+  ['m150', '', 'Wandelndes IMDb', 'Walking IMDb', '150 Schauspieler gemeistert', '150 actors mastered', st => gMasteredN(st) >= 150],
+  ['s3', '', 'Dranbleiben', 'Keep going', '3 Tage in Folge gespielt', 'Played 3 days in a row', st => st.bestStreak >= 3],
+  ['s7', '', 'Wochenkarte', 'Weekly pass', '7 Tage in Folge gespielt', 'Played 7 days in a row', st => st.bestStreak >= 7],
+  ['s30', '', 'Dauerkarte', 'Season ticket', '30 Tage in Folge gespielt', 'Played 30 days in a row', st => st.bestStreak >= 30],
+  ['perfect', '', 'Ohne Patzer', 'Flawless', 'Ein Training mit mindestens 10 Fragen ohne Fehler', 'A training of 10+ questions without a mistake', st => st.perfect >= 1],
+  ['blitz15', '', 'Schnellschuss', 'Quick draw', '15 Punkte in einer Blitzrunde', '15 points in one blitz round', st => st.bestBlitz >= 15],
+  ['blitz30', '', 'Blitzgescheit', 'Lightning mind', '30 Punkte in einer Blitzrunde', '30 points in one blitz round', st => st.bestBlitz >= 30],
+  ['memory', '', 'Fotogedächtnis', 'Photographic memory', 'Memory in unter 45 Sekunden', 'Memory in under 45 seconds', st => st.bestMemory > 0 && st.bestMemory <= 45],
+  ['typed25', '', 'Ohne Spickzettel', 'No cheat sheet', '25 Namen richtig getippt', '25 names typed correctly', st => st.typed >= 25],
+  ['typed100', '', 'Abspann-Leser', 'Credits reader', '100 Namen richtig getippt', '100 names typed correctly', st => st.typed >= 100],
+  ['fans', '', 'Fanclub', 'Fan club', 'Fünf Schauspielern folgen', 'Follow five actors', st => Object.keys(st.fav || {}).length >= 5],
+  ['casts10', '', 'Ensemble', 'Ensemble', 'Die Besetzung von 10 Filmen geübt', 'Practised the cast of 10 films', st => (st.films || []).length >= 10],
+  ['night', '', 'Spätvorstellung', 'Late show', 'Nach Mitternacht gespielt', 'Played after midnight', st => st.night >= 1],
+  ['lv5', '', 'Filmfan', 'Film fan', 'Level 5 erreicht', 'Reached level 5', st => gLvl(st.xp) >= 5],
+  ['lv10', '', 'Kritiker', 'Critic', 'Level 10 erreicht', 'Reached level 10', st => gLvl(st.xp) >= 10],
+  ['lv20', '', 'Filmhistoriker', 'Film historian', 'Level 20 erreicht', 'Reached level 20', st => gLvl(st.xp) >= 20]
 ];
 const gBadgeTxt = b => L === 'de' ? [b[2], b[4]] : [b[3], b[5]];
 function gBadgesCheck(st) { const got = []; G_BADGES.forEach(b => { if (!st.badges[b[0]] && b[6](st)) { st.badges[b[0]] = gDay(); got.push(b); } }); return got; }
@@ -278,7 +278,7 @@ function gStage(S) {
   gNextQ(S);
 }
 function gHud(S) {
-  S.hud.replaceChildren(...[h('span', { class: 'gm-hxp' }, '+' + S.xp + ' XP'), S.combo >= 3 ? h('span', { class: 'gm-hcombo' }, '🔥 ' + S.combo) : null, S.kind === 'blitz' ? h('span', {}, t('gScore') + ' ' + S.ok) : h('span', {}, Math.min(S.i + 1, S.q.length) + ' / ' + S.q.length)].filter(Boolean));
+  S.hud.replaceChildren(...[h('span', { class: 'gm-hxp' }, '+' + S.xp + ' XP'), S.combo >= 3 ? h('span', { class: 'gm-hcombo' }, S.combo + 'x') : null, S.kind === 'blitz' ? h('span', {}, t('gScore') + ' ' + S.ok) : h('span', {}, Math.min(S.i + 1, S.q.length) + ' / ' + S.q.length)].filter(Boolean));
   if (S.kind !== 'blitz') S.bar.firstChild.style.width = (S.i / Math.max(1, S.q.length) * 100) + '%';
 }
 function gNextQ(S) {
@@ -306,8 +306,8 @@ function gRender(S, q) {
     S.badges.push(...gBadgesCheck(st)); gSave(); gHud(S);
     card.classList.add(ok ? 'is-ok' : 'is-bad');
     if (S.kind === 'blitz') { S.auto = setTimeout(next, ok ? 280 : 900); return; }
-    fb.replaceChildren(h('div', { class: 'gm-fbh' }, h('b', { class: ok ? 'ok' : 'bad' }, ok ? (almost ? t('gAlmost') : t('gRight')) : t('gWrong')), h('span', { class: 'gm-fxp' }, '+' + xp + ' XP'), S.combo >= 3 ? h('span', { class: 'gm-hcombo' }, '🔥 ' + S.combo) : null),
-      h('div', { class: 'gm-fbp' }, h('button', { class: 'gm-fbface', 'aria-label': a.name, onclick: () => gActorDialog(a) }, gFace(a, 'sm')), h('div', {}, h('div', { class: 'gm-fbn' }, (ok ? '' : t('gItWas') + ' ') , h('b', {}, a.name), gStars(gBox(st, a.k), 'sm'), gHeart(a, 'sm'), h('button', { class: 'nf-chip gm-allf', onclick: () => gActorDialog(a) }, '🎞️ ' + (hasSeerr() ? t('gTabAll') : t('gTabSeen')))), gKnownFrom(P, a, 3))),
+    fb.replaceChildren(h('div', { class: 'gm-fbh' }, h('b', { class: ok ? 'ok' : 'bad' }, ok ? (almost ? t('gAlmost') : t('gRight')) : t('gWrong')), h('span', { class: 'gm-fxp' }, '+' + xp + ' XP'), S.combo >= 3 ? h('span', { class: 'gm-hcombo' }, S.combo + 'x') : null),
+      h('div', { class: 'gm-fbp' }, h('button', { class: 'gm-fbface', 'aria-label': a.name, onclick: () => gActorDialog(a) }, gFace(a, 'sm')), h('div', {}, h('div', { class: 'gm-fbn' }, (ok ? '' : t('gItWas') + ' ') , h('b', {}, a.name), gStars(gBox(st, a.k), 'sm'), gHeart(a, 'sm'), h('button', { class: 'nf-chip gm-allf', onclick: () => gActorDialog(a) }, (hasSeerr() ? t('gTabAll') : t('gTabSeen')))), gKnownFrom(P, a, 3))),
       h('button', { class: 'btn white gm-next', onclick: next }, t('gNext'), h('kbd', {}, '⏎')));
     card.append(fb); fb.classList.add('show'); requestAnimationFrame(() => { const b = $('.gm-next', fb); if (b) b.focus({ preventScroll: true }); });
     S.onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } };
@@ -325,7 +325,7 @@ function gRender(S, q) {
   const filmOpt = o => [h('div', Object.assign({ class: 'gm-poster' }, bg(o.film.poster))), h('span', { class: 'gm-ft' }, o.film.title + (o.film.year ? ' (' + o.film.year + ')' : ''))];
   if (q.mode === 'intro') {
     const s = st.a[a.k]; if (!s) { if (st.newDay !== gDay()) { st.newDay = gDay(); st.newN = 0; } st.newN++; st.a[a.k] = [0, gDay(), 0, 0, 0, gDay()]; gSave(); }
-    card.append(h('div', { class: 'gm-tag new' }, '✨ ' + t('gNewFace')), gFace(a, 'xl'), h('div', { class: 'gm-nrow' }, h('h2', { class: 'gm-name' }, a.name), gHeart(a)), h('p', { class: 'gm-q' }, t('gRemember')), gKnownFrom(P, a, 4), h('button', { class: 'btn white gm-next', onclick: next }, t('gGotIt'), h('kbd', {}, '⏎')));
+    card.append(h('div', { class: 'gm-tag new' }, t('gNewFace')), gFace(a, 'xl'), h('div', { class: 'gm-nrow' }, h('h2', { class: 'gm-name' }, a.name), gHeart(a)), h('p', { class: 'gm-q' }, t('gRemember')), gKnownFrom(P, a, 4), h('button', { class: 'btn white gm-next', onclick: next }, t('gGotIt'), h('kbd', {}, '⏎')));
     S.onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } }; requestAnimationFrame(() => { const b = $('.gm-next', card); if (b) b.focus({ preventScroll: true }); });
   } else if (q.mode === 'face2name') {
     card.append(h('p', { class: 'gm-q' }, t('gWho')), gFace(a, 'xl'), choose(q.opts, o => h('span', {}, o.a.name)));
@@ -344,7 +344,7 @@ function gRender(S, q) {
     const hint = () => { hinted = true; hintEl.textContent = a.name.split(' ').map(w => w[0] + '·'.repeat(Math.max(0, w.length - 1))).join(' '); };
     const giveUp = () => { if (answered) return; answered = true; inp.disabled = true; done(false); };
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); check(); } });
-    card.append(h('p', { class: 'gm-q' }, t('gWho')), gFace(a, 'xl'), hintEl, h('div', { class: 'gm-typerow' }, inp, h('button', { class: 'btn white', onclick: check }, t('gCheck'))), h('div', { class: 'gm-typeb' }, h('button', { class: 'nf-chip', onclick: hint }, '💡 ' + t('gHint')), h('button', { class: 'nf-chip', onclick: giveUp }, t('gDontKnow'))));
+    card.append(h('p', { class: 'gm-q' }, t('gWho')), gFace(a, 'xl'), hintEl, h('div', { class: 'gm-typerow' }, inp, h('button', { class: 'btn white', onclick: check }, t('gCheck'))), h('div', { class: 'gm-typeb' }, h('button', { class: 'nf-chip', onclick: hint }, t('gHint')), h('button', { class: 'nf-chip', onclick: giveUp }, t('gDontKnow'))));
     setTimeout(() => inp.focus(), 60);
   } else if (q.mode === 'card') {
     const back = h('div', { class: 'gm-back' }, h('h2', { class: 'gm-name' }, a.name), gKnownFrom(P, a, 3));
@@ -388,16 +388,16 @@ function gSummary(S) {
   S.bar.firstChild.style.width = '100%';
   S.stage.replaceChildren(h('div', { class: 'gm-card gm-sum' + (up ? ' up' : '') },
     up ? h('div', { class: 'gm-confetti' }, Array.from({ length: 36 }, (_, i) => h('i', { style: '--x:' + (Math.random() * 100) + '%;--d:' + (Math.random() * .8) + 's;--c:' + ['#e50914', '#f5c518', '#1ed760', '#4aa3ff', '#ff7ac6'][i % 5] }))) : null,
-    h('div', { class: 'gm-sumi' }, up ? '🎉' : S.kind === 'memory' ? '🧠' : S.kind === 'blitz' ? '⚡' : '🎬'),
+    h('div', { class: 'gm-sumi' }, up ? '' : S.kind === 'memory' ? '' : S.kind === 'blitz' ? '' : ''),
     h('h2', {}, up ? t('gLevelUp') + ' ' + lv : t('gDone')), up ? h('p', { class: 'gm-q' }, gTitleOf(lv)) : null,
     S.film ? h('p', { class: 'gm-q' }, S.film.title) : null,
     h('div', { class: 'gm-sumg' },
       h('div', {}, h('b', {}, '+' + S.xp), h('span', {}, t('gEarned'))),
       S.kind === 'memory' ? h('div', {}, h('b', {}, (S.secs || 0) + ' s'), h('span', {}, (S.moves || 0) + ' ' + t('gMoves'))) : h('div', {}, h('b', {}, S.ok + '/' + S.n), h('span', {}, t('gCorrect'))),
-      h('div', {}, h('b', {}, '🔥 ' + S.best), h('span', {}, t('gBestCombo')))),
+      h('div', {}, h('b', {}, S.best), h('span', {}, t('gBestCombo')))),
     h('div', { class: 'gm-lvbar' }, h('span', {}, t('gLevel') + ' ' + lv), h('div', { class: 'gm-xpb' }, h('i', { style: 'width:' + Math.round((st.xp - lo) / (hi - lo) * 100) + '%' })), h('small', {}, (hi - st.xp) + ' XP ' + t('gToNext') + ' ' + (lv + 1))),
-    goalDone ? h('p', { class: 'gm-goal-ok' }, '✓ ' + t('gDailyDone') + ' · 🔥 ' + gStreakNow(st) + ' ' + (gStreakNow(st) === 1 ? t('gStreak1') : t('gStreak'))) : null,
-    uniq.length ? h('div', { class: 'gm-newb' }, h('small', {}, t('gNewBadges')), h('div', {}, uniq.map(b => h('div', { class: 'gm-badge got pop' }, h('span', { class: 'e' }, b[1]), h('b', {}, gBadgeTxt(b)[0]), h('small', {}, gBadgeTxt(b)[1]))))) : null,
+    goalDone ? h('p', { class: 'gm-goal-ok' }, t('gDailyDone') + ' · ' + gStreakNow(st) + ' ' + (gStreakNow(st) === 1 ? t('gStreak1') : t('gStreak'))) : null,
+    uniq.length ? h('div', { class: 'gm-newb' }, h('small', {}, t('gNewBadges')), h('div', {}, uniq.map(b => h('div', { class: 'gm-badge got pop' }, h('span', { class: 'e' }, '★'), h('b', {}, gBadgeTxt(b)[0]), h('small', {}, gBadgeTxt(b)[1]))))) : null,
     h('div', { class: 'gm-sumb' }, h('button', { class: 'btn grey', onclick: S.close }, t('gBack')), h('button', { class: 'btn white', onclick: () => { S.close(); setTimeout(() => gPlay(S.kind, S.film ? { film: S.film.id } : {}), 240); } }, ic('refresh'), t('gAgain')))));
   S.onKey = e => { if (e.key === 'Enter') { e.preventDefault(); S.close(); } };
 }
@@ -438,7 +438,7 @@ function gDash(wrap, st, P) {
   wrap.append(h('div', { class: 'gm-head' },
     h('div', { class: 'gm-lv' }, h('div', { class: 'gm-lvn' }, h('small', {}, t('gLevel')), h('b', {}, String(lv))), h('div', { class: 'gm-lvi' }, h('h1', {}, t('gTitle')), h('p', {}, gTitleOf(lv) + ' · ' + st.xp.toLocaleString() + ' XP'), h('div', { class: 'gm-xpb' }, h('i', { style: 'width:' + Math.round((st.xp - lo) / (hi - lo) * 100) + '%' })), h('small', {}, (hi - st.xp) + ' XP ' + t('gToNext') + ' ' + (lv + 1)))),
     h('div', { class: 'gm-pills' },
-      h('div', { class: 'gm-pill' + (streak ? ' hot' : '') }, h('span', { class: 'e' }, '🔥'), h('div', {}, h('b', {}, String(streak)), h('small', {}, streak === 1 ? t('gStreak1') : t('gStreak')))),
+      h('div', { class: 'gm-pill' + (streak ? ' hot' : '') }, h('div', {}, h('b', {}, String(streak)), h('small', {}, streak === 1 ? t('gStreak1') : t('gStreak')))),
       h('div', { class: 'gm-pill' }, h('div', { class: 'gm-ringw' }, gRing(todayXp, gGoal()), h('span', {}, Math.min(100, Math.round(todayXp / gGoal() * 100)) + '%')), h('div', {}, h('b', {}, todayXp + ' / ' + gGoal()), h('small', {}, t('gGoal')))))));
   wrap.append(h('p', { class: 'gm-lbnote', hidden: true }));
   if (P.list.length < 8) { wrap.append(h('div', { class: 'nf-empty' }, t('gTooFew'))); if (optOn('letterboxd') && lbUser() && !hasSeerr()) wrap.append(h('p', { class: 'gm-loading' }, t('gNoSeerr'))); return; }
@@ -464,10 +464,10 @@ function gDash(wrap, st, P) {
   }
   gFavSection(wrap, st, P);
   /* games */
-  const mode = (k, e, title, sub, extra) => !gModeOn(k) ? null : h('button', { class: 'gm-mode m-' + k, onclick: () => gPlay(k) }, h('span', { class: 'e' }, e), h('b', {}, title), h('small', {}, sub), extra ? h('span', { class: 'gm-rec' }, extra) : null);
+  const mode = (k, e, title, sub, extra) => !gModeOn(k) ? null : h('button', { class: 'gm-mode m-' + k, onclick: () => gPlay(k) }, (e ? h('span', { class: 'e' }, e) : null), h('b', {}, title), h('small', {}, sub), extra ? h('span', { class: 'gm-rec' }, extra) : null);
   wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gModes')), h('div', { class: 'gm-modes' },
-    mode('blitz', '⚡', t('gBlitz'), t('gBlitzSub'), st.bestBlitz ? '🏆 ' + st.bestBlitz : ''), mode('memory', '🧠', t('gMemory'), t('gMemorySub'), st.bestMemory ? '🏆 ' + st.bestMemory + ' s' : ''),
-    mode('type', '⌨️', t('gTypeM'), t('gTypeSub'), st.typed ? '✓ ' + st.typed : ''), mode('cast', '🎭', t('gCastM'), t('gCastSub')), mode('cards', '🃏', t('gCards'), t('gCardsSub')))));
+    mode('blitz', '', t('gBlitz'), t('gBlitzSub'), st.bestBlitz ? st.bestBlitz : ''), mode('memory', '', t('gMemory'), t('gMemorySub'), st.bestMemory ? st.bestMemory + ' s' : ''),
+    mode('type', '', t('gTypeM'), t('gTypeSub'), st.typed ? st.typed : ''), mode('cast', '', t('gCastM'), t('gCastSub')), mode('cards', '', t('gCards'), t('gCardsSub')))));
   /* stats + activity */
   const acc = st.n ? Math.round(st.ok / st.n * 100) : 0;
   const tile = (v, l) => h('div', { class: 'gm-tile2' }, h('b', {}, String(v)), h('small', {}, l));
@@ -484,7 +484,7 @@ function gDash(wrap, st, P) {
   if (two.children.length) wrap.append(two);
   /* badges */
   const got = G_BADGES.filter(b => st.badges[b[0]]).length;
-  wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gBadges') + ' · ' + got + '/' + G_BADGES.length), h('div', { class: 'gm-badges' }, G_BADGES.map(b => { const on = !!st.badges[b[0]]; const [tt, ds] = gBadgeTxt(b); return h('div', { class: 'gm-badge' + (on ? ' got' : ''), title: ds }, h('span', { class: 'e' }, b[1]), h('b', {}, tt), h('small', {}, ds)); }))));
+  wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gBadges') + ' · ' + got + '/' + G_BADGES.length), h('div', { class: 'gm-badges' }, G_BADGES.map(b => { const on = !!st.badges[b[0]]; const [tt, ds] = gBadgeTxt(b); return h('div', { class: 'gm-badge' + (on ? ' got' : ''), title: ds }, h('span', { class: 'e' }, '★'), h('b', {}, tt), h('small', {}, ds)); }))));
   /* collection */
   const coll = h('section', { class: 'gm-sec' }); wrap.append(coll);
   let filter = 'all', q = '', shown = 60;
@@ -503,5 +503,5 @@ function gDash(wrap, st, P) {
 function gCastBtn(it, body) {
   if (!cfg('quiz') || it.Type !== 'Movie' || !ud(it).Played) return;
   const hd = $$('.nf-sect h2', body).find(x => x.textContent === t('cast')); if (!hd) return;
-  hd.classList.add('gm-casth'); hd.append(h('a', { class: 'nf-chip gm-castbtn', href: '#/c/quiz?film=j' + it.Id }, '🎭 ' + t('gCastBtn')));
+  hd.classList.add('gm-casth'); hd.append(h('a', { class: 'nf-chip gm-castbtn', href: '#/c/quiz?film=j' + it.Id }, t('gCastBtn')));
 }

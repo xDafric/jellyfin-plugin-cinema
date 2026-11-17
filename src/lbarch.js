@@ -83,7 +83,7 @@ async function lbSync(force) {
       if (ud(it).Played || done.has(it.Id)) continue;
       try { await ApiClient.markPlayed(uid(), it.Id, e.date ? new Date(e.date + 'T20:00:00') : new Date()); marked.push(it.Id); } catch (er) { }
     }
-    if (marked.length) { await saveCfg({ lbDone: (CFGU.lbDone || []).concat(marked).slice(-3000) }); C.libCache = null; resetSeerrCache(); toast('✓ ' + marked.length + ' ' + t('lbSynced')); }
+    if (marked.length) { await saveCfg({ lbDone: (CFGU.lbDone || []).concat(marked).slice(-3000) }); C.libCache = null; resetSeerrCache(); toast(marked.length + ' ' + t('lbSynced')); }
     LB.last = { n: marked.length, matched, of: movies.length, at: Date.now() };
   } catch (e) { console.warn('[cinema] letterboxd sync', e); } finally { lbSyncState.busy = false; }
 }
@@ -165,8 +165,8 @@ async function archiveDialog(it) {
     go_.disabled = true; st.textContent = t('archBusy');
     try {
       await archiveCore(full, useRadarr.checked);
-      ARCH.at = 0; await archLoad(true); C.libCache = null; resetSeerrCache(); d.close(); toast('✓ ' + t('archDone')); go('#/c/archive');
-    } catch (e) { st.textContent = '⚠ ' + t('archFail') + ': ' + (e.message || e); go_.disabled = false; }
+      ARCH.at = 0; await archLoad(true); C.libCache = null; resetSeerrCache(); d.close(); toast(t('archDone')); go('#/c/archive');
+    } catch (e) { st.textContent = t('archFail') + ': ' + (e.message || e); go_.disabled = false; }
   } }, ic('download'), t('archGo'));
   d.setTitle(full.Name);
   d.body.replaceChildren(...[h('p', { class: 'cxd-hint', style: 'margin-top:0' }, t('archDlgIntro')),
@@ -185,15 +185,15 @@ async function archModal(e) {
   const back = archImg(e, 'backdrop'); const poster = archImg(e, 'primary');
   const facts = [[t('archGenres'), (e.genres || []).join(', ')], [t('archRuntime'), e.runtime ? e.runtime + ' ' + t('min') : ''], [t('archRating'), e.rating ? Number(e.rating).toFixed(1) + (e.officialRating ? ' · ' + e.officialRating : '') : e.officialRating || ''], [t('archFreed'), e.size ? fmtGB(e.size) : ''], [t('archSince'), e.archived || '']].filter(f => f[1]);
   const st = h('p', { class: 'cxd-hint', style: 'min-height:18px' });
-  const btn = (cls, ico, label, fn) => h('button', { class: 'btn ' + cls, onclick: async ev => { const b = ev.currentTarget; b.disabled = true; try { await fn(); } catch (er) { st.textContent = '⚠ ' + (er.message || er); } b.disabled = false; } }, ico ? ic(ico) : null, label);
+  const btn = (cls, ico, label, fn) => h('button', { class: 'btn ' + cls, onclick: async ev => { const b = ev.currentTarget; b.disabled = true; try { await fn(); } catch (er) { st.textContent = (er.message || er); } b.disabled = false; } }, ico ? ic(ico) : null, label);
   d.setTitle(e.title + (e.year ? ' (' + e.year + ')' : ''));
   d.body.replaceChildren(...[back ? h('div', Object.assign({ class: 'arch-hero' }, bg(back))) : null,
     h('div', { class: 'arch-top' }, poster ? h('div', Object.assign({ class: 'arch-poster' }, bg(poster))) : null, h('div', {}, e.tagline ? h('p', { class: 'nf-tagline' }, e.tagline) : null, h('p', { class: 'arch-ov' }, e.overview || ''))),
     h('dl', { class: 'nf-facts' }, facts.map(f => [h('dt', {}, f[0]), h('dd', {}, f[1])])), st].filter(Boolean));
   d.foot.replaceChildren(...[
-    admin ? btn('grey', 'close', t('archRemove'), async () => { await api_del(e.key); d.close(); toast('✓ ' + t('archRemoved')); route(); }) : null,
+    admin ? btn('grey', 'close', t('archRemove'), async () => { await api_del(e.key); d.close(); toast(t('archRemoved')); route(); }) : null,
     e.tmdb ? btn('grey', 'search', t('archRequest'), async () => { d.close(); openSeerrInfo({ id: +e.tmdb, mediaType: 'movie' }); }) : null,
-    admin && e.tmdb ? btn('white', 'refresh', t('archRestore'), async () => { const r = await cpost('/arr/radarr/restore', { tmdbId: +e.tmdb }); if (r && r.found && r.ok) { toast('✓ ' + t('archRestoreDone')); d.close(); } else st.textContent = t('archNoRadarr'); }) : null].filter(Boolean));
+    admin && e.tmdb ? btn('white', 'refresh', t('archRestore'), async () => { const r = await cpost('/arr/radarr/restore', { tmdbId: +e.tmdb }); if (r && r.found && r.ok) { toast(t('archRestoreDone')); d.close(); } else st.textContent = t('archNoRadarr'); }) : null].filter(Boolean));
 }
 const api_del = key => ApiClient.ajax({ type: 'DELETE', url: ApiClient.getUrl('Cinema/archive/' + key) });
 async function archiveView(page) {
@@ -210,17 +210,17 @@ function lbarchCards(card_, row) {
   if (optOn('letterboxd')) {
     const inp = h('input', { type: 'text', value: lbUser(), placeholder: 'username', maxlength: 40, style: 'width:200px' });
     const stat = h('span', { class: 'lb-stat' });
-    const upd = () => { stat.textContent = LB.n ? LB.n + ' ' + t('lbStatusN') + (LB.rated ? ' · ' + LB.rated + ' ' + t('lbRated') : '') + (LB.last ? ' · ' + LB.last.matched + '/' + LB.last.of + ' ' + t('lbMatched') : '') + (LB.at ? ' · ' + new Date(LB.at).toLocaleTimeString() : '') + (LB.err ? ' · ⚠ ' + t('lbErr') : '') : (lbUser() ? (LB.err ? '⚠ ' + t('lbErr') : t('lbNever')) : '—'); };
+    const upd = () => { stat.textContent = LB.n ? LB.n + ' ' + t('lbStatusN') + (LB.rated ? ' · ' + LB.rated + ' ' + t('lbRated') : '') + (LB.last ? ' · ' + LB.last.matched + '/' + LB.last.of + ' ' + t('lbMatched') : '') + (LB.at ? ' · ' + new Date(LB.at).toLocaleTimeString() : '') + (LB.err ? ' · ' + t('lbErr') : '') : (lbUser() ? (LB.err ? t('lbErr') : t('lbNever')) : '—'); };
     const save = h('button', { class: 'btn white', style: 'height:38px', onclick: async () => { const v = inp.value.trim().replace(/^@/, '').replace(/^https?:\/\/letterboxd\.com\//, '').replace(/\/.*$/, ''); await saveCfg({ lbUser: v || null }); stat.textContent = '…'; await lbSync(true); upd(); } }, t('lbSave'));
     const syncB = h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { stat.textContent = '…'; await lbSync(true); upd(); } }, t('lbSyncNow'));
-    const file = h('input', { type: 'file', accept: '.zip,.csv,application/zip,text/csv', style: 'display:none', onchange: async e => { const f = e.target.files[0]; if (!f) return; stat.textContent = '…'; try { await lbImportCsv(f, n => { toast('✓ ' + n + ' ' + t('lbImported')); }); } catch (er) { toast('⚠ ' + (er.message || er)); } upd(); } });
+    const file = h('input', { type: 'file', accept: '.zip,.csv,application/zip,text/csv', style: 'display:none', onchange: async e => { const f = e.target.files[0]; if (!f) return; stat.textContent = '…'; try { await lbImportCsv(f, n => { toast(n + ' ' + t('lbImported')); }); } catch (er) { toast((er.message || er)); } upd(); } });
     const imp = h('button', { class: 'btn grey', style: 'height:38px', onclick: () => file.click() }, t('lbImport'));
     upd(); lbLoad().then(upd);
     out.push(card_(t('lbTitle'), h('p', { class: 'set-p' }, t('lbIntro')), row(t('lbUser'), t('lbUserHint'), h('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, inp, save)), row(t('lbStatus'), '', h('div', { style: 'display:flex;gap:12px;align-items:center;flex-wrap:wrap' }, stat, syncB)), row(t('lbImport'), t('lbImportHint'), h('div', {}, imp, file))));
   }
   if (optOn('archive')) {
     const cnt = h('b', {}, String(ARCH.list.length)); archLoad().then(l => { cnt.textContent = String(l.length); });
-    out.push(card_(t('archive'), h('p', { class: 'set-p' }, t('archiveIntro')), row(t('archSettingsHint'), '', h('div', { style: 'display:flex;gap:12px;align-items:center' }, h('span', {}, cnt, ' ' + t('archCount')), h('a', { class: 'btn grey', style: 'height:38px;display:inline-flex;align-items:center', href: '#/c/archive' }, t('archOpen'))))));
+    out.push(card_(t('archive'), h('p', { class: 'set-p' }, t('archiveIntro')), row(t('archSettingsHint'), '', h('div', { style: 'display:flex;gap:12px;align-items:center' }, h('span', {}, cnt, t('archCount')), h('a', { class: 'btn grey', style: 'height:38px;display:inline-flex;align-items:center', href: '#/c/archive' }, t('archOpen'))))));
   }
   return out;
 }

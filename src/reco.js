@@ -91,7 +91,7 @@ function tasteBar(onPick) {
 /* ----- What shall we watch tonight? ----- */
 const TN = { lib: null, at: 0, time: 'any', mood: 'any', unseen: true, picks: [] };
 const TN_MOODS = { any: null, thrill: /thriller|crime|mystery|krimi|spannung|mystère/i, funny: /comedy|kom[oö]die/i, emo: /drama|romance|liebe|romant/i, light: /comedy|kom[oö]die|animation|zeichentrick|family|familie|romance|liebe/i, think: /documentary|dokument|history|geschichte|science fiction|sci-fi|drama/i, action: /action|adventure|abenteuer|war|krieg/i, scary: /horror|grusel/i, family: /family|familie|animation|zeichentrick/i };
-const TN_MOOD_ICON = { any: '🎲', thrill: '🕵️', funny: '😂', emo: '🥲', light: '☕', think: '🧠', action: '💥', scary: '👻', family: '👨‍👩‍👧' };
+const TN_MOOD_ICON = { any: '', thrill: '', funny: '', emo: '', light: '', think: '', action: '', scary: '', family: '' };
 async function tnLoad() {
   if (TN.lib && Date.now() - TN.at < 300000) return TN.lib; TN.at = Date.now();
   const [r, wl] = await Promise.all([items({ IncludeItemTypes: 'Movie', Fields: F_BASE + ',ProviderIds', Limit: 6000, EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1 }), items({ IncludeItemTypes: 'Movie', Filters: 'Likes', Limit: 2000, Fields: '' }).catch(() => ({ Items: [] }))]);
@@ -109,23 +109,23 @@ function tnPick(lib, D, n, exclude) {
 async function tonightView(page) {
   const wrap = h('div', { class: 'nf-page-pad tn-page' }, h('h1', {}, t('tnTitle')), h('p', { class: 'gm-secp' }, t('tnSub'))); page.append(wrap);
   const mq = parse().q.get('mood'); if (mq && TN_MOODS[mq] !== undefined) TN.mood = mq;
-  wrap.append(h('div', { class: 'spinner', style: 'margin:60px auto' })); let lib, D; try { [lib, D] = await Promise.all([tnLoad(), recoInit()]); } catch (e) { wrap.replaceChildren(h('div', { class: 'nf-empty' }, '⚠ ' + (e.message || e))); return; } wrap.querySelector('.spinner').remove();
+  wrap.append(h('div', { class: 'spinner', style: 'margin:60px auto' })); let lib, D; try { [lib, D] = await Promise.all([tnLoad(), recoInit()]); } catch (e) { wrap.replaceChildren(h('div', { class: 'nf-empty' }, (e.message || e))); return; } wrap.querySelector('.spinner').remove();
   const resume = await api('Users/' + uid() + '/Items/Resume', { Limit: 2, MediaTypes: 'Video', Fields: F_BASE, EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1 }).then(r => r.Items || []).catch(() => []);
   const res = h('div', { class: 'tn-res' });
   const chip = (cur, v, label, set) => h('button', { class: 'nf-chip' + (cur === v ? ' on' : ''), onclick: e => { set(v); $$('.nf-chip', e.currentTarget.parentElement).forEach(c => c.classList.toggle('on', c === e.currentTarget)); roll(); } }, label);
   const timeRow = h('div', { class: 'nf-seasons', style: 'margin:0' }, [['any', t('tnAny')], ['short', t('tnShort')], ['mid', t('tnMid')], ['long', t('tnLong')]].map(([v, l]) => chip(TN.time, v, l, x => { TN.time = x; })));
   const moods = [['any', t('tnAny')], ['thrill', t('tnThrill')], ['funny', t('tnFunny')], ['emo', t('tnEmo')], ['light', t('tnLight')], ['think', t('tnThink')], ['action', t('tnAction')], ['scary', t('tnScary')], ['family', t('tnFamily')]];
-  const moodRow = h('div', { class: 'tn-moods' }, moods.map(([v, l]) => h('button', { class: 'tn-mood' + (TN.mood === v ? ' on' : ''), onclick: e => { TN.mood = v; $$('.tn-mood', moodRow).forEach(c => c.classList.toggle('on', c === e.currentTarget)); roll(); } }, h('span', {}, TN_MOOD_ICON[v]), l)));
+  const moodRow = h('div', { class: 'tn-moods' }, moods.map(([v, l]) => h('button', { class: 'tn-mood' + (TN.mood === v ? ' on' : ''), onclick: e => { TN.mood = v; $$('.tn-mood', moodRow).forEach(c => c.classList.toggle('on', c === e.currentTarget)); roll(); } }, l)));
   const unseenCb = h('label', { class: 'dc-tg' }, h('input', { type: 'checkbox', checked: TN.unseen, onchange: e => { TN.unseen = e.target.checked; roll(); } }), h('i'), h('span', {}, t('tnOnlyNew')));
   wrap.append(h('div', { class: 'tn-filters' }, h('div', {}, h('small', {}, t('tnTime')), timeRow), h('div', {}, h('small', {}, t('tnMood')), moodRow), unseenCb));
   if (resume.length) wrap.append(h('div', { class: 'tn-resume' }, h('small', {}, t('tnResume')), h('div', {}, resume.map(it => h('button', { class: 'tn-rs', onclick: () => playVideo(it) }, h('div', Object.assign({ class: 'tn-rsp' }, bg(imgUrl(it, 'Primary', 120)))), h('div', {}, h('b', { class: 'ell' }, it.Type === 'Episode' ? (it.SeriesName || it.Name) : it.Name), h('span', {}, Math.round(100 - pct(it)) + '% ' + t('tnLeft'))), ic('play'))))));
-  const act = h('div', { class: 'tn-act' }, h('button', { class: 'btn white', onclick: () => roll() }, ic('refresh'), t('tnAgain')), h('button', { class: 'btn grey', onclick: () => surprise() }, '🎲 ' + t('tnSurprise')));
+  const act = h('div', { class: 'tn-act' }, h('button', { class: 'btn white', onclick: () => roll() }, ic('refresh'), t('tnAgain')), h('button', { class: 'btn grey', onclick: () => surprise() }, t('tnSurprise')));
   wrap.append(res, act);
   const card = (p, slot) => {
     const m = p.m; const end = new Date(Date.now() + m._mins * 60000).toLocaleTimeString(L === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
     const el = h('div', { class: 'tn-card' }, h('div', Object.assign({ class: 'tn-bd' }, bg(imgUrl(m, 'Backdrop', 780) || imgUrl(m, 'Primary', 500)))), h('div', Object.assign({ class: 'tn-poster', onclick: () => go(itemHash(m)) }, bg(imgUrl(m, 'Primary', 400)))),
       h('div', { class: 'tn-body' }, h('h2', { onclick: () => go(itemHash(m)) }, m.Name), h('div', { class: 'nf-meta' }, [m.ProductionYear, m.OfficialRating ? h('span', { class: 'badge' }, m.OfficialRating) : null, Math.round(m._mins) + ' ' + t('min'), m.CommunityRating ? '★ ' + m.CommunityRating.toFixed(1) : '', (m.Genres || []).slice(0, 2).join(', ')].filter(Boolean).map(x => x.nodeType ? x : h('span', {}, x))),
-        h('p', { class: 'tn-ov' }, (m.Overview || '').replace(/<[^>]+>/g, '')), h('div', { class: 'tn-why' }, p.why.slice(0, 3).map(k => h('i', {}, t(k)))), h('div', { class: 'tn-end' }, '🕘 ' + t('tnEnds').replace('{t}', end)),
+        h('p', { class: 'tn-ov' }, (m.Overview || '').replace(/<[^>]+>/g, '')), h('div', { class: 'tn-why' }, p.why.slice(0, 3).map(k => h('i', {}, t(k)))), h('div', { class: 'tn-end' }, t('tnEnds').replace('{t}', end)),
         h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: () => playVideo(m) }, ic('play'), t('tnPlay')), h('button', { class: 'btn grey', onclick: () => go(itemHash(m)) }, ic('info'), t('info')), h('button', { class: 'btn grey', onclick: () => { const ex = new Set(TN.picks.map(x => x.m.Id)); const n = tnPick(lib, D, 1, ex)[0]; if (n) { TN.picks[slot] = n; el.replaceWith(card(n, slot)); } else toast(t('tnNone')); } }, t('tnSkip')))));
     return el;
   };
@@ -135,5 +135,5 @@ async function tonightView(page) {
 }
 function tonightBanner(container) {
   const moods = [['thrill', t('tnThrill')], ['funny', t('tnFunny')], ['light', t('tnLight')], ['action', t('tnAction')]];
-  container.append(h('section', { class: 'tn-banner' }, h('div', { class: 'tn-bt' }, h('span', { class: 'tn-be' }, '🍿'), h('div', {}, h('h2', {}, t('tnTitle')), h('p', {}, t('tnBannerSub')))), h('div', { class: 'tn-bm' }, moods.map(([k, l]) => h('a', { class: 'nf-chip', href: '#/c/tonight?mood=' + k }, TN_MOOD_ICON[k] + ' ' + l)), h('a', { class: 'btn white sm', href: '#/c/tonight' }, ic('play'), t('tnGo')))));
+  container.append(h('section', { class: 'tn-banner' }, h('div', { class: 'tn-bt' }, h('div', {}, h('h2', {}, t('tnTitle')), h('p', {}, t('tnBannerSub')))), h('div', { class: 'tn-bm' }, moods.map(([k, l]) => h('a', { class: 'nf-chip', href: '#/c/tonight?mood=' + k }, l)), h('a', { class: 'btn white sm', href: '#/c/tonight' }, ic('play'), t('tnGo')))));
 }

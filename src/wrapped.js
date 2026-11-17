@@ -143,8 +143,8 @@ function wrSlides(D) {
   if (D.take) add(['#a8321f', '#1a0805'], 8000, () => { const r = D.take.r, up = D.take.diff > 0; return [h('div', { class: 'wr-kick' }, t('wrTake')), wrPosterEl(r, 'lg'), h('h2', { class: 'wr-h sm' }, wrT(r)), h('p', { class: 'wr-sub' }, up ? t('wrTakeUp') : t('wrTakeDown')),
     h('div', { class: 'wr-vs' }, h('div', {}, h('small', {}, t('wrYou')), h('b', {}, wrStars(r.lb.rating))), h('span', {}, 'vs'), h('div', {}, h('small', {}, t('wrCrowd')), h('b', {}, wrStars(r.it.CommunityRating / 2))))]; });
   if (D.streak.n >= 2 || D.binge) add(['#0a4f7a', '#050f17'], 7500, () => { const out = [];
-    if (D.streak.n < 2 && D.binge) out.push(h('div', { class: 'wr-kick' }, t('wrBinge')), h('div', { class: 'wr-huge' }, '🍿 ' + D.binge.n), h('p', { class: 'wr-sub' }, D.binge.date.toLocaleDateString(wrLoc(), { weekday: 'long', day: 'numeric', month: 'long' })));
-    if (D.streak.n >= 2) out.push(h('div', { class: 'wr-kick' }, t('wrStreak')), h('div', { class: 'wr-huge' }, '🔥 ' + D.streak.n), h('p', { class: 'wr-sub' }, wrFmt(t('wrStreakN'), { n: D.streak.n }) + ' · ' + new Date(D.streak.from * 864e5 + 43200000).toLocaleDateString(wrLoc(), { day: 'numeric', month: 'short', timeZone: 'UTC' })));
+    if (D.streak.n < 2 && D.binge) out.push(h('div', { class: 'wr-kick' }, t('wrBinge')), h('div', { class: 'wr-huge' }, D.binge.n), h('p', { class: 'wr-sub' }, D.binge.date.toLocaleDateString(wrLoc(), { weekday: 'long', day: 'numeric', month: 'long' })));
+    if (D.streak.n >= 2) out.push(h('div', { class: 'wr-kick' }, t('wrStreak')), h('div', { class: 'wr-huge' }, D.streak.n), h('p', { class: 'wr-sub' }, wrFmt(t('wrStreakN'), { n: D.streak.n }) + ' · ' + new Date(D.streak.from * 864e5 + 43200000).toLocaleDateString(wrLoc(), { day: 'numeric', month: 'short', timeZone: 'UTC' })));
     if (D.binge && D.streak.n >= 2) out.push(h('p', { class: 'wr-sub pill' }, t('wrBinge') + ': ' + wrFmt(t('wrBingeN'), { n: D.binge.n, d: D.binge.date.toLocaleDateString(wrLoc(), { day: 'numeric', month: 'long' }) })));
     const wd = D.weekdays, wm = Math.max(...wd), wi = wd.indexOf(wm); if (D.n >= 8) out.push(h('p', { class: 'wr-sub dim' }, t('wrWeekday') + ': ' + new Date(2024, 0, 7 + wi).toLocaleDateString(wrLoc(), { weekday: 'long' })));
     return out; });
@@ -163,11 +163,11 @@ function wrSummary(D) {
     h('div', { class: 'wr-acts' }, h('button', { class: 'btn white', onclick: e => { e.stopPropagation(); wrShare(D, e.currentTarget); } }, ic('download'), t('wrSave')), h('button', { class: 'btn grey', onclick: e => { e.stopPropagation(); wrCopy(D); } }, t('wrCopy')), h('button', { class: 'btn grey', onclick: e => { e.stopPropagation(); wrStory(D); } }, ic('refresh'), t('wrReplay'))) ];
 }
 function wrText(D) {
-  const l = ['🎬 Cinema Wrapped ' + D.year, '', wrPersonaName(D), D.n + ' ' + t('wrFilmsDone') + ' · ' + Math.round(D.minutes / 60) + ' h'];
+  const l = [' Cinema Wrapped ' + D.year, '', wrPersonaName(D), D.n + ' ' + t('wrFilmsDone') + ' · ' + Math.round(D.minutes / 60) + ' h'];
   if (D.genres[0]) l.push(t('wrGenres') + ': ' + D.genres.slice(0, 3).map(g => g[0]).join(', ')); if (D.actors[0]) l.push(t('wrActor') + ': ' + D.actors[0].name);
   if (D.best.length) l.push(t('wrBest') + ': ' + D.best.slice(0, 3).map(r => wrT(r)).join(', ')); return l.join('\n');
 }
-function wrCopy(D) { try { navigator.clipboard.writeText(wrText(D)); toast('✓ ' + t('wrCopied')); } catch (e) { toast('⚠'); } }
+function wrCopy(D) { try { navigator.clipboard.writeText(wrText(D)); toast(t('wrCopied')); } catch (e) { toast(t('error')); } }
 async function wrShare(D, btn) {
   try {
     const W = 1080, Hh = 1920, c = document.createElement('canvas'); c.width = W; c.height = Hh; const g = c.getContext('2d');
@@ -187,8 +187,8 @@ async function wrShare(D, btn) {
     const blob = await new Promise(res => c.toBlob(res, 'image/png')); if (!blob) throw new Error('png');
     const file = new File([blob], 'cinema-wrapped-' + D.year + '.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] }) && isMobile()) { await navigator.share({ files: [file], text: wrText(D) }); return; }
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 800); toast('✓ ' + t('wrSaved'));
-  } catch (e) { if (!(e && e.name === 'AbortError')) toast('⚠ ' + t('wrShareFail')); }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 800); toast(t('wrSaved'));
+  } catch (e) { if (!(e && e.name === 'AbortError')) toast(t('wrShareFail')); }
 }
 
 /* ----- the story player ----- */
@@ -197,10 +197,10 @@ function wrStory(D) {
   const slides = wrSlides(D); let i = 0; const auto = cfg('wrappedAuto') !== false; let paused = false;
   const segs = slides.map(() => h('i', {}, h('b')));
   const stage = h('div', { class: 'wr-stage' }); const layer = h('div', { class: 'wr-layer' });
-  const pauseB = h('button', { class: 'wr-ib', 'aria-label': 'Pause', onclick: e => { e.stopPropagation(); setPause(!paused); } }, auto ? '⏸' : '');
+  const pauseB = h('button', { class: 'wr-ib', 'aria-label': 'Pause', onclick: e => { e.stopPropagation(); setPause(!paused); } }, auto ? '' : '');
   const close = () => { document.removeEventListener('keydown', keys, true); layer.classList.remove('show'); if (WR.close === close) { WR.close = null; document.documentElement.classList.remove('wr-open'); } setTimeout(() => layer.remove(), 250); };
   const closeB = h('button', { class: 'wr-ib', 'aria-label': t('wrClose'), onclick: e => { e.stopPropagation(); close(); } }, ic('close'));
-  const setPause = p => { paused = p; layer.classList.toggle('paused', p); pauseB.textContent = p ? '▶' : '⏸'; };
+  const setPause = p => { paused = p; layer.classList.toggle('paused', p); pauseB.textContent = p ? '▶' : ''; };
   function show(n) {
     i = Math.max(0, Math.min(slides.length - 1, n)); const s = slides[i];
     layer.style.setProperty('--c1', s.hue[0]); layer.style.setProperty('--c2', s.hue[1]);
@@ -222,7 +222,7 @@ async function wrappedView(page) {
   const wrap = h('div', { class: 'nf-page-pad wr-page' }); page.append(wrap);
   wrap.append(h('div', { class: 'spinner', style: 'margin:80px auto' }));
   const Y = await wrYears(); wrap.replaceChildren();
-  wrap.append(h('div', { class: 'wr-hubh' }, h('div', {}, h('h1', {}, 'Cinema Wrapped'), h('p', { class: 'gm-secp' }, t('wrHubSub'))), h('a', { class: 'nf-chip', href: '#/c/settings?tab=features' }, ic('gear', 'ic-s'), ' ' + t('wrSettings'))));
+  wrap.append(h('div', { class: 'wr-hubh' }, h('div', {}, h('h1', {}, 'Cinema Wrapped'), h('p', { class: 'gm-secp' }, t('wrHubSub'))), h('a', { class: 'nf-chip', href: '#/c/settings?tab=features' }, ic('gear', 'ic-s'), t('wrSettings'))));
   if (!Y.years.length) { wrap.append(h('div', { class: 'nf-empty' }, t('wrNeed'))); return; }
   const host = h('div', {}); const chips = h('div', { class: 'nf-seasons' }, Y.years.slice(0, 8).map(y => h('button', { class: 'nf-chip' + (y === Y.def ? ' on' : ''), onclick: e => { $$('.nf-chip', chips).forEach(c => c.classList.toggle('on', c === e.currentTarget)); draw(y); } }, String(y))));
   wrap.append(chips, host);

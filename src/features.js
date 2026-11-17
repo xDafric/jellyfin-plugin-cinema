@@ -10,7 +10,7 @@ async function toggleWatch(it) {
     it.UserData = Object.assign(ud(it), { Likes: on ? true : null });
     toast(on ? t('wlAdded') : t('wlRemoved'));
     if (on && cfg('seerrWatchlistSync') && hasSeerr()) { const tm = (it.ProviderIds || {}).Tmdb; const mt = it.Type === 'Series' ? 'tv' : 'movie'; if (tm) try { if (usePluginSeerr()) await cpostSeerr('/watchlist', { tmdbId: +tm, mediaType: mt, title: it.Name }); else if (JE.jellyseerrAPI.addToWatchlist) await JE.jellyseerrAPI.addToWatchlist(+tm, mt); } catch (e) { console.warn('[cinema] seerr watchlist', e); } }
-  } catch (e) { toast('⚠ ' + (e.message || 'error')); }
+  } catch (e) { toast((e.message || 'error')); }
   return on;
 }
 async function toggleFav(it) { const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData = Object.assign(ud(it), { IsFavorite: on }); return on; }
@@ -104,11 +104,11 @@ async function itemMenu(e, it) {
   const ent = [];
   ent.push({ icon: 'play', label: t('play'), fn: () => playVideo(it) });
   ent.push({ icon: isWatch(it) ? 'check' : 'plus', label: isWatch(it) ? t('wlRemove') : t('wlAdd'), fn: () => toggleWatch(it) });
-  ent.push({ icon: ud(it).IsFavorite ? 'heartOn' : 'heart', label: ud(it).IsFavorite ? t('favRemove') : t('favAdd'), fn: async () => { await toggleFav(it); toast('✓'); } });
+  ent.push({ icon: ud(it).IsFavorite ? 'heartOn' : 'heart', label: ud(it).IsFavorite ? t('favRemove') : t('favAdd'), fn: async () => { await toggleFav(it); toast(''); } });
   if (it.Type !== 'Series' || true) ent.push({ icon: 'check', label: ud(it).Played ? t('markUnwatched') : t('markWatched'), fn: () => togglePlayed(it) });
   ent.push('-');
   ent.push({ icon: 'info', label: t('openDetails'), fn: () => go(itemHash(it) || '#/home') });
-  if ((ud(it).PlaybackPositionTicks || 0) > 0) ent.push({ icon: 'close', label: t('rmResume'), fn: async () => { try { await jf('POST', 'UserItems/' + it.Id + '/UserData', { userId: uid() }, { PlaybackPositionTicks: 0 }); it.UserData = Object.assign(ud(it), { PlaybackPositionTicks: 0 }); toast('✓ ' + t('rmResumeDone')); C.libCache = null; route(); } catch (e) { toast('⚠ ' + (e.message || e)); } } });
+  if ((ud(it).PlaybackPositionTicks || 0) > 0) ent.push({ icon: 'close', label: t('rmResume'), fn: async () => { try { await jf('POST', 'UserItems/' + it.Id + '/UserData', { userId: uid() }, { PlaybackPositionTicks: 0 }); it.UserData = Object.assign(ud(it), { PlaybackPositionTicks: 0 }); toast(t('rmResumeDone')); C.libCache = null; route(); } catch (e) { toast((e.message || e)); } } });
   const isVid = ['Movie', 'Episode', 'Video', 'MusicVideo'].includes(it.Type);
   if (['Movie', 'Episode', 'Video', 'MusicVideo', 'Audio'].includes(it.Type) && (!user.Policy || user.Policy.EnableContentDownloading !== false)) ent.push({ icon: 'download', label: t('download'), fn: () => { const a = h('a', { href: ApiClient.getUrl('Items/' + it.Id + '/Download', { api_key: ApiClient.accessToken() }), download: '' }); document.body.append(a); a.click(); a.remove(); } });
   if (admin && isVid) ent.push({ icon: 'badge-cc', label: t('editSubs'), fn: () => nativeCommand(it.Id, ['editsubtitles']) });
@@ -206,7 +206,7 @@ async function showNativeActions(it, x, y) {
   openMenu(x, y, list.map(e => ({ mi: e.mi, label: e.label, fn: () => nativeCommand(it.Id, [e.id]) })));
 }
 
-async function hideNextUp(seriesId) { const l = (CFGU.nuHide || []).slice(); if (!l.includes(seriesId)) l.push(seriesId); await saveCfg({ nuHide: l }); toast('✓ ' + t('nuDone')); route(); }
+async function hideNextUp(seriesId) { const l = (CFGU.nuHide || []).slice(); if (!l.includes(seriesId)) l.push(seriesId); await saveCfg({ nuHide: l }); toast(t('nuDone')); route(); }
 
 Object.assign(TX.en, { rmResume: 'Remove from Continue watching', rmResumeDone: 'Removed from Continue watching' });
 Object.assign(TX.de, { rmResume: 'Aus "Weiterschauen" entfernen', rmResumeDone: 'Aus "Weiterschauen" entfernt' });

@@ -58,35 +58,35 @@ const FART = {
   peek: () => fa('fa-peek', h('i'), h('i', { class: 'mid' }, h('b'), h('b'), h('b', { class: 'w' })), h('i')),
   inf: () => fa('fa-inf', [0, 1, 2].map(r => h('div', { style: '--o:' + (1 - r * .3) }, h('i'), h('i'), h('i'), h('i'), h('i')))),
   player: () => fa('fa-player', h('span', { class: 'big' }), h('span', { class: 'skip' }, 'Skip ›'), h('div', { class: 'bar' }, h('i'))),
-  quiz: () => fa('fa-quiz', h('span', { class: 'face' }, '🙂'), h('div', {}, h('i'), h('i', { class: 'ok' }), h('i'), h('i'))),
+  quiz: () => fa('fa-quiz', h('span', { class: 'face' }, ''), h('div', {}, h('i'), h('i', { class: 'ok' }), h('i'), h('i'))),
   wrapped: () => fa('fa-wr', h('b', {}, '2026'), h('div', {}, [30, 55, 40, 85, 60, 35].map(v => h('i', { style: 'height:' + v + '%' })))),
   lb: () => fa('fa-lb', h('div', {}, h('i', { class: 'g' }), h('i', { class: 'o' }), h('i', { class: 'b' })), h('span', {}, '★★★★½')),
-  arch: () => fa('fa-arch', h('i'), h('i'), h('i'), h('span', {}, '📦')),
+  arch: () => fa('fa-arch', h('i'), h('i'), h('i'), h('span', {}, '')),
   pages: () => fa('fa-pages', ['Home', 'Movies', 'Quiz', 'Music'].map((x, i) => h('i', { class: i === 2 ? 'on' : '' }, x))),
-  tonight: () => fa('fa-tn', h('i', {}), h('i', { class: 'mid' }), h('i', {}), h('span', {}, '🍿')),
-  home: () => fa('fa-home', h('div', {}, h('i', { class: 'a' }), h('i', { class: 'b' }), h('i', { class: 'c' })), h('em', {}, 'NEW'), h('u', {}, '✓')),
+  tonight: () => fa('fa-tn', h('i', {}), h('i', { class: 'mid' }), h('i', {}), h('span', {}, '')),
+  home: () => fa('fa-home', h('div', {}, h('i', { class: 'a' }), h('i', { class: 'b' }), h('i', { class: 'c' })), h('em', {}, 'NEW'), h('u', {}, '')),
   disc: () => fa('fa-disc', h('div', {}, [0, 1, 2, 3].map(i => h('i', { class: i === 1 ? 'p' : '' }))), h('span', {}, '＋')),
-  watch: () => fa('fa-watch', h('i', {}), h('i', { class: 'mid' }), h('i', {}), h('span', {}, '🔖')),
+  watch: () => fa('fa-watch', h('i', {}), h('i', { class: 'mid' }), h('i', {}), h('span', {}, '')),
   req: () => fa('fa-req', h('div', {}, [1, 1, 0, 0].map((d, i) => h('i', { class: d ? 'on' : i === 2 ? 'cur' : '' }))), h('b', {}, h('i', { style: 'width:62%' }))),
   cal: () => fa('fa-cal', [...Array(14).keys()].map(i => h('i', { class: i === 9 ? 'on' : i === 4 || i === 12 ? 'dot' : '' }))),
-  reco: () => faEmoji('✨', [90, 60, 40]),
-  sim: () => faEmoji('🎞️', [80, 50]),
-  rate: () => fa('fa-rate', h('span', { class: 'rt' }, '🍅 94%'), h('span', { class: 'im' }, 'IMDb 8.1')),
+  reco: () => faEmoji('', [90, 60, 40]),
+  sim: () => faEmoji('', [80, 50]),
+  rate: () => fa('fa-rate', h('span', { class: 'rt' }, '94%'), h('span', { class: 'im' }, 'IMDb 8.1')),
   info: () => fa('fa-info', [90, 70, 80, 55].map(w => h('div', {}, h('i', {}), h('b', { style: 'width:' + w + 'px' })))),
   menu: () => fa('fa-menu', h('i', {}), h('div', {}, h('b', {}), h('b', {}), h('b', {}))),
-  plug: () => faEmoji('🧩', [70, 40]),
-  music: () => fa('fa-music', h('span', { class: 'disc' }, '🎵'), h('div', {}, [40, 70, 55, 90, 45, 65].map(v => h('i', { style: 'height:' + v + '%' })))),
+  plug: () => faEmoji('', [70, 40]),
+  music: () => fa('fa-music', h('span', { class: 'disc' }, ''), h('div', {}, [40, 70, 55, 90, 45, 65].map(v => h('i', { style: 'height:' + v + '%' })))),
   lyr: () => fa('fa-lyr', [80, 110, 70, 95].map((w, i) => h('i', { class: i === 1 ? 'on' : '', style: 'width:' + w + 'px' }))),
-  md: () => faEmoji('🎧', [90, 60]),
-  mr: () => fa('fa-mr', h('span', {}, '🎶'), h('b', {}, '＋ Request')),
-  store: () => fa('fa-store', h('div', {}, h('i', { style: 'width:78%' })), h('div', {}, h('i', { style: 'width:42%' })), h('span', {}, '💾'))
+  md: () => faEmoji('', [90, 60]),
+  mr: () => fa('fa-mr', h('span', {}, ''), h('b', {}, '＋ Request')),
+  store: () => fa('fa-store', h('div', {}, h('i', { style: 'width:78%' })), h('div', {}, h('i', { style: 'width:42%' })), h('span', {}, ''))
 };
 
 /* ----- services a feature may need ----- */
 const SVC = { seerr: () => !!(C.status && C.status.seerr), arr: () => !!(C.status && (C.status.radarr || C.status.sonarr)), radarr: () => !!(C.status && C.status.radarr), aurral: () => !!(C.status && C.status.aurral) };
 const SVC_N = { seerr: 'svcSeerr', arr: 'svcArr', radarr: 'svcRadarr', aurral: 'svcAurral' };
 const adminHidden = k => (((C.status && C.status.defaults && C.status.defaults.hiddenNav) || '') + '').split(',').map(x => x.trim()).includes(k);
-const GROUPS = [['browse', '🎞️', 'ftGBrowse', 'ftGBrowseD'], ['disc', '🔭', 'ftGDisc', 'ftGDiscD'], ['music', '🎵', 'ftGMusic', 'ftGMusicD'], ['learn', '🎭', 'ftGLearn', 'ftGLearnD'], ['play', '▶️', 'ftGPlay', 'ftGPlayD'], ['lib', '🗄️', 'ftGLib', 'ftGLibD'], ['menu', '🧭', 'ftGMenu', 'ftGMenuD']];
+const GROUPS = [['browse', '', 'ftGBrowse', 'ftGBrowseD'], ['disc', '', 'ftGDisc', 'ftGDiscD'], ['music', '', 'ftGMusic', 'ftGMusicD'], ['learn', '', 'ftGLearn', 'ftGLearnD'], ['play', '▶', 'ftGPlay', 'ftGPlayD'], ['lib', '', 'ftGLib', 'ftGLibD'], ['menu', '', 'ftGMenu', 'ftGMenuD']];
 const NAV_ENTRIES = [['discover', 'discover', 'discover'], ['watchlist', 'Watchlist', 'watchlist'], ['requests', 'requests', 'requests'], ['calendar', 'calendar', 'calendar'], ['music', 'music', 'music'], ['quiz', 'gTitle', 'quiz'], ['wrapped', 'wrTitle', 'wrapped'], ['tonight', 'tnTitle', 'tonight'], ['favorites', 'navMyList', null], ['bookmarks', 'navBookmarks', null], ['live', 'navLive', null], ['games', 'navGames', null]];
 const navLabel = k => { const e = NAV_ENTRIES.find(x => x[0] === k); return e ? (TX[L][e[1]] || TX.en[e[1]] || e[1]) : k; };
 
@@ -99,46 +99,46 @@ function featCatalog(X) {
   const T = (label, key, hint, needs) => { const r = X.toggle(label, key, hint); if (r && needs && !needs.every(n => SVC[n]())) r.classList.add('locked'); return r; };
   return [
     /* browsing and home */
-    { id: 'hero', g: 'browse', ic: '🖼️', hue: '#e50914', name: 'ftHeroN', desc: 'ftHeroD', art: 'hero', key: 'hero', feat: 'hero', opts: () => [X.row(t('setHeroItems'), t('setHeroItemsHint'), X.seg([[4, '4'], [6, '6'], [8, '8'], [12, '12']], 'heroItems'), 'heroItems'), X.row(t('setHeroInterval'), t('setHeroIntervalHint'), X.seg([[6, '6 s'], [11, '11 s'], [16, '16 s'], [30, '30 s']], 'heroInterval'), 'heroInterval')] },
-    { id: 'peek', g: 'browse', ic: '👁️', hue: '#0a84ff', name: 'ftPeekN', desc: 'ftPeekD', art: 'peek', key: 'peek', feat: 'peek', opts: () => [X.row(t('setPeekDelay'), t('setPeekDelayHint'), X.seg([[180, t('fast')], [320, t('normal')], [520, t('slow')]], 'peekDelay'), 'peekDelay')] },
-    { id: 'inf', g: 'browse', ic: '♾️', hue: '#8b5cf6', name: 'ftInfN', desc: 'ftInfD', art: 'inf', key: 'infinite', feat: 'infiniteScroll' },
-    { id: 'home', g: 'browse', ic: '✨', hue: '#5e5ce6', name: 'ftHomeN', desc: 'ftHomeD', art: 'home', on: () => cfg('homeSeen') !== 'off', tab: 'home', actionLbl: 'ftManage', opts: () => [X.row(t('rcSeenSet'), t('rcSeenHint'), X.seg([['badge', t('rcSeenBadge')], ['hide', t('rcSeenHide')], ['off', t('rcSeenOff')]], 'homeSeen'), 'homeSeen')] },
-    { id: 'tonight', g: 'browse', ic: '🍿', hue: '#ff9f0a', name: 'ftTnN', desc: 'ftTnD', art: 'tonight', key: 'tonight', feat: 'tonight', open: '#/c/tonight' },
+    { id: 'hero', g: 'browse', ic: '', hue: '#e50914', name: 'ftHeroN', desc: 'ftHeroD', art: 'hero', key: 'hero', feat: 'hero', opts: () => [X.row(t('setHeroItems'), t('setHeroItemsHint'), X.seg([[4, '4'], [6, '6'], [8, '8'], [12, '12']], 'heroItems'), 'heroItems'), X.row(t('setHeroInterval'), t('setHeroIntervalHint'), X.seg([[6, '6 s'], [11, '11 s'], [16, '16 s'], [30, '30 s']], 'heroInterval'), 'heroInterval')] },
+    { id: 'peek', g: 'browse', ic: '', hue: '#0a84ff', name: 'ftPeekN', desc: 'ftPeekD', art: 'peek', key: 'peek', feat: 'peek', opts: () => [X.row(t('setPeekDelay'), t('setPeekDelayHint'), X.seg([[180, t('fast')], [320, t('normal')], [520, t('slow')]], 'peekDelay'), 'peekDelay')] },
+    { id: 'inf', g: 'browse', ic: '', hue: '#8b5cf6', name: 'ftInfN', desc: 'ftInfD', art: 'inf', key: 'infinite', feat: 'infiniteScroll' },
+    { id: 'home', g: 'browse', ic: '', hue: '#5e5ce6', name: 'ftHomeN', desc: 'ftHomeD', art: 'home', on: () => cfg('homeSeen') !== 'off', tab: 'home', actionLbl: 'ftManage', opts: () => [X.row(t('rcSeenSet'), t('rcSeenHint'), X.seg([['badge', t('rcSeenBadge')], ['hide', t('rcSeenHide')], ['off', t('rcSeenOff')]], 'homeSeen'), 'homeSeen')] },
+    { id: 'tonight', g: 'browse', ic: '', hue: '#ff9f0a', name: 'ftTnN', desc: 'ftTnD', art: 'tonight', key: 'tonight', feat: 'tonight', open: '#/c/tonight' },
     { id: 'menu', g: 'browse', ic: '⋯', hue: '#8d8d97', name: 'ftMenuN', desc: 'ftMenuD', art: 'menu', key: 'itemMenu', feat: 'itemMenu' },
-    { id: 'plug', g: 'browse', ic: '🧩', hue: '#64d2ff', name: 'ftPlugN', desc: 'ftPlugD', art: 'plug', key: 'pluginMenus', feat: 'pluginMenus' },
+    { id: 'plug', g: 'browse', ic: '', hue: '#64d2ff', name: 'ftPlugN', desc: 'ftPlugD', art: 'plug', key: 'pluginMenus', feat: 'pluginMenus' },
     /* discover and requests */
-    { id: 'disc', g: 'disc', ic: '🔭', hue: '#bf5af2', name: 'ftDiscN', desc: 'ftDiscD', art: 'disc', nav: 'discover', feat: 'discover', needs: ['seerr'], open: '#/c/discover' },
-    { id: 'reco', g: 'disc', ic: '✨', hue: '#ff6482', name: 'ftRecoN', desc: 'ftRecoD', art: 'reco', key: 'recommendations', feat: 'recommendations', needs: ['seerr'] },
-    { id: 'wl', g: 'disc', ic: '🔖', hue: '#ffd60a', name: 'ftWlN', desc: 'ftWlD', art: 'watch', nav: 'watchlist', feat: 'watchlist', open: '#/c/watchlist', opts: () => [T(t('setSeerrWl'), 'seerrWatchlistSync', t('setSeerrWlHint'), ['seerr'])] },
-    { id: 'req', g: 'disc', ic: '📥', hue: '#0a84ff', name: 'ftReqN', desc: 'ftReqD', art: 'req', nav: 'requests', feat: 'requests', needs: ['seerr'], open: '#/c/requests' },
-    { id: 'cal', g: 'disc', ic: '📅', hue: '#30d158', name: 'ftCalN', desc: 'ftCalD', art: 'cal', nav: 'calendar', feat: 'calendar', needs: ['arr'], open: '#/c/calendar', opts: () => [X.toggle(t('calHistL'), 'calendarHistory', t('calHistH'))] },
-    { id: 'sim', g: 'disc', ic: '🎞️', hue: '#ff9f0a', name: 'ftSimN', desc: 'ftSimD', art: 'sim', key: 'seerrSimilar', feat: 'seerrSimilar', needs: ['seerr'] },
-    { id: 'rate', g: 'disc', ic: '🍅', hue: '#ff453a', name: 'ftRateN', desc: 'ftRateD', art: 'rate', key: 'ratings', feat: 'ratings', needs: ['seerr'] },
-    { id: 'info', g: 'disc', ic: '📋', hue: '#8e8e93', name: 'ftInfoN', desc: 'ftInfoD', art: 'info', key: 'mediaInfo', feat: 'mediaInfo' },
+    { id: 'disc', g: 'disc', ic: '', hue: '#bf5af2', name: 'ftDiscN', desc: 'ftDiscD', art: 'disc', nav: 'discover', feat: 'discover', needs: ['seerr'], open: '#/c/discover' },
+    { id: 'reco', g: 'disc', ic: '', hue: '#ff6482', name: 'ftRecoN', desc: 'ftRecoD', art: 'reco', key: 'recommendations', feat: 'recommendations', needs: ['seerr'] },
+    { id: 'wl', g: 'disc', ic: '', hue: '#ffd60a', name: 'ftWlN', desc: 'ftWlD', art: 'watch', nav: 'watchlist', feat: 'watchlist', open: '#/c/watchlist', opts: () => [T(t('setSeerrWl'), 'seerrWatchlistSync', t('setSeerrWlHint'), ['seerr'])] },
+    { id: 'req', g: 'disc', ic: '', hue: '#0a84ff', name: 'ftReqN', desc: 'ftReqD', art: 'req', nav: 'requests', feat: 'requests', needs: ['seerr'], open: '#/c/requests' },
+    { id: 'cal', g: 'disc', ic: '', hue: '#30d158', name: 'ftCalN', desc: 'ftCalD', art: 'cal', nav: 'calendar', feat: 'calendar', needs: ['arr'], open: '#/c/calendar', opts: () => [X.toggle(t('calHistL'), 'calendarHistory', t('calHistH'))] },
+    { id: 'sim', g: 'disc', ic: '', hue: '#ff9f0a', name: 'ftSimN', desc: 'ftSimD', art: 'sim', key: 'seerrSimilar', feat: 'seerrSimilar', needs: ['seerr'] },
+    { id: 'rate', g: 'disc', ic: '', hue: '#ff453a', name: 'ftRateN', desc: 'ftRateD', art: 'rate', key: 'ratings', feat: 'ratings', needs: ['seerr'] },
+    { id: 'info', g: 'disc', ic: '', hue: '#8e8e93', name: 'ftInfoN', desc: 'ftInfoD', art: 'info', key: 'mediaInfo', feat: 'mediaInfo' },
     /* music */
-    { id: 'music', g: 'music', ic: '🎵', hue: '#1ed760', name: 'ftMusicN', desc: 'ftMusicD', art: 'music', nav: 'music', feat: 'music', open: '#/c/music' },
-    { id: 'lyr', g: 'music', ic: '🎤', hue: '#ff375f', name: 'ftLyrN', desc: 'ftLyrD', art: 'lyr', key: 'musicLyrics', feat: 'musicLyrics', needsFeat: 'music' },
-    { id: 'md', g: 'music', ic: '🎧', hue: '#bf5af2', name: 'ftMdN', desc: 'ftMdD', art: 'md', key: 'musicDiscovery', feat: 'musicDiscovery', needs: ['aurral'], needsFeat: 'music' },
-    { id: 'mr', g: 'music', ic: '🎶', hue: '#64d2ff', name: 'ftMrN', desc: 'ftMrD', art: 'mr', key: 'musicRequests', feat: 'musicRequests', needs: ['aurral'], needsFeat: 'music' },
+    { id: 'music', g: 'music', ic: '', hue: '#1ed760', name: 'ftMusicN', desc: 'ftMusicD', art: 'music', nav: 'music', feat: 'music', open: '#/c/music' },
+    { id: 'lyr', g: 'music', ic: '', hue: '#ff375f', name: 'ftLyrN', desc: 'ftLyrD', art: 'lyr', key: 'musicLyrics', feat: 'musicLyrics', needsFeat: 'music' },
+    { id: 'md', g: 'music', ic: '', hue: '#bf5af2', name: 'ftMdN', desc: 'ftMdD', art: 'md', key: 'musicDiscovery', feat: 'musicDiscovery', needs: ['aurral'], needsFeat: 'music' },
+    { id: 'mr', g: 'music', ic: '', hue: '#64d2ff', name: 'ftMrN', desc: 'ftMrD', art: 'mr', key: 'musicRequests', feat: 'musicRequests', needs: ['aurral'], needsFeat: 'music' },
     /* learn and look back */
-    { id: 'quiz', g: 'learn', ic: '🎭', hue: '#1ed760', name: 'ftQuizN', desc: 'ftQuizD', art: 'quiz', key: 'quiz', feat: 'quiz', open: '#/c/quiz', opts: () => [
+    { id: 'quiz', g: 'learn', ic: '', hue: '#1ed760', name: 'ftQuizN', desc: 'ftQuizD', art: 'quiz', key: 'quiz', feat: 'quiz', open: '#/c/quiz', opts: () => [
       X.row(t('qNew'), t('qNewH'), X.seg([[5, '5'], [10, '10'], [20, '20'], [30, '30']], 'quizNew'), 'quizNew'), X.row(t('qGoal'), t('qGoalH'), X.seg([[50, '50'], [100, '100'], [200, '200'], [300, '300']], 'quizGoal'), 'quizGoal'),
       X.row(t('qBlitz'), '', X.seg([[30, '30 s'], [60, '60 s'], [90, '90 s']], 'quizBlitz'), 'quizBlitz'), X.toggle(t('qAuto'), 'quizAuto', t('qAutoH')),
       X.row(t('qMin'), t('qMinH'), X.seg([[1, t('qMinAll')], [2, t('qMin2')], [3, t('qMin3')]], 'quizMin'), 'quizMin'),
       lbOn() ? X.toggle(t('qLb'), 'quizLb', t('qLbH')) : null, X.row(t('qFamous'), t('qFamousH'), X.seg([['both', t('qFamousBoth')], ['seen', t('qFamousSeen')]], 'quizFamous'), 'quizFamous'), X.toggle(t('qScenes'), 'quizScenes', t('qScenesH')), X.row(t('qGames'), t('qGamesH'), modeChips()),
-      X.row(t('qReset'), t('qResetH'), h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { if (!confirm(t('qResetAsk'))) return; await gLoad(); Object.assign(GM.st, gDef(), { ts: Date.now() }); await gFlush(); toast('✓ ' + t('qResetOk')); } }, t('qResetDo')))] },
-    { id: 'wrapped', g: 'learn', ic: '🎬', hue: '#ff2d92', name: 'ftWrN', desc: 'ftWrD', art: 'wrapped', key: 'wrapped', feat: 'wrapped', open: '#/c/wrapped', opts: () => [
+      X.row(t('qReset'), t('qResetH'), h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { if (!confirm(t('qResetAsk'))) return; await gLoad(); Object.assign(GM.st, gDef(), { ts: Date.now() }); await gFlush(); toast(t('qResetOk')); } }, t('qResetDo')))] },
+    { id: 'wrapped', g: 'learn', ic: '', hue: '#ff2d92', name: 'ftWrN', desc: 'ftWrD', art: 'wrapped', key: 'wrapped', feat: 'wrapped', open: '#/c/wrapped', opts: () => [
       X.row(t('wrBanner'), t('wrBannerH'), X.seg([['auto', t('wrBSeason')], ['always', t('wrBAlways')], ['never', t('wrBNever')]], 'wrappedBanner'), 'wrappedBanner'), X.toggle(t('wrShowsL'), 'wrappedShows', t('wrShowsH')), X.toggle(t('wrAutoL'), 'wrappedAuto', t('wrAutoH'))] },
     /* playback */
-    { id: 'player', g: 'play', ic: '▶️', hue: '#ff6a3d', name: 'ftPlayerN', desc: 'ftPlayerD', art: 'player', feat: 'ownPlayer', on: () => playerMode() === 'own', tab: 'player', opts: () => [
+    { id: 'player', g: 'play', ic: '▶', hue: '#ff6a3d', name: 'ftPlayerN', desc: 'ftPlayerD', art: 'player', feat: 'ownPlayer', on: () => playerMode() === 'own', tab: 'player', opts: () => [
       X.row(t('setDevPlayer'), t('setDevPlayerHint'), h('div', { class: 'pl-seg set-seg' }, [['own', t('plOwn')], ['native', t('plStd')]].map(([v, l]) => h('button', { class: playerMode() === v ? 'on' : '', onclick: e => { $$('button', e.currentTarget.parentElement).forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on'); devSet('player', v); X.reload(); } }, l)))),
       X.toggle(t('plAutoNext'), 'pl_autoNext', t('plAutoNextHint')), X.toggle(t('plAutoSkip'), 'pl_autoSkip', t('plAutoSkipHint')), h('p', { class: 'set-hint' }, h('a', { href: '#', onclick: e => { e.preventDefault(); X.go('player'); } }, t('setPlayer') + ' ›'))] },
     /* library and connections */
-    { id: 'lb', g: 'lib', ic: '🟢', hue: '#00b020', name: 'ftLbN', desc: 'ftLbD', art: 'lb', avail: lbOn, on: () => lbOn() && !!lbUser(), tab: 'services', actionLbl: 'ftGoServices' },
-    { id: 'arch', g: 'lib', ic: '📦', hue: '#f5b301', name: 'ftArchN', desc: 'ftArchD', art: 'arch', avail: () => optOn('archive'), on: () => optOn('archive'), open: '#/c/archive' },
-    { id: 'store', g: 'lib', ic: '💾', hue: '#64d2ff', name: 'ftStoreN', desc: 'ftStoreD', art: 'store', avail: () => !!(C.status && C.status.admin) && feat('storage'), on: () => true, noPill: true, open: '#/c/storage' },
+    { id: 'lb', g: 'lib', ic: '', hue: '#00b020', name: 'ftLbN', desc: 'ftLbD', art: 'lb', avail: lbOn, on: () => lbOn() && !!lbUser(), tab: 'services', actionLbl: 'ftGoServices' },
+    { id: 'arch', g: 'lib', ic: '', hue: '#f5b301', name: 'ftArchN', desc: 'ftArchD', art: 'arch', avail: () => optOn('archive'), on: () => optOn('archive'), open: '#/c/archive' },
+    { id: 'store', g: 'lib', ic: '', hue: '#64d2ff', name: 'ftStoreN', desc: 'ftStoreD', art: 'store', avail: () => !!(C.status && C.status.admin) && feat('storage'), on: () => true, noPill: true, open: '#/c/storage' },
     /* menu */
-    { id: 'pages', g: 'menu', ic: '🧭', hue: '#34c759', name: 'ftPagesN', desc: 'ftPagesD', art: 'pages', on: () => true, noPill: true, startOpen: true, opts: () => [pageChips(), h('p', { class: 'set-hint' }, t('ftReload') + ' · ', h('a', { href: '#', onclick: e => { e.preventDefault(); location.reload(); } }, t('ftReloadDo')))] }
+    { id: 'pages', g: 'menu', ic: '', hue: '#34c759', name: 'ftPagesN', desc: 'ftPagesD', art: 'pages', on: () => true, noPill: true, startOpen: true, opts: () => [pageChips(), h('p', { class: 'set-hint' }, t('ftReload') + ' · ', h('a', { href: '#', onclick: e => { e.preventDefault(); location.reload(); } }, t('ftReloadDo')))] }
   ];
 }
 const FT = { open: new Set(), q: '', f: 'all' };
@@ -154,7 +154,7 @@ function ftSwitch(f, onset) {
 }
 function featuresTab(X) {
   const cat = featCatalog(X); const root = h('div', {});
-  const needs = f => (f.needs || []).length ? h('div', { class: 'ft-needs' }, f.needs.map(n => h('i', { class: SVC[n]() ? 'ok' : 'bad' }, (SVC[n]() ? '✓ ' : '✕ ') + t(SVC_N[n])))) : null;
+  const needs = f => (f.needs || []).length ? h('div', { class: 'ft-needs' }, f.needs.map(n => h('i', { class: SVC[n]() ? 'ok' : 'bad' }, (SVC[n]() ? ' ' : ' ') + t(SVC_N[n])))) : null;
   function apply() {
     let any = false;
     $$('.ft-card', root).forEach(c => { const hit = (!FT.q || c.dataset.s.includes(FT.q)) && (FT.f === 'all' || (FT.f === 'on') === c.classList.contains('on')); c.hidden = !hit; if (hit) any = true; });
@@ -165,7 +165,7 @@ function featuresTab(X) {
   root.append(h('div', { class: 'ft-head' }, h('p', {}, t('ftIntro')), h('button', { class: 'btn grey', style: 'height:38px', onclick: () => onboardWizard(true) }, ic('refresh', 'ic-s'), t('ftRunSetup'))), h('div', { class: 'ft-bar' }, h('div', { class: 'dc-q' }, ic('search', 'ic-s'), q), chips));
   GROUPS.forEach(([id, e, name, desc]) => {
     const list = cat.filter(f => f.g === id); if (!list.length) return; const grid = h('div', { class: 'ft-grid' }); list.forEach(f => grid.append(ftCard(f, X, needs)));
-    root.append(h('section', { class: 'ft-sec' }, h('div', { class: 'ft-sh' }, h('span', {}, e), h('div', {}, h('h3', {}, t(name)), h('p', {}, t(desc)))), grid));
+    root.append(h('section', { class: 'ft-sec' }, h('div', { class: 'ft-sh' }, h('div', {}, h('h3', {}, t(name)), h('p', {}, t(desc)))), grid));
   });
   root.append(h('div', { class: 'nf-empty ft-none', hidden: true }, t('ftNone'))); apply(); return [root];
 }
@@ -180,7 +180,7 @@ function ftCard(f, X, needsEl) {
   if (opts) foot.append(h('button', { class: 'ft-more', onclick: () => { const open = !card.classList.contains('open'); card.classList.toggle('open', open); open ? (FT.open.add(f.id), FT.open.delete('-' + f.id)) : (FT.open.delete(f.id), FT.open.add('-' + f.id)); } }, t('ftOptions'), ic('down', 'ic-s')));
   if (avail && f.tab) foot.append(h('button', { class: 'ft-more', onclick: () => X.go(f.tab) }, t(f.actionLbl || 'ftManage'), ic('right', 'ic-s')));
   if (avail && f.open) foot.append(h('a', { class: 'ft-more go', href: f.open }, t('ftOpen'), ic('right', 'ic-s')));
-  card.append(h('div', { class: 'ft-art' }, FART[f.art](), h('span', { class: 'ft-ic' }, f.ic)), h('div', { class: 'ft-body' }, h('div', { class: 'ft-title' }, h('b', {}, t(f.name)), pill), h('p', {}, t(f.desc)), needsEl ? needsEl(f) : null, foot), ...(opts ? [h('div', { class: 'ft-opts' }, opts.filter(Boolean))] : []));
+  card.append(h('div', { class: 'ft-art' }, FART[f.art](), h('span', { class: 'ft-ic' }, t(f.name).charAt(0))), h('div', { class: 'ft-body' }, h('div', { class: 'ft-title' }, h('b', {}, t(f.name)), pill), h('p', {}, t(f.desc)), needsEl ? needsEl(f) : null, foot), ...(opts ? [h('div', { class: 'ft-opts' }, opts.filter(Boolean))] : []));
   return card;
 }
 
@@ -193,12 +193,12 @@ function onboardWizard(manual) {
   if ($('.ob-dlg')) return; const d = cxDialog('', { wide: false }); d.el.classList.add('ob-dlg'); let step = 0; saveCfg({ onb: 1 });
   const X = { sw: null, row: () => null, seg: () => null, toggle: () => null, go: () => { }, reload: () => { } };
   const cat = () => featCatalog(X); const find = ids => cat().filter(f => ids.includes(f.id) && ftAvail(f));
-  const rowOf = f => { const sw = ftSwitch(f, v => row.classList.toggle('on', v)); const row = h('div', { class: 'ob-f' + (ftOn(f) ? ' on' : ''), style: '--hue:' + f.hue }, h('div', { class: 'ob-fa' }, FART[f.art](), h('span', { class: 'ft-ic' }, f.ic)), h('div', { class: 'ob-ft' }, h('b', {}, t(f.name)), h('small', {}, t(f.desc))), sw); return row; };
+  const rowOf = f => { const sw = ftSwitch(f, v => row.classList.toggle('on', v)); const row = h('div', { class: 'ob-f' + (ftOn(f) ? ' on' : ''), style: '--hue:' + f.hue }, h('div', { class: 'ob-fa' }, FART[f.art](), h('span', { class: 'ft-ic' }, t(f.name).charAt(0))), h('div', { class: 'ob-ft' }, h('b', {}, t(f.name)), h('small', {}, t(f.desc))), sw); return row; };
   const seg = (opts, key) => h('div', { class: 'pl-seg set-seg' }, opts.map(([v, l]) => h('button', { class: String(cfg(key)) === String(v) ? 'on' : '', onclick: async e => { $$('button', e.currentTarget.parentElement).forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on'); await saveCfg({ [key]: v }); } }, l)));
   const lab = txt => h('div', { class: 'ob-lab' }, txt);
   /* every step is built when it is shown and skipped when the server offers nothing there */
   const STEPS = {
-    welcome: () => ({ first: true, body: h('div', { class: 'ob-body ob-welcome' }, h('div', { class: 'ob-logo' }, BRAND.toUpperCase()), h('h2', {}, t('obWelcome')), h('p', { class: 'ob-sub' }, t('obWelcomeSub')), h('div', { class: 'ob-hi' }, [['🍿', 'obHi1', 'obHi1d', true], ['🔭', 'obHi2', 'obHi2d', feat('discover') || feat('requests')], ['🎵', 'obHi3', 'obHi3d', feat('music')], ['🎭', 'obHi4', 'obHi4d', feat('quiz') || feat('wrapped')]].filter(x => x[3]).map(([e, a, b]) => h('div', {}, h('span', {}, e), h('div', {}, h('b', {}, t(a)), h('small', {}, t(b))))))) }),
+    welcome: () => ({ first: true, body: h('div', { class: 'ob-body ob-welcome' }, h('div', { class: 'ob-logo' }, BRAND.toUpperCase()), h('h2', {}, t('obWelcome')), h('p', { class: 'ob-sub' }, t('obWelcomeSub')), h('div', { class: 'ob-hi' }, [[null, 'obHi1', 'obHi1d', true], [null, 'obHi2', 'obHi2d', feat('discover') || feat('requests')], [null, 'obHi3', 'obHi3d', feat('music')], [null, 'obHi4', 'obHi4d', feat('quiz') || feat('wrapped')]].filter(x => x[3]).map(([e, a, b]) => h('div', {}, h('div', {}, h('b', {}, t(a)), h('small', {}, t(b))))))) }),
     look: () => {
       const SZ = { s: .8, m: 1, l: 1.25 }; const prev = h('div', { class: 'ob-prev' }, [0, 1, 2, 3].map(i => h('div', { class: 'ob-pc', style: '--h:' + (i * 70 + 10) }, h('i')))); prev.style.setProperty('--sz', SZ[cfg('cardSize')] || 1);
       const sw = h('div', { class: 'set-sw ob-sw' }, ['#e50914', '#ff6a3d', '#f5b301', '#34c759', '#0a84ff', '#8b5cf6', '#ff2d92', '#ffffff'].map(c => h('button', { style: 'background:' + c, class: cfg('accent') === c ? 'on' : '', 'aria-label': c, onclick: async e => { await saveCfg({ accent: c }); $$('button', sw).forEach(b => b.classList.toggle('on', b === e.currentTarget)); } })));
@@ -221,15 +221,15 @@ function onboardWizard(manual) {
     music: () => { if (!feat('music') || adminHidden('music')) return null; const fs = find(['lyr', 'md', 'mr']); if (!fs.length) return null; return { body: h('div', { class: 'ob-body' }, h('h2', {}, t('obMusic')), h('p', { class: 'ob-sub' }, t('obMusicSub')), h('div', { class: 'ob-feats' }, fs.map(rowOf))) }; },
     learn: () => {
       const parts = [];
-      if (cfg('quiz')) { const presets = [['obRelaxed', 'obRelaxedD', 5, 50, '🌱'], ['obSteady', 'obSteadyD', 10, 100, '🔥'], ['obKeen', 'obKeenD', 20, 200, '🚀']]; const cur = () => presets.findIndex(p => +cfg('quizNew') === p[2] && +cfg('quizGoal') === p[3]);
-        const cards = h('div', { class: 'ob-presets' }, presets.map(([a, b, n, g, e], i) => h('button', { class: 'ob-preset' + (cur() === i ? ' on' : ''), onclick: async () => { await saveCfg({ quizNew: n, quizGoal: g }); $$('.ob-preset', cards).forEach((x, k) => x.classList.toggle('on', k === i)); } }, h('span', {}, e), h('b', {}, t(a)), h('small', {}, t(b))))); parts.push(lab(t('obQuizPace')), cards); }
+      if (cfg('quiz')) { const presets = [['obRelaxed', 'obRelaxedD', 5, 50, ''], ['obSteady', 'obSteadyD', 10, 100, ''], ['obKeen', 'obKeenD', 20, 200, '']]; const cur = () => presets.findIndex(p => +cfg('quizNew') === p[2] && +cfg('quizGoal') === p[3]);
+        const cards = h('div', { class: 'ob-presets' }, presets.map(([a, b, n, g, e], i) => h('button', { class: 'ob-preset' + (cur() === i ? ' on' : ''), onclick: async () => { await saveCfg({ quizNew: n, quizGoal: g }); $$('.ob-preset', cards).forEach((x, k) => x.classList.toggle('on', k === i)); } }, h('b', {}, t(a)), h('small', {}, t(b))))); parts.push(lab(t('obQuizPace')), cards); }
       if (cfg('wrapped')) parts.push(lab(t('wrBanner')), seg([['auto', t('wrBSeason')], ['always', t('wrBAlways')], ['never', t('wrBNever')]], 'wrappedBanner'));
       if (optOn('letterboxd')) parts.push(h('div', { class: 'ob-lb' }, lab(t('obLbT')), h('input', { type: 'text', value: lbUser(), placeholder: 'username', maxlength: 40, onchange: async e => { const v = e.target.value.trim().replace(/^@/, '').replace(/^https?:\/\/letterboxd\.com\//, '').replace(/\/.*$/, ''); await saveCfg({ lbUser: v || null }); if (v) lbSync(true); } }), h('small', {}, t('obLbH'))));
       if (!parts.length) return null; return { body: h('div', { class: 'ob-body' }, h('h2', {}, t('obLearn')), h('p', { class: 'ob-sub' }, t('obLearnSub')), parts) };
     },
     done: () => {
       const feats = cat().filter(f => ftOn(f) && !f.noPill).length; const menu = NAV_ENTRIES.filter(([k, , f]) => (!f || feat(f)) && !adminHidden(k) && navOn(k)).length;
-      return { last: true, body: h('div', { class: 'ob-body ob-welcome' }, h('div', { class: 'ob-big' }, '✅'), h('h2', {}, t('obDone')), h('p', { class: 'ob-sub' }, t('obDoneSub')), h('div', { class: 'ob-sum' }, h('div', {}, h('b', {}, String(feats)), h('span', {}, t('obOnN'))), h('div', {}, h('b', {}, String(menu)), h('span', {}, t('obMenuN'))))) };
+      return { last: true, body: h('div', { class: 'ob-body ob-welcome' }, h('div', { class: 'ob-big' }, ic('check')), h('h2', {}, t('obDone')), h('p', { class: 'ob-sub' }, t('obDoneSub')), h('div', { class: 'ob-sum' }, h('div', {}, h('b', {}, String(feats)), h('span', {}, t('obOnN'))), h('div', {}, h('b', {}, String(menu)), h('span', {}, t('obMenuN'))))) };
     }
   };
   const ORDER = ['welcome', 'look', 'menu', 'browse', 'detail', 'music', 'learn', 'done'];

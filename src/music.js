@@ -56,7 +56,7 @@ P.audio.addEventListener('ended', () => next(true));
 P.audio.addEventListener('play', () => { if (!P.reportedStart) { P.reportedStart = true; rep('Start'); } else rep('Progress', { EventName: 'unpause' }); emit(); });
 P.audio.addEventListener('pause', () => { if (!P.audio.ended) rep('Progress', { EventName: 'pause' }); emit(); });
 P.audio.addEventListener('timeupdate', () => { tickUI(); const n = Date.now(); if (n - P.lastReport > 10000 && !P.audio.paused) { P.lastReport = n; rep('Progress', { EventName: 'timeupdate' }); } });
-P.audio.addEventListener('error', () => { const it = cur(); if (it) { toast('⚠ ' + it.Name); setTimeout(() => next(), 800); } });
+P.audio.addEventListener('error', () => { const it = cur(); if (it) { toast(it.Name); setTimeout(() => next(), 800); } });
 window.addEventListener('beforeunload', () => { if (P.reportedStart) rep('Stopped'); });
 function setMedia() {
   const it = cur(); if (!it || !('mediaSession' in navigator)) return;
@@ -250,7 +250,7 @@ async function trackMenu(e, it, ctx) {
   ent.push('-', { icon: ud(it).IsFavorite ? 'heartOn' : 'heart', label: ud(it).IsFavorite ? t('unlike') : t('like'), fn: () => likeTrack(it) });
   if (it.AlbumId) ent.push({ icon: 'lib', label: t('goAlbum'), fn: () => go('#/c/music/album/' + it.AlbumId) });
   if ((it.ArtistItems || [])[0]) ent.push({ icon: 'user', label: t('goArtist'), fn: () => go('#/c/music/artist/' + it.ArtistItems[0].Id) });
-  if (ctx && ctx.playlistId && it.PlaylistItemId) ent.push('-', { icon: 'close', label: t('rmPl'), fn: async () => { await ApiClient.ajax({ type: 'DELETE', url: ApiClient.getUrl('Playlists/' + ctx.playlistId + '/Items', { entryIds: it.PlaylistItemId }) }); toast('✓'); route(); } });
+  if (ctx && ctx.playlistId && it.PlaylistItemId) ent.push('-', { icon: 'close', label: t('rmPl'), fn: async () => { await ApiClient.ajax({ type: 'DELETE', url: ApiClient.getUrl('Playlists/' + ctx.playlistId + '/Items', { entryIds: it.PlaylistItemId }) }); toast(''); route(); } });
   openMenu(x, y, ent);
 }
 
@@ -272,9 +272,9 @@ function refreshRows() { $$('.sp-row .lk').forEach(b => b._upd && b._upd()); }
 function trackList(tracks, ctx) {
   ctx = ctx || {}; const noAlb = ctx.noAlbum;
   const wrap = h('div', {});
-  wrap.append(h('div', { class: 'sp-th' + (noAlb ? ' noalb' : '') }, h('span', {}, '#'), h('span', {}, t('title')), noAlb ? null : h('span', {}, t('album')), h('span', {}, '⏱')));
+  wrap.append(h('div', { class: 'sp-th' + (noAlb ? ' noalb' : '') }, h('span', {}, '#'), h('span', {}, t('title')), noAlb ? null : h('span', {}, t('album')), h('span', {}, '')));
   // grid has 5 columns with album, 4 without; adjust header to match
-  const th = $('.sp-th', wrap); if (!noAlb) { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, t('album')), h('span', {}, '⏱')); } else { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, '⏱')); }
+  const th = $('.sp-th', wrap); if (!noAlb) { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, t('album')), h('span', {}, '')); } else { th.replaceChildren(h('span', {}, '#'), h('span', {}, t('title')), h('span', {}, '')); }
   let lastDisc = null;
   tracks.forEach((it, idx) => {
     if (ctx.discs && it.ParentIndexNumber && it.ParentIndexNumber !== lastDisc && tracks.some(x => (x.ParentIndexNumber || 1) > 1)) { lastDisc = it.ParentIndexNumber; wrap.append(h('div', { class: 'sp-disc' }, ic('note', 'ic-s'), 'Disc ' + lastDisc)); }
@@ -539,5 +539,5 @@ async function playLibItem(o) {
     else if (/album/.test(o.href)) tr = await tracksOf({ ParentId: o.id, SortBy: 'ParentIndexNumber,IndexNumber,SortName' });
     else if (/artist/.test(o.href)) tr = await tracksOf({ ArtistIds: o.id, SortBy: 'PlayCount,SortName', SortOrder: 'Descending', Limit: 100 });
     if (tr.length) playList(tr, 0, { ctx: { id: o.id } }); else toast(t('empty'));
-  } catch (e) { toast('⚠'); }
+  } catch (e) { toast(t('error')); }
 }

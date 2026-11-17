@@ -77,8 +77,8 @@ async function hxDialog() {
   const st = h('p', { class: 'cxd-hint', style: 'text-align:center;min-height:20px' });
   const setup = () => {
     const a = pw(t('hxNew')); const save = h('button', { class: 'btn white', onclick: async () => {
-      if (a.value.length < 4) { st.textContent = '⚠ ' + t('hxMin'); return; } save.disabled = true;
-      try { await hxCall('POST', 'code', { code: a.value }); toast('✓'); d.close(); } catch (e) { st.textContent = '⚠ ' + e.message; save.disabled = false; }
+      if (a.value.length < 4) { st.textContent = t('hxMin'); return; } save.disabled = true;
+      try { await hxCall('POST', 'code', { code: a.value }); toast(''); d.close(); } catch (e) { st.textContent = e.message; save.disabled = false; }
     } }, ic('check'), t('hxSave'));
     a.addEventListener('keydown', e => { if (e.key === 'Enter') save.click(); });
     d.setTitle(t('hxSetup')); d.body.replaceChildren(h('p', { class: 'cxd-hint', style: 'margin-top:0' }, t('hxSetupHint')), a, st); d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel')), save); setTimeout(() => a.focus(), 250);
@@ -91,7 +91,7 @@ async function hxDialog() {
   if (!hasCode) { if (admin) return setup(); d.body.replaceChildren(h('p', { class: 'cxd-hint', style: 'margin-top:0' }, t('hxNone'))); d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel'))); return; }
   const a = pw(); const go_ = h('button', { class: 'btn white', onclick: async () => {
     if (!a.value) return; go_.disabled = true; st.textContent = '…';
-    try { const r = await hxCall('POST', 'verify', { code: a.value }); if (r.ok) { st.textContent = '✓'; hxSet(true); } else { st.textContent = '⚠ ' + t('hxBad'); a.classList.remove('shake'); void a.offsetWidth; a.classList.add('shake'); a.value = ''; go_.disabled = false; a.focus(); } } catch (e) { st.textContent = '⚠ ' + e.message; go_.disabled = false; }
+    try { const r = await hxCall('POST', 'verify', { code: a.value }); if (r.ok) { st.textContent = ''; hxSet(true); } else { st.textContent = t('hxBad'); a.classList.remove('shake'); void a.offsetWidth; a.classList.add('shake'); a.value = ''; go_.disabled = false; a.focus(); } } catch (e) { st.textContent = e.message; go_.disabled = false; }
   } }, ic('check'), t('hxUnlock'));
   a.addEventListener('keydown', e => { if (e.key === 'Enter') go_.click(); });
   d.body.replaceChildren(h('div', { class: 'hx-lock' }, ic('lock')), h('p', { class: 'cxd-hint', style: 'margin:0 0 14px;text-align:center' }, t('hxCodeHint')), a, st); d.foot.replaceChildren(h('button', { class: 'btn grey', onclick: d.close }, t('cancel')), go_); setTimeout(() => a.focus(), 250);
@@ -106,8 +106,8 @@ async function hxToggle(it) {
   try {
     const full = await jf('GET', 'Users/' + uid() + '/Items/' + it.Id); const tags = (full.Tags || []).slice(); const has = tags.some(hxIsTag);
     full.Tags = has ? tags.filter(x => !hxIsTag(x)) : tags.concat(HID.tag); full.TagItems = full.Tags.map(n => ({ Name: n }));
-    await jf('POST', 'Items/' + it.Id, null, full); toast('✓ ' + t(has ? 'hxShown' : 'hxHidden')); await hxReload();
-  } catch (e) { toast('⚠ ' + (e.message || e)); }
+    await jf('POST', 'Items/' + it.Id, null, full); toast(t(has ? 'hxShown' : 'hxHidden')); await hxReload();
+  } catch (e) { toast((e.message || e)); }
 }
 
 /* Seerr / Radarr / Sonarr answers (requests, discover, queue, calendar) must not give hidden titles away either */
