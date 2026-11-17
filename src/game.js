@@ -262,7 +262,7 @@ async function gPlay(kind, opts) {
   gStage(S);
 }
 function gStage(S) {
-  const keys = e => { if (!GM.play) return; if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); return; } if (S.onKey) S.onKey(e); };
+  const keys = e => { if (!GM.play || document.querySelector('.cxd-bg.show')) return; if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); return; } if (S.onKey) S.onKey(e); };
   const close = () => { document.removeEventListener('keydown', keys, true); clearInterval(S.timer); clearTimeout(S.auto); layer.classList.remove('show'); setTimeout(() => layer.remove(), 220); GM.play = null; document.documentElement.classList.remove('gm-open'); if (S.changed && /#\/c\/quiz/.test(location.hash)) route(); };
   const finish = () => { if (S.n || S.kind === 'memory' && S.won) gSummary(S); else close(); };
   const bar = h('div', { class: 'gm-pbar' }, h('i'));
@@ -307,11 +307,12 @@ function gRender(S, q) {
     card.classList.add(ok ? 'is-ok' : 'is-bad');
     if (S.kind === 'blitz') { S.auto = setTimeout(next, ok ? 280 : 900); return; }
     fb.replaceChildren(h('div', { class: 'gm-fbh' }, h('b', { class: ok ? 'ok' : 'bad' }, ok ? (almost ? t('gAlmost') : t('gRight')) : t('gWrong')), h('span', { class: 'gm-fxp' }, '+' + xp + ' XP'), S.combo >= 3 ? h('span', { class: 'gm-hcombo' }, '🔥 ' + S.combo) : null),
-      h('div', { class: 'gm-fbp' }, gFace(a, 'sm'), h('div', {}, h('div', { class: 'gm-fbn' }, (ok ? '' : t('gItWas') + ' ') , h('b', {}, a.name), gStars(gBox(st, a.k), 'sm'), gHeart(a, 'sm')), gKnownFrom(P, a, 3))),
+      h('div', { class: 'gm-fbp' }, h('button', { class: 'gm-fbface', 'aria-label': a.name, onclick: () => gActorDialog(a) }, gFace(a, 'sm')), h('div', {}, h('div', { class: 'gm-fbn' }, (ok ? '' : t('gItWas') + ' ') , h('b', {}, a.name), gStars(gBox(st, a.k), 'sm'), gHeart(a, 'sm'), h('button', { class: 'nf-chip gm-allf', onclick: () => gActorDialog(a) }, '🎞️ ' + (hasSeerr() ? t('gTabAll') : t('gTabSeen')))), gKnownFrom(P, a, 3))),
       h('button', { class: 'btn white gm-next', onclick: next }, t('gNext'), h('kbd', {}, '⏎')));
     card.append(fb); fb.classList.add('show'); requestAnimationFrame(() => { const b = $('.gm-next', fb); if (b) b.focus({ preventScroll: true }); });
     S.onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } };
-    if (ok && q.mode !== 'type' && cfg('quizAuto') !== false) S.auto = setTimeout(next, 2600);
+    /* automatic next question: slow, with a visible countdown, and it stops as soon as you touch, hover or focus the answer card (to look at the other films) */
+    if (ok && q.mode !== 'type' && cfg('quizAuto') !== false) { const ms = 7000; const cd = h('div', { class: 'gm-cd' }, h('i', { style: 'animation-duration:' + ms + 'ms' })); fb.append(cd); S.auto = setTimeout(next, ms); const stop = () => { clearTimeout(S.auto); cd.remove(); }; ['pointerenter', 'pointerdown', 'focusin', 'wheel', 'touchstart'].forEach(ev => fb.addEventListener(ev, stop, { once: true, passive: true })); }
   };
   const choose = (opts, render, wrapCls) => {
     let answered = false;

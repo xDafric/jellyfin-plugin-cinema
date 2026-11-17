@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.37.0",
+                             "changelog":  "Film Quiz: the answer card no longer jumps to the next question while you look at the actor's other films. The automatic advance is slower (7 s) with a visible countdown and stops as soon as you hover, touch or focus the card; the face and a new button open the actor's full film list; Enter and Esc no longer affect the quiz while that dialog is open.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.37.0.zip",
+                             "checksum":  "d838f13f7c02188aef7b1d87dfde09f5",
+                             "timestamp":  "2026-12-04T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.36.0",
                              "changelog":  "Film Quiz: follow actors (trained first, new and upcoming films of the actors you follow on the quiz page and home page), best known films and the full filmography of every actor with watched, in-library and requestable status, the role shown for every film, and scene pictures (with the actor when a TMDB key is set on the server, otherwise the film backdrop). Follow button on person pages.",
                              "targetAbi":  "12.4.0.0",
