@@ -96,7 +96,7 @@ async function mDownloads(n) {
     const live = (Array.isArray(q) ? q : (q.items || q.downloads || q.queue || q.records || [])).map(x => ({ x, k: kindOf(x) === 'queued' ? 'queued' : 'work' }));
     const hist = (Array.isArray(act) ? act : (act.items || act.requests || [])).slice().sort((a, b) => Date.parse(b.requestedAt || 0) - Date.parse(a.requestedAt || 0)).map(x => ({ x, k: kindOf(x) }));
     const active = live.concat(hist.filter(o => o.k === 'work' || o.k === 'queued')); const recent = hist.filter(o => o.k === 'done' || o.k === 'failed').slice(0, 40);
-    if (!box.isConnected) return; box.replaceChildren();
+    if (!box.isConnected && !first) return; first = false; box.replaceChildren();
     if (!active.length && !recent.length) { box.append(h('div', { class: 'nf-empty' }, h('div', {}, t('mdlEmpty')), h('small', { style: 'opacity:.6' }, t('mdlHint')))); return; }
     if (active.length) box.append(h('h2', { class: 'dl-h' }, t('mdlActive') + ' · ' + active.length), h('div', { class: 'dl-list' }, active.map(o => rowOf(o.x, o.k))));
     if (recent.length) box.append(h('h2', { class: 'dl-h' }, t('mdlRecent')), h('div', { class: 'dl-list' }, recent.map(o => rowOf(o.x, o.k))));

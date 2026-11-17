@@ -21,7 +21,7 @@ function dzTop(name) {
   DZ.top.set(k, p); return p;
 }
 const probeImg = u => new Promise(res => { const i = new Image(); i.onload = () => res(true); i.onerror = () => res(false); i.src = u; });
-function setCover(el, url) { const cv = el.querySelector('.cv'); if (!cv || !url || !el.isConnected) return; cv.style.backgroundImage = 'url("' + url + '")'; cv.replaceChildren(); }
+function setCover(el, url) { const cv = el.querySelector('.cv'); if (!cv || !url) return; cv.style.backgroundImage = 'url("' + url + '")'; cv.replaceChildren(); }
 function fillArtistImg(el, name) { dzArtist(name).then(r => { if (r && r.img) setCover(el, r.img); }); }
 function fillAlbumImg(el, mbid, artist, title) {
   (mbid ? probeImg(caaImg(mbid)) : Promise.resolve(false)).then(ok => ok ? setCover(el, caaImg(mbid)) : dzAlbumCover(artist, title).then(u => u && setCover(el, u)));
@@ -37,8 +37,8 @@ const skelRows = n => h('div', { class: 'sk-list' }, Array.from({ length: n }, (
 async function artistPopular(ar, all, popBox, moreHost) {
   popBox.replaceChildren(skelRows(5));
   let rank = []; try { rank = await dzTop(ar.Name); } catch (e) { }
-  if (!popBox.isConnected) return;
   let list = [];
+  try {
   if (rank.length) {
     const flat = rank.map(r => ({ artistName: ar.Name, trackName: r.title, title: r.title, albumName: r.album, durationMs: r.dur, preview_url: r.preview, artworkUrl: r.image, id: 'dz' + r.title }));
     const its = await toTrackItems(flat); const have = new Set(its.filter(x => !x._ext).map(x => x.Id));
@@ -47,7 +47,7 @@ async function artistPopular(ar, all, popBox, moreHost) {
   } else {
     const top = await tracksOf({ ArtistIds: ar.Id, SortBy: 'PlayCount,SortName', SortOrder: 'Descending', Limit: 10 }); list = top.concat(all.filter(x => !top.some(y => y.Id === x.Id)));
   }
-  if (!popBox.isConnected) return;
+  } catch (e) { console.warn('[cinema] popular', e); list = all.slice(); }
   let open = false; const btn = h('button', { class: 'btn grey sp-more', onclick: () => { open = !open; draw(); } });
   const draw = () => { const shown = open ? list : list.slice(0, 5); popBox.replaceChildren(trackList(shown, { id: ar.Id + '-pop' + (open ? 'all' : ''), number: 'idx' })); $$('.sp-th', popBox).forEach(x => x.remove()); btn.textContent = open ? t('showFewer') : t('showMoreSongs') + ' (' + list.length + ')'; btn.hidden = list.length <= 5; };
   moreHost.replaceChildren(btn); draw();
@@ -89,7 +89,7 @@ async function artistDisco(n, ar, alb) {
 async function albumMissing(n, al, tracks) {
   const rg = (al.ProviderIds || {}).MusicBrainzReleaseGroup; if (!rg || !aurralOn() || !aurralReq()) return;
   let list; try { list = await aget('/api/artists/release-group/' + rg + '/tracks'); } catch (e) { return; }
-  if (!Array.isArray(list) || !list.length || !n.isConnected) return;
+  if (!Array.isArray(list) || !list.length) return;
   const artist = (al.AlbumArtist || (al.ArtistItems && al.ArtistItems[0] && al.ArtistItems[0].Name) || '');
   const have = new Set(tracks.map(x => norm(x.Name)));
   const missing = list.filter(x => !have.has(norm(x.title || x.trackName || x.name)));
