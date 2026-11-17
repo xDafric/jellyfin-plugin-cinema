@@ -66,7 +66,7 @@
 .gm-recent { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
 .gm-rf { display: flex; gap: 14px; padding: 12px; border-radius: 18px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.05); }
 .gm-rfp { position: relative; width: 92px; aspect-ratio: 2/3; border-radius: 10px; background: #26262b center / cover; flex: none; }
-.gm-rfp .dmark { position: absolute; left: 4px; bottom: 4px; font-size: 10px; }
+.gm-rfp .dmark { position: absolute; left: 4px; right: auto; top: auto; bottom: 4px; font-size: 10px; padding: 2px 7px; }
 .gm-rfb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .gm-rfb > b { font-size: 15px; }
 .gm-rfb > small { color: #8d8d97; }

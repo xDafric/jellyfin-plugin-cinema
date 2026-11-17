@@ -91,7 +91,7 @@ function tasteBar(onPick) {
 /* ----- What shall we watch tonight? ----- */
 const TN = { lib: null, at: 0, time: 'any', mood: 'any', unseen: true, picks: [] };
 const TN_MOODS = { any: null, thrill: /thriller|crime|mystery|krimi|spannung|mystère/i, funny: /comedy|kom[oö]die/i, emo: /drama|romance|liebe|romant/i, light: /comedy|kom[oö]die|animation|zeichentrick|family|familie|romance|liebe/i, think: /documentary|dokument|history|geschichte|science fiction|sci-fi|drama/i, action: /action|adventure|abenteuer|war|krieg/i, scary: /horror|grusel/i, family: /family|familie|animation|zeichentrick/i };
-const TN_MOOD_ICON = { any: '', thrill: '', funny: '', emo: '', light: '', think: '', action: '', scary: '', family: '' };
+const TN_MOOD_ICON = { any: '🎲', thrill: '🕵️', funny: '😂', emo: '🥲', light: '☕', think: '🧠', action: '💥', scary: '👻', family: '👨‍👩‍👧' };
 async function tnLoad() {
   if (TN.lib && Date.now() - TN.at < 300000) return TN.lib; TN.at = Date.now();
   const [r, wl] = await Promise.all([items({ IncludeItemTypes: 'Movie', Fields: F_BASE + ',ProviderIds', Limit: 6000, EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1 }), items({ IncludeItemTypes: 'Movie', Filters: 'Likes', Limit: 2000, Fields: '' }).catch(() => ({ Items: [] }))]);
@@ -115,7 +115,7 @@ async function tonightView(page) {
   const chip = (cur, v, label, set) => h('button', { class: 'nf-chip' + (cur === v ? ' on' : ''), onclick: e => { set(v); $$('.nf-chip', e.currentTarget.parentElement).forEach(c => c.classList.toggle('on', c === e.currentTarget)); roll(); } }, label);
   const timeRow = h('div', { class: 'nf-seasons', style: 'margin:0' }, [['any', t('tnAny')], ['short', t('tnShort')], ['mid', t('tnMid')], ['long', t('tnLong')]].map(([v, l]) => chip(TN.time, v, l, x => { TN.time = x; })));
   const moods = [['any', t('tnAny')], ['thrill', t('tnThrill')], ['funny', t('tnFunny')], ['emo', t('tnEmo')], ['light', t('tnLight')], ['think', t('tnThink')], ['action', t('tnAction')], ['scary', t('tnScary')], ['family', t('tnFamily')]];
-  const moodRow = h('div', { class: 'tn-moods' }, moods.map(([v, l]) => h('button', { class: 'tn-mood' + (TN.mood === v ? ' on' : ''), onclick: e => { TN.mood = v; $$('.tn-mood', moodRow).forEach(c => c.classList.toggle('on', c === e.currentTarget)); roll(); } }, l)));
+  const moodRow = h('div', { class: 'tn-moods' }, moods.map(([v, l]) => h('button', { class: 'tn-mood' + (TN.mood === v ? ' on' : ''), onclick: e => { TN.mood = v; $$('.tn-mood', moodRow).forEach(c => c.classList.toggle('on', c === e.currentTarget)); roll(); } }, h('span', {}, TN_MOOD_ICON[v]), l)));
   const unseenCb = h('label', { class: 'dc-tg' }, h('input', { type: 'checkbox', checked: TN.unseen, onchange: e => { TN.unseen = e.target.checked; roll(); } }), h('i'), h('span', {}, t('tnOnlyNew')));
   wrap.append(h('div', { class: 'tn-filters' }, h('div', {}, h('small', {}, t('tnTime')), timeRow), h('div', {}, h('small', {}, t('tnMood')), moodRow), unseenCb));
   if (resume.length) wrap.append(h('div', { class: 'tn-resume' }, h('small', {}, t('tnResume')), h('div', {}, resume.map(it => h('button', { class: 'tn-rs', onclick: () => playVideo(it) }, h('div', Object.assign({ class: 'tn-rsp' }, bg(imgUrl(it, 'Primary', 120)))), h('div', {}, h('b', { class: 'ell' }, it.Type === 'Episode' ? (it.SeriesName || it.Name) : it.Name), h('span', {}, Math.round(100 - pct(it)) + '% ' + t('tnLeft'))), ic('play'))))));
@@ -135,5 +135,5 @@ async function tonightView(page) {
 }
 function tonightBanner(container) {
   const moods = [['thrill', t('tnThrill')], ['funny', t('tnFunny')], ['light', t('tnLight')], ['action', t('tnAction')]];
-  container.append(h('section', { class: 'tn-banner' }, h('div', { class: 'tn-bt' }, h('div', {}, h('h2', {}, t('tnTitle')), h('p', {}, t('tnBannerSub')))), h('div', { class: 'tn-bm' }, moods.map(([k, l]) => h('a', { class: 'nf-chip', href: '#/c/tonight?mood=' + k }, l)), h('a', { class: 'btn white sm', href: '#/c/tonight' }, ic('play'), t('tnGo')))));
+  container.append(h('section', { class: 'tn-banner' }, h('div', { class: 'tn-bt' }, h('span', { class: 'tn-be' }, '🍿'), h('div', {}, h('h2', {}, t('tnTitle')), h('p', {}, t('tnBannerSub')))), h('div', { class: 'tn-bm' }, moods.map(([k, l]) => h('a', { class: 'nf-chip', href: '#/c/tonight?mood=' + k }, TN_MOOD_ICON[k] + ' ' + l)), h('a', { class: 'btn white sm', href: '#/c/tonight' }, ic('play'), t('tnGo')))));
 }
