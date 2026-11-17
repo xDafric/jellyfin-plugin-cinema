@@ -208,3 +208,6 @@ function tvInit() {
     if (g) { const r = e.getBoundingClientRect(); g.style.background = 'radial-gradient(ellipse 55% 60% at ' + Math.round((r.left + r.width / 2) / innerWidth * 100) + '% ' + Math.round((r.top + r.height / 2) / innerHeight * 100) + '%, rgba(' + rgb_ + ',.34), rgba(' + rgb_ + ',.12) 45%, transparent 75%)'; g.style.opacity = 1; }
   };
 }
+
+/* the app asks pages to give memory back when the system runs low */
+window.cxTvTrim = () => { try { hidePeek(); C.libCache = null; if (typeof resetSeerrCache === 'function') resetSeerrCache(); } catch (e) { } };

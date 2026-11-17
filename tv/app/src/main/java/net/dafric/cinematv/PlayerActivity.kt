@@ -168,7 +168,16 @@ class PlayerActivity : Activity() {
         setContentView(root)
     }
 
-    private var softDecoders = false; private var uiLoop = false
+    private var softDecoders = false; private var uiLoop = false; private var netRetries = 0
+    /** A clear message with a way out instead of a toast and a closed screen. */
+    private fun fail(code: String, resume: Long) {
+        if (isFinishing || isDestroyed) return
+        runCatching {
+            android.app.AlertDialog.Builder(this).setTitle(getString(R.string.play_failed)).setMessage(code).setCancelable(false)
+                .setPositiveButton("Erneut versuchen") { _, _ -> netRetries = 0; scope.launch { startStream(forceTranscode = true, resumeMs = resume) } }
+                .setNegativeButton("Schlie\u00dfen") { _, _ -> finish() }.show()
+        }.onFailure { finish() }
+    }
     private fun buildPlayer() {
         val dsf = DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true).setDefaultRequestProperties(mapOf("Authorization" to store.authHeader()))
         player = ExoPlayer.Builder(this, DefaultRenderersFactory(this).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER).setEnableDecoderFallback(softDecoders))
@@ -181,7 +190,7 @@ class PlayerActivity : Activity() {
             override fun onPlaybackStateChanged(state: Int) {
                 spinner.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
                 if (state == Player.STATE_ENDED) { if (nextItem != null) playNext() else finish() }
-                if (state == Player.STATE_READY) updateUi()
+                if (state == Player.STATE_READY) { netRetries = 0; updateUi() }
             }
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 ppBtn.setIcon(if (isPlaying) R.drawable.t_pause else R.drawable.t_play)
@@ -191,12 +200,15 @@ class PlayerActivity : Activity() {
             override fun onTracksChanged(tracks: Tracks) { if (!defaultsApplied && tracks.groups.isNotEmpty()) { defaultsApplied = true; applyDefaultTracks(tracks) } }
             override fun onPlayerError(e: PlaybackException) {
                 Log.e("CinemaPlayer", "error", e)
+                /* network trouble: try the same stream again a few times before changing anything */
+                val net = e.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED || e.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT || e.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+                if (net && netRetries < 3) { netRetries++; val pos = player.currentPosition; flash("Verbindung \u2026 Versuch " + netRetries); ui.postDelayed({ scope.launch { startStream(forceTranscode = method == "Transcode", resumeMs = pos) } }, 2000L * netRetries); return }
                 if (method != "Transcode") scope.launch { startStream(forceTranscode = true, resumeMs = player.currentPosition) }
                 else if (!softDecoders && e.errorCodeName.contains("DECOD")) {
                     /* the hardware decoder is not available: last resort is a software decoder (slower, but it plays) */
                     softDecoders = true; val pos = player.currentPosition; view.player = null; player.release(); buildPlayer(); scope.launch { startStream(forceTranscode = true, resumeMs = pos) }
                 }
-                else { Toast.makeText(this@PlayerActivity, getString(R.string.play_failed) + " (" + e.errorCodeName + ")", Toast.LENGTH_LONG).show(); finish() }
+                else fail(e.errorCodeName, player.currentPosition)
             }
         })
         if (!uiLoop) { uiLoop = true; ui.post(object : Runnable { override fun run() { updateUi(); checkSegment(); if (System.currentTimeMillis() - lastReport > 10_000 && player.isPlaying) report("Progress"); ui.postDelayed(this, 500) } }) }
@@ -215,7 +227,7 @@ class PlayerActivity : Activity() {
     private suspend fun start(id: String, ticks: Long) {
         itemId = id; startTicks = ticks; defaultsApplied = false; nextItem = null; segments = emptyList(); sheets.evictAll(); tpWidth = 0
         val r = withContext(Dispatchers.IO) { runCatching { Http.request("GET", "${store.url}/Users/${store.userId}/Items/$id", store.authHeader()) }.getOrNull() }
-        if (r == null || !r.ok) { Toast.makeText(this, R.string.play_failed, Toast.LENGTH_LONG).show(); finish(); return }
+        if (r == null || !r.ok) { fail(if (r == null) "NETWORK" else "HTTP " + r.code, ticks / 10_000); return }
         item = r.json()
         val isEp = item.optString("Type") == "Episode"
         titleView.text = if (isEp) item.optString("SeriesName") else item.optString("Name")
@@ -258,9 +270,9 @@ class PlayerActivity : Activity() {
         val body = JSONObject().put("DeviceProfile", deviceProfile()).toString()
         val q = "UserId=${store.userId}&StartTimeTicks=${resumeMs * 10_000}&MaxStreamingBitrate=120000000&AutoOpenLiveStream=true" + if (forceTranscode) "&EnableDirectPlay=false&EnableDirectStream=false" else ""
         val r = withContext(Dispatchers.IO) { runCatching { Http.request("POST", "${store.url}/Items/$itemId/PlaybackInfo?$q", store.authHeader(), body, 20000) }.getOrNull() }
-        if (r == null || !r.ok) { Toast.makeText(this, R.string.play_failed, Toast.LENGTH_LONG).show(); finish(); return }
+        if (r == null || !r.ok) { fail(if (r == null) "NETWORK" else "HTTP " + r.code, resumeMs); return }
         val j = r.json(); psid = j.optString("PlaySessionId"); val srcs = j.optJSONArray("MediaSources")
-        if (srcs == null || srcs.length() == 0) { Toast.makeText(this, R.string.play_failed, Toast.LENGTH_LONG).show(); finish(); return }
+        if (srcs == null || srcs.length() == 0) { fail("NO_SOURCE", resumeMs); return }
         source = srcs.getJSONObject(0)
         val msid = source.getString("Id")
         val builder = MediaItem.Builder()

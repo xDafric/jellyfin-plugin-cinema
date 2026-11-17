@@ -9,8 +9,8 @@ android {
         applicationId = "net.dafric.cinematv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.3.4"
+        versionCode = 10
+        versionName = "1.4.0"
     }
     signingConfigs {
         create("release") {
