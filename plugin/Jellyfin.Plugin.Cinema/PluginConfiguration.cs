@@ -57,6 +57,12 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public bool FeatItemMenu { get; set; } = true;
 
+    /// <summary>Film Quiz: learn faces, names and films of the actors from watched films.</summary>
+    public bool FeatQuiz { get; set; } = true;
+
+    /// <summary>Cinema Wrapped: the viewing year as a story.</summary>
+    public bool FeatWrapped { get; set; } = true;
+
     // ---- defaults for every user (users can override unless AllowUserOverrides is off) ----
     public bool AllowUserOverrides { get; set; } = true;
 
@@ -79,6 +85,25 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool PlayerAutoSkipIntro { get; set; }
 
     public string PlayerQuality { get; set; } = "auto";
+
+    // ---- Film Quiz and Wrapped defaults (users can override) ----
+    public int QuizNewPerDay { get; set; } = 10;
+
+    public int QuizDailyGoalXp { get; set; } = 100;
+
+    public int QuizBlitzSeconds { get; set; } = 60;
+
+    public bool QuizAutoAdvance { get; set; } = true;
+
+    /// <summary>Only learn actors that appear in at least this many watched films (1 = everyone).</summary>
+    public int QuizMinFilms { get; set; } = 1;
+
+    /// <summary>auto = on the home page from mid November to the end of January, always, never.</summary>
+    public string WrappedBanner { get; set; } = "auto";
+
+    public bool WrappedIncludeShows { get; set; } = true;
+
+    public bool WrappedAutoPlay { get; set; } = true;
 
     /// <summary>Comma separated navigation entries to hide, e.g. "calendar,requests".</summary>
     public string HiddenNav { get; set; } = string.Empty;

@@ -50,7 +50,18 @@
                 .cin-colors { display: flex; align-items: center; gap: 10px; } .cin-colors button { all: unset; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; } .cin-colors button.on { border-color: #fff; }
                 .cin-colors input[type=color] { width: 40px; height: 30px; padding: 0; border: 0; background: none; }
                 .cin pre { background: rgba(0,0,0,.4); border-radius: 12px; padding: 12px; font-size: 12px; overflow: auto; max-height: 240px; }
-                @media (max-width: 800px) { .cin-layout { grid-template-columns: 1fr; } .cin-nav { position: static; flex-direction: row; overflow-x: auto; } .cin-field { grid-template-columns: 1fr; } }
+                .cin-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; align-items: start; margin-bottom: 18px; }
+                .cin-feat { --h: #e50914; border-radius: 22px; border: 1px solid rgba(255,255,255,.07); background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--h) 26%, #17171a), #17171a 60%); padding: 18px 22px; }
+                .cin-feat:has(.cin-fh .cin-sw.on) { border-color: color-mix(in srgb, var(--h) 50%, transparent); }
+                .cin-fh { display: flex; align-items: flex-start; gap: 14px; }
+                .cin-fh > div { flex: 1; min-width: 0; } .cin-fh b { display: block; font-size: 16.5px; font-weight: 800; } .cin-fh span { display: block; color: #9a9aa4; font-size: 13px; line-height: 1.5; margin-top: 3px; }
+                .cin-fi { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: rgba(0,0,0,.35); }
+                .cin-feat:not(:has(.cin-fh .cin-sw.on)) .cin-fi { filter: grayscale(1); opacity: .6; }
+                .cin-sub { margin-top: 12px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,.07); }
+                .cin-feat:not(:has(.cin-fh .cin-sw.on)) .cin-sub { opacity: .45; }
+                .cin-start { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
+                .cin-start > div { padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.05); } .cin-start em { font-style: normal; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #fff; color: #000; font-weight: 800; font-size: 13px; margin-bottom: 8px; } .cin-start b { display: block; font-size: 14.5px; } .cin-start span { display: block; color: #9a9aa4; font-size: 12.5px; line-height: 1.45; margin: 3px 0 8px; }
+                @media (max-width: 800px) { .cin-gal { grid-template-columns: 1fr; } .cin-layout { grid-template-columns: 1fr; } .cin-nav { position: static; flex-direction: row; overflow-x: auto; } .cin-field { grid-template-columns: 1fr; } }
             </style>
             <div class="cin" id="CinRoot">
                 <div class="cin-head">
@@ -70,6 +81,13 @@
                     <div>
                         <!-- connections -->
                         <div class="cin-panel on" data-panel="conn">
+                            <div class="cin-card"><h3>Getting started</h3><p>Four steps to a finished setup.</p>
+                                <div class="cin-start">
+                                    <div><em>1</em><b>Connect your services</b><span>Seerr, Radarr, Sonarr and Aurral are optional. The chips at the top show what is connected.</span></div>
+                                    <div><em>2</em><b>Choose the features</b><span>Quiz, Wrapped, Letterboxd and more can be switched on or off for everyone.</span><button class="cin-btn" data-goto="feat">Open features</button></div>
+                                    <div><em>3</em><b>Set the look</b><span>Accent colour, logo text and card size as defaults for all users.</span><button class="cin-btn" data-goto="look">Open appearance</button></div>
+                                    <div><em>4</em><b>Invite your users</b><span>Everyone sees a short setup wizard on their first visit and can adjust everything in their settings.</span></div>
+                                </div></div>
                             <div class="cin-card"><h3>Welcome to Cinema</h3><p>Cinema replaces the look of Jellyfin with a streaming-service style interface: Netflix-like home page, a Spotify-like music app, its own video player and a TV mode for Android TV. Everything works with Jellyfin alone. The connections below are optional and each one unlocks extra pages.</p>
                                 <ol class="cin-steps"><li><b>Seerr</b> unlocks Discover, requests, the "requested" marks and the Seerr watchlist.</li><li><b>Radarr and Sonarr</b> unlock download progress and the release calendar.</li><li><b>Aurral</b> unlocks music discovery and album requests.</li><li>Use <b>Test connection</b> under each service. A green dot at the top means it is reachable from the Jellyfin server.</li><li>Save, then reload the web page (Ctrl+F5) once to see the changes.</li></ol></div>
                             <div class="cin-card"><h3>Seerr</h3><p>Jellyseerr or Overseerr. <b>URL:</b> the address the Jellyfin server can reach, for example http://seerr:5055 inside Docker or http://192.168.1.20:5055. <b>API key:</b> in Seerr open Settings, General, copy the API key. Requests are made as the signed-in Jellyfin user, so the Jellyfin accounts must be imported into Seerr first. The key never reaches the browser; the server forwards requests.</p>
@@ -87,16 +105,35 @@
                         </div>
                         <!-- features -->
                         <div class="cin-panel" data-panel="feat">
-                            <div class="cin-card"><h3>Browsing</h3><p>Turn features off for every user. A disabled feature disappears from the interface.</p>
-                                <div data-feats="Hero|Billboard on the home page|Large rotating banner at the top.,Peek|Hover preview cards|Preview card when hovering a poster.,InfiniteScroll|Infinite scroll|Load more rows and grids while scrolling.,ItemMenu|Item menu|The three-dot menu with metadata, image and watched actions.,MediaInfo|Media info panel|File, video, audio and subtitle details on detail pages.,Ratings|Rotten Tomatoes and IMDb scores|Needs Seerr.,SeerrSimilar|Similar titles from Seerr|Shows titles you do not own yet."></div></div>
-                            <div class="cin-card"><h3>Pages</h3><p>Entire sections of the interface.</p>
-                                <div data-feats="Discover|Discover|Seerr recommendations with filters and search.,Watchlist|Watchlist|Your saved titles.,Requests|Requests and downloads|Seerr requests with download progress.,Calendar|Release calendar|Needs Radarr or Sonarr.,Music|Music app|The Spotify style music interface.,MusicDiscovery|Music discovery|Aurral discovery, track previews and requests.,PluginMenus|Plugin entries in the account menu|Shows entries other plugins add to Jellyfin's menu."></div></div>
-                            <div class="cin-card"><h3>Player</h3><p>The built-in video player.</p>
-                                <div data-feats="OwnPlayer|Cinema video player|Turn off to use Jellyfin's own player everywhere."></div></div>
-                        <div class="cin-card"><h3>Extras (off by default)</h3><p>Two optional features. Turn them on here, then each person sets them up in Cinema settings.</p>
-                                <div data-feats="Letterboxd|Letterboxd watched films|Films a user logged as watched on Letterboxd show as watched in Jellyfin and are labelled in Discover. Read only: nothing is ever written to Letterboxd. Each user enters their public Letterboxd name in Cinema settings under Services. Letterboxd has no official API; the public diary feed is used (latest entries) plus an optional CSV import for the full history.,Archive|Movie archive|Administrators can archive a movie from its three-dot menu: the file is deleted to free space while title; poster and details stay on an Archive page. Archived movies can be restored later."></div>
-                                <div class="cin-row"><div><b>Archive also cleans up Radarr</b><span>When archiving, delete the file in Radarr and stop monitoring the movie so it is not downloaded again. Needs the Radarr connection. Turn off to leave Radarr untouched.</span></div><button class="cin-sw" data-sw="ArchiveRadarr"></button></div></div>
+                            <div class="cin-card"><h3>Features</h3><p>Switch features on or off for every user. A disabled feature disappears from the interface, and users can switch the rest off for themselves in their own settings. Each person also gets a short setup wizard the first time they open Cinema.</p></div>
+                            <div class="cin-gal">
+                            <div class="cin-feat" style="--h:#e50914">
+                                <div class="cin-fh"><span class="cin-fi">🖼️</span><div><b>Billboard on the home page</b><span>Large rotating banner with logo, synopsis and a play button. Number and speed are set under Appearance.</span></div><button class="cin-sw" data-sw="FeatHero"></button></div>
                             </div>
+                            <div class="cin-feat" style="--h:#0a84ff">
+                                <div class="cin-fh"><span class="cin-fi">👁️</span><div><b>Hover preview cards</b><span>A card with synopsis, rating and quick actions when the pointer rests on a poster.</span></div><button class="cin-sw" data-sw="FeatPeek"></button></div>
+                            </div>
+                            <div class="cin-feat" style="--h:#ff6a3d">
+                                <div class="cin-fh"><span class="cin-fi">▶️</span><div><b>Cinema video player</b><span>Our own player with subtitle styling, skip intro, auto next episode and quality choice. Turn off to use Jellyfin's own player everywhere.</span></div><button class="cin-sw" data-sw="FeatOwnPlayer"></button></div>
+                            </div>
+                            <div class="cin-feat" style="--h:#1ed760">
+                                <div class="cin-fh"><span class="cin-fi">🎭</span><div><b>Film Quiz</b><span>Users learn faces, names and films of the actors from the films they watched: daily spaced-repetition training, games, levels, streaks and badges. Progress is stored per user in Jellyfin. The values below are defaults that every user can change for themselves.</span></div><button class="cin-sw" data-sw="FeatQuiz"></button></div><div class="cin-sub"><div class="cin-row"><div><b>New faces per day</b><span>How many new actors the daily training introduces.</span></div><input type="number" min="1" max="50" data-k="QuizNewPerDay" style="width:110px"></div><div class="cin-row"><div><b>Daily goal (XP)</b><span>The ring on the quiz dashboard. Reaching it keeps the streak alive.</span></div><input type="number" min="20" max="1000" data-k="QuizDailyGoalXp" style="width:110px"></div><div class="cin-row"><div><b>Blitz round length (seconds)</b><span></span></div><input type="number" min="15" max="180" data-k="QuizBlitzSeconds" style="width:110px"></div><div class="cin-row"><div><b>Continue after a correct answer</b><span>Jump to the next question by itself.</span></div><button class="cin-sw" data-sw="QuizAutoAdvance"></button></div><div class="cin-row"><div><b>Which actors to learn</b><span>Focus on actors that appear in several watched films.</span></div><select data-k="QuizMinFilms" style="width:200px"><option value="1">Everyone</option><option value="2">2 or more films</option><option value="3">3 or more films</option></select></div></div>
+                            </div>
+                            <div class="cin-feat" style="--h:#ff2d92">
+                                <div class="cin-fh"><span class="cin-fi">🎬</span><div><b>Cinema Wrapped</b><span>The viewing year as a story: hours, favourite genres, the actor seen most, highlights, streaks and a picture to share. Uses Jellyfin watch dates and the Letterboxd diary.</span></div><button class="cin-sw" data-sw="FeatWrapped"></button></div><div class="cin-sub"><div class="cin-row"><div><b>Home page banner</b><span>Season shows the card from mid November to the end of January.</span></div><select data-k="WrappedBanner" style="width:200px"><option value="auto">Season</option><option value="always">Always</option><option value="never">Never</option></select></div><div class="cin-row"><div><b>Include series</b><span>Also count watched episodes of series.</span></div><button class="cin-sw" data-sw="WrappedIncludeShows"></button></div><div class="cin-row"><div><b>Advance automatically</b><span>Slides move on by themselves.</span></div><button class="cin-sw" data-sw="WrappedAutoPlay"></button></div></div>
+                            </div>
+                            <div class="cin-feat" style="--h:#00b020">
+                                <div class="cin-fh"><span class="cin-fi">🟢</span><div><b>Letterboxd watched films</b><span>Films a user logged as watched on Letterboxd show as watched in Jellyfin and are labelled in Discover. Read only: nothing is ever written to Letterboxd. Each user enters their public Letterboxd name in Cinema settings under Connections. Letterboxd has no official API; the public diary feed is used (latest entries) plus an optional export import for the full history. Off by default.</span></div><button class="cin-sw" data-sw="FeatLetterboxd"></button></div>
+                            </div>
+                            <div class="cin-feat" style="--h:#f5b301">
+                                <div class="cin-fh"><span class="cin-fi">📦</span><div><b>Movie archive</b><span>Administrators can archive a movie from its three-dot menu: the file is deleted to free space while title, poster and details stay on an Archive page. Archived movies can be restored later. Off by default.</span></div><button class="cin-sw" data-sw="FeatArchive"></button></div><div class="cin-sub"><div class="cin-row"><div><b>Also clean up Radarr</b><span>Delete the file in Radarr and stop monitoring the movie so it is not downloaded again. Needs the Radarr connection.</span></div><button class="cin-sw" data-sw="ArchiveRadarr"></button></div></div>
+                            </div>
+                            </div>
+                            <div class="cin-card"><h3>More browsing features</h3><p>Smaller parts of the interface.</p>
+                                <div data-feats="InfiniteScroll|Infinite scroll|Load more rows and grids while scrolling.,ItemMenu|Item menu|The three-dot menu with metadata; image and watched actions.,MediaInfo|Media info panel|File; video; audio and subtitle details on detail pages.,Ratings|Rotten Tomatoes and IMDb scores|Needs Seerr.,SeerrSimilar|Similar titles from Seerr|Shows titles you do not own yet."></div></div>
+                            <div class="cin-card"><h3>Pages</h3><p>Entire sections of the interface.</p>
+                                <div data-feats="Discover|Discover|Seerr recommendations with filters and search.,Watchlist|Watchlist|Your saved titles.,Requests|Requests and downloads|Seerr requests with download progress.,Calendar|Release calendar|Needs Radarr or Sonarr.,Music|Music app|The Spotify style music interface.,MusicDiscovery|Music discovery|Aurral discovery; track previews and requests.,PluginMenus|Plugin entries in the account menu|Shows entries other plugins add to Jellyfin's menu."></div></div>
+                        </div>
                         <!-- appearance -->
                         <div class="cin-panel" data-panel="look">
                             <div class="cin-card"><h3>Branding</h3><p>Defaults for every user. Users can change them in their own settings unless you lock them below.</p>
@@ -106,7 +143,7 @@
                                 <div class="cin-row"><div><b>Billboard titles</b><span>How many titles rotate.</span></div><input type="number" min="1" max="20" data-k="HeroItems" style="width:110px"></div>
                                 <div class="cin-row"><div><b>Billboard speed (seconds)</b><span>Time before the next title.</span></div><input type="number" min="3" max="60" data-k="HeroIntervalSeconds" style="width:110px"></div>
                                 <div class="cin-row"><div><b>Preview delay (ms)</b><span>Hover time before the preview card opens.</span></div><input type="number" min="0" max="2000" step="20" data-k="PeekDelayMs" style="width:110px"></div>
-                                <div class="cin-row"><div><b>Hidden navigation entries</b><span>Comma separated: watchlist, discover, requests, calendar, music, quiz.</span></div><input type="text" data-k="HiddenNav" style="width:260px" placeholder="calendar,requests"></div>
+                                <div class="cin-row"><div><b>Hidden navigation entries</b><span>Comma separated: watchlist, discover, requests, calendar, music, quiz, wrapped.</span></div><input type="text" data-k="HiddenNav" style="width:260px" placeholder="calendar,requests"></div>
                                 <div class="cin-row"><div><b>Allow users to change settings</b><span>When off, every user gets exactly these defaults.</span></div><button class="cin-sw" data-sw="AllowUserOverrides"></button></div></div>
                         </div>
                         <!-- home -->
@@ -241,6 +278,7 @@
                 $$('#CinNav button').forEach(function (x) { x.classList.toggle('on', x === b); });
                 $$('.cin-panel').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-panel') === tab); });
             });
+            $$('[data-goto]').forEach(function (b) { b.onclick = function () { var n = page.querySelector('#CinNav [data-tab="' + b.getAttribute('data-goto') + '"]'); if (n) n.click(); }; });
             page.querySelector('#CinSave').onclick = save;
             page.querySelector('#CinSecsReset').onclick = function () { secs = DEFAULT_ON.map(function (id) { return { id: id, on: true }; }); secsDirty = false; secsReset = true; drawSecs(); };
             $$('[data-test]').forEach(function (btn) {
