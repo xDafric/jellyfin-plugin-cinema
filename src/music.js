@@ -559,3 +559,24 @@ async function playLibItem(o) {
     if (tr.length) playList(tr, 0, { ctx: { id: o.id } }); else toast(t('empty'));
   } catch (e) { toast(t('error')); }
 }
+
+/* hardware media keys from desktop/TV shells: music first when a track is loaded and nothing else is playing, otherwise the video element */
+window.cxMedia = k => {
+  try {
+    const v = document.querySelector('video');
+    const useVideo = v && (v.currentSrc || v.src) && (!v.paused || !cur());
+    if (useVideo) {
+      if (k === 'playpause') v.paused ? v.play().catch(() => { }) : v.pause();
+      else if (k === 'play') v.play().catch(() => { });
+      else if (k === 'pause' || k === 'stop') v.pause();
+      return true;
+    }
+    if (!cur()) return false;
+    if (k === 'playpause') toggle();
+    else if (k === 'play') { if (P.audio.paused) toggle(); }
+    else if (k === 'pause' || k === 'stop') { if (!P.audio.paused) toggle(); }
+    else if (k === 'next') next();
+    else if (k === 'prev' || k === 'previous') prev();
+    return true;
+  } catch (e) { return false; }
+};

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cinema</title>
+<link rel="stylesheet" href="setup.css">
+</head>
+<body>
+<main>
+  <h1>Cinema</h1>
+  <p class="sub" id="sub">Connect to your Jellyfin server</p>
+  <form id="f" autocomplete="off">
+    <label for="url">Server address</label>
+    <input id="url" type="text" inputmode="url" spellcheck="false" placeholder="https://jellyfin.example.com" autofocus>
+    <button id="go" type="submit">Connect</button>
+  </form>
+  <p id="msg" role="status"></p>
+</main>
+<script src="setup.js"></script>
+</body>
+</html>
