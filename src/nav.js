@@ -8,7 +8,7 @@ function tabHref(name) {
 }
 function navKey(r, kind) {
   const p0 = (r.parts[0] || 'home').replace(/\.html$/, ''), v = r.parts[1];
-  if (kind === 'overlay') return p0 === 'home' ? 'home' : ({ movies: 'movies', shows: 'shows', list: 'favorites', music: 'music', discover: 'discover', calendar: 'calendar', watchlist: 'watchlist', person: '', requests: 'requests', settings: '', quiz: 'quiz', wrapped: 'wrapped' }[v] || '');
+  if (kind === 'overlay') return p0 === 'home' ? 'home' : ({ movies: 'movies', shows: 'shows', list: 'favorites', music: 'music', discover: 'discover', calendar: 'calendar', watchlist: 'watchlist', person: '', requests: 'requests', settings: '', quiz: 'quiz', wrapped: 'wrapped', tonight: 'tonight', storage: '' }[v] || '');
   if (p0 === 'home') {
     const tab = r.q.get('tab'); if (tab === '1') return 'favorites'; if (tab === '2') return 'watchlist';
     const b = $$('.headerTabs .emby-tab-button').find(x => x.dataset.index === tab); const m = b && /je-native-tab-btn-(\w+)/.exec(b.id || '');
@@ -63,8 +63,8 @@ const skinLabel = () => t('pskin') + ': ' + (skinOn() ? t('on') : t('off'));
 function getUI() { let u = document.getElementById('cx-ui'); if (!u) { u = h('div', { id: 'cx-ui' }); document.body.append(u); } return u; }
 
 /* ---------- persistent top bar ---------- */
-const NAVFEAT = { discover: 'discover', watchlist: 'watchlist', requests: 'requests', calendar: 'calendar', music: 'music', quiz: 'quiz', wrapped: 'wrapped' };
-const navOn = k => { const hid = (((C.status && C.status.defaults && C.status.defaults.hiddenNav) || '') + '').split(',').map(x => x.trim()); if (hid.includes(k) || (CFGU.navHide || []).includes(k)) return false; if (k === 'quiz' || k === 'wrapped') return !!cfg(k); return !NAVFEAT[k] || feat(NAVFEAT[k]); };
+const NAVFEAT = { discover: 'discover', watchlist: 'watchlist', requests: 'requests', calendar: 'calendar', music: 'music', quiz: 'quiz', wrapped: 'wrapped', tonight: 'tonight' };
+const navOn = k => { const hid = (((C.status && C.status.defaults && C.status.defaults.hiddenNav) || '') + '').split(',').map(x => x.trim()); if (hid.includes(k) || (CFGU.navHide || []).includes(k)) return false; if (k === 'quiz' || k === 'wrapped' || k === 'tonight') return !!cfg(k); return !NAVFEAT[k] || feat(NAVFEAT[k]); };
 function buildTop() {
   const uiRoot = getUI();
   const L_ = (k, label, href, cls) => h('a', { 'data-k': k, href: typeof href === 'function' ? '#' : href, class: cls || '', onclick: typeof href === 'function' ? (e => { e.preventDefault(); go(href()); }) : null }, label);
@@ -74,7 +74,7 @@ function buildTop() {
     navOn('requests') ? L_('requests', t('requests'), '#/c/requests', 'opt') : null, navOn('calendar') ? L_('calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'opt') : null, navOn('music') ? L_('music', t('music'), '#/c/music') : null, navOn('quiz') ? L_('quiz', t('gTitle'), '#/c/quiz', 'opt') : null);
   const more = h('div', { class: 'nf-menu-wrap nf-more' });
   const mkPop = items_ => h('div', { class: 'nf-pop hide' }, items_.map(([k, label, href, cls, ico]) => h('a', { 'data-cx': 1, 'data-k': k, class: cls || '', href: typeof href === 'function' ? '#' : href, onclick: e => { if (typeof href === 'function') { e.preventDefault(); go(href()); } } }, ico ? ic(ico, 'ic-s') : null, label)));
-  const moreItems = [navOn('quiz') ? ['quiz', t('gTitle'), '#/c/quiz', 'm-opt', 'star'] : null, navOn('wrapped') ? ['wrapped', t('wrTitle'), '#/c/wrapped', '', 'film'] : null, ['requests', t('requests'), '#/c/requests', 'm-opt', 'plus'], ['calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'm-opt', 'cal'], ['favorites', t('mylist'), '#/c/list', '', 'list'], ['bookmarks', t('bookmarks'), () => tabHref('bookmarks'), '', 'star'], ['live', 'Live TV', '#/livetv', '', 'tv'], ['games', 'Games', '#/games', '', 'film']];
+  const moreItems = [navOn('quiz') ? ['quiz', t('gTitle'), '#/c/quiz', 'm-opt', 'star'] : null, navOn('wrapped') ? ['wrapped', t('wrTitle'), '#/c/wrapped', '', 'film'] : null, navOn('tonight') ? ['tonight', t('tnTitle'), '#/c/tonight', '', 'play'] : null, ['requests', t('requests'), '#/c/requests', 'm-opt', 'plus'], ['calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'm-opt', 'cal'], ['favorites', t('mylist'), '#/c/list', '', 'list'], ['bookmarks', t('bookmarks'), () => tabHref('bookmarks'), '', 'star'], ['live', 'Live TV', '#/livetv', '', 'tv'], ['games', 'Games', '#/games', '', 'film']];
   moreItems.splice(0, moreItems.length, ...moreItems.filter(Boolean));
   const popMore = mkPop(moreItems); const popMore2 = mkPop(moreItems.map(x => x.slice())); popMore2.classList.add('up'); uiRoot.append(popMore2);
   more.append(h('button', { class: 'nf-pillbtn', onclick: e => { e.stopPropagation(); closePops(popMore); popMore.classList.toggle('hide'); } }, t('more'), ic('down', 'ic-s')), popMore);
@@ -85,13 +85,13 @@ function buildTop() {
   const av = h('div', { class: 'nf-avatar' }, 'U');
   const umItem = (iconNode, label, href, fn, cls) => h('a', { 'data-cx': 1, class: 'um-item ' + (cls || ''), href: href || '#', onclick: e => { if (!href || href === '#') e.preventDefault(); closePops(); fn && fn(e); } }, h('span', { class: 'um-ic' }, iconNode), h('span', { class: 'um-l' }, label), ic('right', 'um-ch'));
   const umAv = h('div', { class: 'um-av' }, 'U'), umName = h('div', { class: 'um-name' }, '');
-  const mobileItems = [['discover', t('discover'), '#/c/discover', 'star'], ['watchlist', 'Watchlist', '#/c/watchlist', 'plus'], ['favorites', t('mylist'), '#/c/list', 'list'], ['requests', t('requests'), '#/c/requests', 'queue'], ['calendar', t('calendar'), (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'cal'], ['quiz', t('gTitle'), '#/c/quiz', 'star'], ['wrapped', t('wrTitle'), '#/c/wrapped', 'film'], ['live', 'Live TV', '#/livetv', 'tv']].filter(x => (x[0] !== 'quiz' && x[0] !== 'wrapped') || navOn(x[0])).map(([k, label, href, i]) => umItem(ic(i, 'ic-s'), label, href, null, 'm-only'));
+  const mobileItems = [['discover', t('discover'), '#/c/discover', 'star'], ['watchlist', 'Watchlist', '#/c/watchlist', 'plus'], ['favorites', t('mylist'), '#/c/list', 'list'], ['requests', t('requests'), '#/c/requests', 'queue'], ['calendar', t('calendar'), (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'cal'], ['quiz', t('gTitle'), '#/c/quiz', 'star'], ['wrapped', t('wrTitle'), '#/c/wrapped', 'film'], ['tonight', t('tnTitle'), '#/c/tonight', 'play'], ['live', 'Live TV', '#/livetv', 'tv']].filter(x => (x[0] !== 'quiz' && x[0] !== 'wrapped' && x[0] !== 'tonight') || navOn(x[0])).map(([k, label, href, i]) => umItem(ic(i, 'ic-s'), label, href, null, 'm-only'));
   const skinSw = h('button', { class: 'set-switch' + (skinOn() ? ' on' : ''), 'aria-label': t('pskin'), onclick: e => { e.stopPropagation(); setSkin(!skinOn()); skinSw.classList.toggle('on', skinOn()); } }, h('i'));
   const plugSlot = h('div', { class: 'um-sec plug-slot', 'data-cx': 1 });
   const popUser = h('div', { class: 'nf-pop nf-user hide' },
     h('div', { class: 'um-head', 'data-cx': 1 }, umAv, h('div', {}, umName, h('span', {}, 'Cinema'))),
     h('div', { class: 'um-sec m-only', 'data-cx': 1 }, mobileItems),
-    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('edit', 'ic-s'), t('settings') + ' · Cinema', '#/c/settings'), optOn('archive') ? umItem(ic('lib', 'ic-s'), t('archive'), '#/c/archive') : null, umItem(ic('tv', 'ic-s'), t('quickConnect'), '#', () => quickConnectDialog()), umItem(ic('user', 'ic-s'), t('prefs'), '#/mypreferencesmenu'), umItem(ic('info', 'ic-s'), t('dash'), '#/dashboard')),
+    h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('edit', 'ic-s'), t('settings') + ' · Cinema', '#/c/settings'), optOn('archive') ? umItem(ic('lib', 'ic-s'), t('archive'), '#/c/archive') : null, (C.status && C.status.admin && feat('storage')) ? umItem(ic('lib', 'ic-s'), t('stTitle'), '#/c/storage') : null, umItem(ic('tv', 'ic-s'), t('quickConnect'), '#', () => quickConnectDialog()), umItem(ic('user', 'ic-s'), t('prefs'), '#/mypreferencesmenu'), umItem(ic('info', 'ic-s'), t('dash'), '#/dashboard')),
     plugSlot,
     h('div', { class: 'um-sec', 'data-cx': 1 }, umItem(ic('logout', 'ic-s'), t('logout'), '#', () => { try { ApiClient.logout().then(() => location.reload()); } catch (e) { location.href = '#/login'; } }, 'um-danger')));
   async function fillPlugins() {

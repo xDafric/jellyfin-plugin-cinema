@@ -147,6 +147,14 @@ function lbArchBadges(x) {
   return out;
 }
 async function blobB64(url) { if (!url) return ''; try { const r = await fetch(url); if (!r.ok) return ''; const b = await r.blob(); return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.readAsDataURL(b); }); } catch (e) { return ''; } }
+/* archive one movie: keep the details, delete the file, optionally clean up Radarr (shared by the dialog and the storage assistant) */
+async function archiveCore(full, useRadarr) {
+  const size = ((full.MediaSources || [])[0] || {}).Size || 0; const tm = (full.ProviderIds || {}).Tmdb;
+  const [primaryB64, backdropB64] = await Promise.all([blobB64(imgUrl(full, 'Primary', 700)), blobB64(imgUrl(full, 'Backdrop', 1280))]);
+  await cpost('/archive/add', { tmdb: tm, title: full.Name, year: full.ProductionYear, overview: full.Overview, tagline: (full.Taglines || [])[0], genres: full.Genres, runtime: full.RunTimeTicks ? Math.round(full.RunTimeTicks / 6e8) : null, rating: full.CommunityRating, officialRating: full.OfficialRating, played: !!ud(full).Played, size, primaryB64, backdropB64 });
+  if (useRadarr && tm) { const r = await cpost('/arr/radarr/archive', { tmdbId: +tm }); if (r && r.ok === false && r.found !== false) throw new Error(r.message || 'Radarr'); }
+  await jf('DELETE', 'Items/' + full.Id);
+}
 async function archiveDialog(it) {
   const d = cxDialog(t('archDlgTitle'), { wide: false }); d.busy();
   let full; try { full = await getItem(it.Id); } catch (e) { return errBox(d, e); }
@@ -156,10 +164,7 @@ async function archiveDialog(it) {
   const go_ = h('button', { class: 'btn white', onclick: async () => {
     go_.disabled = true; st.textContent = t('archBusy');
     try {
-      const [primaryB64, backdropB64] = await Promise.all([blobB64(imgUrl(full, 'Primary', 700)), blobB64(imgUrl(full, 'Backdrop', 1280))]);
-      await cpost('/archive/add', { tmdb: tm, title: full.Name, year: full.ProductionYear, overview: full.Overview, tagline: (full.Taglines || [])[0], genres: full.Genres, runtime: full.RunTimeTicks ? Math.round(full.RunTimeTicks / 6e8) : null, rating: full.CommunityRating, officialRating: full.OfficialRating, played: !!ud(full).Played, size, primaryB64, backdropB64 });
-      if (useRadarr.checked && tm) { const r = await cpost('/arr/radarr/archive', { tmdbId: +tm }); if (r && r.ok === false && r.found !== false) throw new Error(r.message || 'Radarr'); }
-      await jf('DELETE', 'Items/' + it.Id);
+      await archiveCore(full, useRadarr.checked);
       ARCH.at = 0; await archLoad(true); C.libCache = null; resetSeerrCache(); d.close(); toast('✓ ' + t('archDone')); go('#/c/archive');
     } catch (e) { st.textContent = '⚠ ' + t('archFail') + ': ' + (e.message || e); go_.disabled = false; }
   } }, ic('download'), t('archGo'));

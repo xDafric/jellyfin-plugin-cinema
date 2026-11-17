@@ -63,6 +63,12 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Cinema Wrapped: the viewing year as a story.</summary>
     public bool FeatWrapped { get; set; } = true;
 
+    /// <summary>Storage assistant for administrators: free space, big files, clean-up suggestions.</summary>
+    public bool FeatStorage { get; set; } = true;
+
+    /// <summary>"What shall we watch tonight?" picker.</summary>
+    public bool FeatTonight { get; set; } = true;
+
     // ---- defaults for every user (users can override unless AllowUserOverrides is off) ----
     public bool AllowUserOverrides { get; set; } = true;
 

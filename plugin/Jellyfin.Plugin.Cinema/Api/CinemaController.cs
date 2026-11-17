@@ -176,7 +176,7 @@ public class CinemaController : ControllerBase
                 hero = c.FeatHero, peek = c.FeatPeek, discover = c.FeatDiscover, watchlist = c.FeatWatchlist, requests = c.FeatRequests,
                 calendar = c.FeatCalendar, music = c.FeatMusic, musicDiscovery = c.FeatMusicDiscovery, ownPlayer = c.FeatOwnPlayer,
                 letterboxd = c.FeatLetterboxd, archive = c.FeatArchive, archiveRadarr = c.ArchiveRadarr, mediaInfo = c.FeatMediaInfo, ratings = c.FeatRatings, seerrSimilar = c.FeatSeerrSimilar, infiniteScroll = c.FeatInfiniteScroll,
-                pluginMenus = c.FeatPluginMenus, itemMenu = c.FeatItemMenu, quiz = c.FeatQuiz, wrapped = c.FeatWrapped
+                pluginMenus = c.FeatPluginMenus, itemMenu = c.FeatItemMenu, quiz = c.FeatQuiz, wrapped = c.FeatWrapped, storage = c.FeatStorage, tonight = c.FeatTonight
             },
             defaults = new
             {
@@ -435,6 +435,143 @@ public class CinemaController : ControllerBase
         if (!string.IsNullOrWhiteSpace(Cfg.SonarrUrl))
         {
             tasks.Add(Collect("sonarr", Cfg.SonarrUrl, Cfg.SonarrApiKey, "/api/v3/calendar?includeSeries=true"));
+        }
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        return Content(result.ToJsonString(), "application/json");
+    }
+
+    [HttpGet("arr/diskspace")]
+    [Authorize]
+    public async Task<IActionResult> DiskSpace(CancellationToken ct)
+    {
+        if (!IsAdmin)
+        {
+            return Forbid();
+        }
+
+        var result = new JsonArray();
+        async Task Collect(string source, string url, string key)
+        {
+            try
+            {
+                var node = await GetJson(url, "/api/v3/diskspace", key, ct).ConfigureAwait(false);
+                foreach (var r in node?.AsArray() ?? new JsonArray())
+                {
+                    if (r is null)
+                    {
+                        continue;
+                    }
+
+                    lock (result)
+                    {
+                        result.Add(new JsonObject { ["source"] = source, ["path"] = r["path"]?.ToString(), ["label"] = r["label"]?.ToString(), ["free"] = r["freeSpace"]?.DeepClone(), ["total"] = r["totalSpace"]?.DeepClone() });
+                    }
+                }
+            }
+            catch
+            {
+                // an unreachable instance only means fewer disks in the list
+            }
+        }
+
+        var tasks = new List<Task>();
+        if (!string.IsNullOrWhiteSpace(Cfg.RadarrUrl))
+        {
+            tasks.Add(Collect("radarr", Cfg.RadarrUrl, Cfg.RadarrApiKey));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Cfg.SonarrUrl))
+        {
+            tasks.Add(Collect("sonarr", Cfg.SonarrUrl, Cfg.SonarrApiKey));
+        }
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        return Content(result.ToJsonString(), "application/json");
+    }
+
+    /// <summary>Recent grabs, imports and failures from Radarr and Sonarr (episodes of one series on one day are merged).</summary>
+    [HttpGet("arr/history")]
+    [Authorize]
+    public async Task<IActionResult> History([FromQuery] string start, [FromQuery] string end, CancellationToken ct)
+    {
+        if (!Cfg.ShareQueue && !IsAdmin)
+        {
+            return Forbid();
+        }
+
+        var style = System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal;
+        var from = DateTime.TryParse(start, System.Globalization.CultureInfo.InvariantCulture, style, out var f) ? f : DateTime.UtcNow.AddDays(-60);
+        var to = DateTime.TryParse(end, System.Globalization.CultureInfo.InvariantCulture, style, out var t) ? t.AddDays(1) : DateTime.UtcNow.AddDays(1);
+        var result = new JsonArray();
+        async Task Collect(string source, string url, string key, string path)
+        {
+            try
+            {
+                var node = await GetJson(url, path, key, ct).ConfigureAwait(false);
+                var merged = new Dictionary<string, JsonObject>();
+                foreach (var r in node?["records"]?.AsArray() ?? new JsonArray())
+                {
+                    if (r is null || !DateTime.TryParse(r["date"]?.ToString(), System.Globalization.CultureInfo.InvariantCulture, style, out var d) || d < from || d > to)
+                    {
+                        continue;
+                    }
+
+                    var kind = r["eventType"]?.ToString() switch { "grabbed" => "grabbed", "downloadFolderImported" => "imported", "downloadFailed" => "failed", _ => null };
+                    if (kind is null)
+                    {
+                        continue;
+                    }
+
+                    var isMovie = source == "radarr";
+                    var title = isMovie ? r["movie"]?["title"]?.ToString() : r["series"]?["title"]?.ToString();
+                    var mkey = source + "|" + title + "|" + kind + "|" + d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                    if (merged.TryGetValue(mkey, out var existing))
+                    {
+                        existing["count"] = (existing["count"]?.GetValue<int>() ?? 1) + 1;
+                        existing["subtitle"] = null;
+                        continue;
+                    }
+
+                    var images = (isMovie ? r["movie"]?["images"] : r["series"]?["images"])?.AsArray();
+                    merged[mkey] = new JsonObject
+                    {
+                        ["source"] = source,
+                        ["kind"] = kind,
+                        ["date"] = d.ToString("o", System.Globalization.CultureInfo.InvariantCulture),
+                        ["title"] = title,
+                        ["subtitle"] = isMovie || r["episode"] is null ? null : $"S{r["episode"]?["seasonNumber"]}E{r["episode"]?["episodeNumber"]} {r["episode"]?["title"]}",
+                        ["year"] = (isMovie ? r["movie"]?["year"] : r["series"]?["year"])?.DeepClone(),
+                        ["tmdbId"] = (isMovie ? r["movie"]?["tmdbId"] : r["series"]?["tmdbId"])?.DeepClone(),
+                        ["poster"] = images?.FirstOrDefault(i => i?["coverType"]?.ToString() == "poster")?["remoteUrl"]?.ToString(),
+                        ["quality"] = r["quality"]?["quality"]?["name"]?.ToString(),
+                        ["count"] = 1
+                    };
+                }
+
+                lock (result)
+                {
+                    foreach (var m in merged.Values)
+                    {
+                        result.Add(m);
+                    }
+                }
+            }
+            catch
+            {
+                // ignore a single failing instance
+            }
+        }
+
+        var tasks = new List<Task>();
+        if (!string.IsNullOrWhiteSpace(Cfg.RadarrUrl))
+        {
+            tasks.Add(Collect("radarr", Cfg.RadarrUrl, Cfg.RadarrApiKey, "/api/v3/history?page=1&pageSize=1000&sortKey=date&sortDirection=descending&includeMovie=true"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Cfg.SonarrUrl))
+        {
+            tasks.Add(Collect("sonarr", Cfg.SonarrUrl, Cfg.SonarrApiKey, "/api/v3/history?page=1&pageSize=1000&sortKey=date&sortDirection=descending&includeSeries=true&includeEpisode=true"));
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);

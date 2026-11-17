@@ -144,6 +144,7 @@ function card(it, kind, opts) {
   const hash = itemHash(it) || ('#/details?id=' + it.Id);
   const im = h('div', { class: 'im' }, src ? h('div', Object.assign({ class: 'bgi' }, bg(src))) : h('div', { class: 'ph' }, title));
   if (pct(it)) im.append(h('div', { class: 'prog' }, h('i', { style: 'width:' + pct(it) + '%' })));
+  try { cardBadges(it, im); } catch (e) { }
   const el = h('div', { class: 'nf-card ' + kind, onclick: () => go(hash), oncontextmenu: e => itemMenu(e, it) }, im, h('div', { class: 'title ell' }, title));
   if (HID.on && HID.ids.has(it.Id)) { el.classList.add('hx'); im.append(h('span', { class: 'hx-badge', title: t('hxIsHidden') }, ic('eyeOff', 'ic-s'))); }
   attachPeek(el, im, () => libDesc(it, poster));
@@ -157,7 +158,7 @@ function row(title, list, kind, opts) {
   if (typeof TVM !== 'undefined' && TVM && opts.href) sc.append(h('a', { class: 'nf-card more ' + (kind || 'thumb'), href: opts.href }, h('div', { class: 'im' }, h('div', { class: 'mr' }, ic('right'), h('span', {}, t('showAll'))))));
   const L_ = h('button', { class: 'nf-arrow l', 'aria-label': 'Previous', onclick: () => sc.scrollBy({ left: -sc.clientWidth * .85 }) }, ic('left'));
   const R_ = h('button', { class: 'nf-arrow r', 'aria-label': 'Next', onclick: () => sc.scrollBy({ left: sc.clientWidth * .85 }) }, ic('right'));
-  return h('section', { class: 'nf-row' + (kind === 'top10' ? ' top10' : kind === 'spotlight' ? ' spot' : '') }, h('h2', {}, opts.href ? h('a', { href: opts.href }, title + ' ›') : title), L_, sc, R_);
+  return h('section', { class: 'nf-row' + (kind === 'top10' ? ' top10' : kind === 'spotlight' ? ' spot' : '') }, h('h2', {}, opts.href ? h('a', { href: opts.href }, title + ' ›') : title, opts.tag ? h('span', { class: 'rowtag', title: t('rcDiscoverHint') }, opts.tag) : null), L_, sc, R_);
 }
 /* numbered "Top 10" poster and wide spotlight card with synopsis */
 function top10Card(it, idx) { const c = card(it, 'poster'); c.classList.add('t10c'); c.prepend(h('span', { class: 'n' }, String(idx + 1))); return c; }
@@ -171,7 +172,7 @@ function spotCard(it) {
 /* async row: placeholder is inserted immediately to keep order, filled when data arrives */
 function lazyRow(container, title, fn, kind, opts) {
   const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
-  Promise.resolve().then(fn).then(list => { const arr = (list && list.Items) || list || []; if (arr.length >= ((opts && opts.min) || 1)) ph.replaceWith(row(title, arr, kind, opts)); else ph.remove(); }).catch(e => { console.warn('[cinema] row failed', title, e); ph.remove(); });
+  Promise.resolve().then(fn).then(list => { let arr = (list && list.Items) || list || []; if (opts && opts.unseen) arr = arr.filter(i => !ud(i).Played); if (arr.length >= ((opts && opts.min) || 1)) ph.replaceWith(row(title, arr, kind, opts)); else ph.remove(); }).catch(e => { console.warn('[cinema] row failed', title, e); ph.remove(); });
 }
 
 function heroEl(list) {
@@ -217,7 +218,7 @@ async function renderNF(r) {
   if (view === 'home') await homeView2(page);
   else if (view === 'movies') await browseView(page, 'Movie');
   else if (view === 'shows') await browseView(page, 'Series');
-  else if ((view === 'discover' && !feat('discover')) || (view === 'watchlist' && !feat('watchlist')) || (view === 'requests' && !feat('requests')) || (view === 'calendar' && !feat('calendar')) || (view === 'quiz' && !cfg('quiz')) || (view === 'wrapped' && !cfg('wrapped'))) page.append(h('div', { class: 'nf-page-pad' }, h('div', { class: 'nf-empty' }, t('featOff'))));
+  else if ((view === 'discover' && !feat('discover')) || (view === 'watchlist' && !feat('watchlist')) || (view === 'requests' && !feat('requests')) || (view === 'calendar' && !feat('calendar')) || (view === 'quiz' && !cfg('quiz')) || (view === 'wrapped' && !cfg('wrapped')) || (view === 'tonight' && !cfg('tonight')) || (view === 'storage' && !feat('storage'))) page.append(h('div', { class: 'nf-page-pad' }, h('div', { class: 'nf-empty' }, t('featOff'))));
   else if (view === 'discover') await discoverView2(page);
   else if (view === 'watchlist') await watchlistView(page);
   else if (view === 'settings') await settingsView(page);
@@ -231,6 +232,8 @@ async function renderNF(r) {
   else if (view === 'archive') await archiveView(page);
   else if (view === 'quiz') await quizView(page);
   else if (view === 'wrapped') await wrappedView(page);
+  else if (view === 'tonight') await tonightView(page);
+  else if (view === 'storage') await storageView(page);
   else page.append(h('div', { class: 'nf-empty' }, '404'));
   done();
 }
@@ -250,7 +253,7 @@ async function homeView(page) {
   genreRows(rows, 'Movie', 4);
 }
 function genreRows(rows, type, n) {
-  api('Genres', { userId: uid(), IncludeItemTypes: type, SortBy: 'Random', Limit: n }).then(g => (g.Items || []).forEach(gn => lazyRow(rows, gn.Name, () => items({ IncludeItemTypes: type, Genres: gn.Name, SortBy: 'Random', Limit: 20 }), 'thumb', { min: 4, href: '#/c/browse/genre/' + encodeURIComponent(gn.Name) }))).catch(() => { });
+  api('Genres', { userId: uid(), IncludeItemTypes: type, SortBy: 'Random', Limit: n }).then(g => (g.Items || []).forEach(gn => lazyRow(rows, gn.Name, () => items({ IncludeItemTypes: type, Genres: gn.Name, SortBy: 'Random', Limit: 20 }), 'thumb', { unseen: cfg('homeSeen') === 'hide', min: 4, href: '#/c/browse/genre/' + encodeURIComponent(gn.Name) }))).catch(() => { });
 }
 async function browseView(page, type) {
   const hero = await heroFor(type).catch(() => []);
