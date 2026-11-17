@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.40.0",
+                             "changelog":  "Slim scrollbars everywhere, including the dashboard, dialogs, login and text fields.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.40.0.zip",
+                             "checksum":  "fe68baf596607feb7513727dcea6a37b",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.39.0",
                              "changelog":  "Emoji only where they carry meaning (feature tiles, quiz badges, quiz modes), clean icons elsewhere; fixed the stretched Letterboxd tag on quiz film posters.",
                              "targetAbi":  "12.4.0.0",
