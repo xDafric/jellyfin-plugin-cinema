@@ -217,7 +217,7 @@ async function renderNF(r) {
   if (view === 'home') await homeView2(page);
   else if (view === 'movies') await browseView(page, 'Movie');
   else if (view === 'shows') await browseView(page, 'Series');
-  else if ((view === 'discover' && !feat('discover')) || (view === 'watchlist' && !feat('watchlist')) || (view === 'requests' && !feat('requests')) || (view === 'calendar' && !feat('calendar'))) page.append(h('div', { class: 'nf-page-pad' }, h('div', { class: 'nf-empty' }, t('featOff'))));
+  else if ((view === 'discover' && !feat('discover')) || (view === 'watchlist' && !feat('watchlist')) || (view === 'requests' && !feat('requests')) || (view === 'calendar' && !feat('calendar')) || (view === 'quiz' && !cfg('quiz')) || (view === 'wrapped' && !cfg('wrapped'))) page.append(h('div', { class: 'nf-page-pad' }, h('div', { class: 'nf-empty' }, t('featOff'))));
   else if (view === 'discover') await discoverView2(page);
   else if (view === 'watchlist') await watchlistView(page);
   else if (view === 'settings') await settingsView(page);
@@ -230,6 +230,7 @@ async function renderNF(r) {
   else if (view === 'item') await itemView(page, c);
   else if (view === 'archive') await archiveView(page);
   else if (view === 'quiz') await quizView(page);
+  else if (view === 'wrapped') await wrappedView(page);
   else page.append(h('div', { class: 'nf-empty' }, '404'));
   done();
 }

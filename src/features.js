@@ -17,13 +17,14 @@ async function toggleFav(it) { const on = !ud(it).IsFavorite; await ApiClient.up
 async function togglePlayed(it) { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData = Object.assign(ud(it), { Played: on }); toast(on ? t('markedWatched') : t('markedUnwatched')); return on; }
 
 /* settings: server defaults (plugin) overridden per user (Jellyfin DisplayPreferences, synced across devices) */
-const CFG_DEF = { nativePlayer: false, hero: true, peek: true, seerrWatchlistSync: false, sections: null, accent: '#e50914', infinite: true, cardSize: 'm', heroItems: 8, heroInterval: 11, peekDelay: 320 };
+const CFG_DEF = { nativePlayer: false, hero: true, peek: true, seerrWatchlistSync: false, sections: null, accent: '#e50914', infinite: true, cardSize: 'm', heroItems: 8, heroInterval: 11, peekDelay: 320, quiz: true, wrapped: true, quizNew: 10, quizGoal: 100, quizBlitz: 60, quizAuto: true, quizMin: 1, quizLb: true, quizModes: null, wrappedBanner: 'auto', wrappedShows: true, wrappedAuto: true };
 let CFGU = {};
 const feat = k => !(C.status && C.status.features) || C.status.features[k] !== false;
-const SRV = { accent: 'accent', seerrWatchlistSync: 'seerrWatchlistSync', pl_autoNext: 'pl_autoNext', pl_autoSkip: 'pl_autoSkip', pl_quality: 'pl_quality', cardSize: 'cardSize', heroItems: 'heroItems', heroInterval: 'heroInterval', peekDelay: 'peekDelay' };
+const SRV = { accent: 'accent', seerrWatchlistSync: 'seerrWatchlistSync', pl_autoNext: 'pl_autoNext', pl_autoSkip: 'pl_autoSkip', pl_quality: 'pl_quality', cardSize: 'cardSize', heroItems: 'heroItems', heroInterval: 'heroInterval', peekDelay: 'peekDelay', quizNew: 'quizNew', quizGoal: 'quizGoal', quizBlitz: 'quizBlitz', quizAuto: 'quizAuto', quizMin: 'quizMin', wrappedBanner: 'wrappedBanner', wrappedShows: 'wrappedShows', wrappedAuto: 'wrappedAuto' };
 function cfg(k) {
   const d = (C.status && C.status.defaults) || {}; const allow = d.allowUserOverrides !== false; const u = allow ? CFGU[k] : undefined;
   if (k === 'hero') return feat('hero') && u !== false; if (k === 'peek') return feat('peek') && u !== false; if (k === 'infinite') return feat('infiniteScroll') && u !== false;
+  if (k === 'quiz' || k === 'wrapped') return feat(k) && u !== false;
   if (u !== undefined) return u;
   if (k === 'sections') { try { const j = d.sections && JSON.parse(d.sections); const OLD = 'continue,nextup,newMovies,newShows,top,watchlist,favs,random,genres'; if (j && j.length && !(j.length === 9 && j.every(x => x.on !== false) && j.map(x => x.id).join(',') === OLD)) return j; } catch (e) { } return null; } // the old built-in list, saved by an earlier config page, counts as "not customised"
   if (SRV[k] !== undefined && d[SRV[k]] !== undefined && d[SRV[k]] !== '') return d[SRV[k]];

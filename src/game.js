@@ -41,8 +41,11 @@ Object.assign(TX.de, {
 /* ----- progress, stored per user in Jellyfin (DisplayPreferences "cinema-game"), mirrored in localStorage ----- */
 const GM = { st: null, p: null, saveT: 0, pool: null, poolP: null, poolAt: 0, enr: null, play: null };
 const G_IV = [0, 1, 3, 7, 14, 30, 60, 120]; // days until the next review, by box
-const G_NEW = 10; // new faces per day
-const G_GOAL = 100; // XP per day
+const gNewN = () => Math.max(1, +cfg('quizNew') || 10); // new faces per day
+const gGoal = () => Math.max(20, +cfg('quizGoal') || 100); // XP per day
+const gBlitzS = () => Math.max(15, +cfg('quizBlitz') || 60);
+const G_MODES = ['blitz', 'memory', 'type', 'cast', 'cards'];
+const gModeOn = k => { const m = cfg('quizModes'); return !m || m[k] !== false; };
 const gDay = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 864e5);
 const gDef = () => ({ v: 1, ts: 0, xp: 0, a: {}, days: {}, streak: 0, bestStreak: 0, last: 0, badges: {}, n: 0, ok: 0, typed: 0, bestCombo: 0, bestBlitz: 0, bestMemory: 0, films: [], sessions: 0, perfect: 0, newDay: 0, newN: 0, night: 0 });
 const gLS = () => { try { return JSON.parse(localStorage.getItem('cx-game-' + uid()) || 'null'); } catch (e) { return null; } };
@@ -103,6 +106,12 @@ function gBadgesCheck(st) { const got = []; G_BADGES.forEach(b => { if (!st.badg
 /* ----- the pool: actors (with a picture) from every film you watched, in Jellyfin and on Letterboxd ----- */
 let GTM = {}; try { GTM = JSON.parse(localStorage.getItem('cx-game-tm') || '{}') || {}; } catch (e) { }
 const gRoleOk = r => !!r && r.length < 48 && !/^(self|himself|herself|themselves|narrator|voice|additional voices|uncredited)\b/i.test(r) && !/\((voice|uncredited|archive)/i.test(r);
+/* all watched movies with cast, genres and runtime: shared by the quiz and Wrapped */
+const GPM = { p: null, at: 0 };
+function gPlayed(force) {
+  if (!force && GPM.p && Date.now() - GPM.at < 300000) return GPM.p; GPM.at = Date.now();
+  return GPM.p = items({ IncludeItemTypes: 'Movie', Filters: 'IsPlayed', Fields: 'People,ProviderIds,OriginalTitle,Genres,RunTimeTicks,CommunityRating,ProductionYear', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 4000, EnableImageTypes: 'Primary', ImageTypeLimit: 1 }).catch(() => { GPM.p = null; return { Items: [] }; });
+}
 function gPool(force) {
   if (!force && GM.pool && Date.now() - GM.poolAt < 600000) return Promise.resolve(GM.pool);
   if (GM.poolP) return GM.poolP;
@@ -118,7 +127,7 @@ async function gBuild() {
     if (a.films.includes(f.id)) return;
     a.films.push(f.id); a.roles[f.id] = role || ''; a.score += order < 3 ? 1 : order < 6 ? .7 : .45; a.last = Math.max(a.last, f.date || 0); f.cast.push(k);
   };
-  const r = await items({ IncludeItemTypes: 'Movie', Filters: 'IsPlayed', Fields: 'People,ProviderIds,OriginalTitle', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 4000, EnableImageTypes: 'Primary', ImageTypeLimit: 1 }).catch(() => ({ Items: [] }));
+  const r = await gPlayed();
   for (const it of r.Items || []) {
     const u = ud(it); const tm = +((it.ProviderIds || {}).Tmdb) || 0;
     const f = { id: 'j' + it.Id, jf: it.Id, tmdb: tm, title: it.Name, year: it.ProductionYear || 0, poster: imgUrl(it, 'Primary', 300), date: u.LastPlayedDate ? Date.parse(u.LastPlayedDate) || 0 : 0, cast: [], src: 'jf' };
@@ -127,13 +136,14 @@ async function gBuild() {
     films.set(f.id, f);
     (it.People || []).filter(p => p.Type === 'Actor').slice(0, 10).forEach((p, i) => addActor(f, p.Name, p.PrimaryImageTag ? U(p.Id, 'Primary', 400, p.PrimaryImageTag) : '', p.Role, i, p.Id));
   }
-  for (const c of Object.values(GTM)) {
+  for (const c of (cfg('quizLb') === false ? [] : Object.values(GTM))) {
     if (!c || !c[4]) continue; const [tm, title, year, poster, cast, date] = c; if (tmSeen.has(tm) || films.has('t' + tm)) continue;
     const f = { id: 't' + tm, tmdb: tm, title, year, poster: TM(poster, 'w342'), date: date || 0, cast: [], src: 'lb' };
     films.set(f.id, f); cast.forEach(([name, prof, role], i) => addActor(f, name, TM(prof, 'w185'), role, i));
   }
   for (const f of [...films.values()]) if (!f.cast.length) films.delete(f.id);
-  const list = [...actors.values()].sort((a, b) => b.score - a.score || b.films.length - a.films.length);
+  let list = [...actors.values()].sort((a, b) => b.score - a.score || b.films.length - a.films.length);
+  const minF = +cfg('quizMin') || 1; if (minF > 1) { const f = list.filter(a => a.films.length >= minF); if (f.length >= 8) list = f; }
   const recentCut = Date.now() - 45 * 864e5;
   const fresh = list.slice().sort((a, b) => ((b.last > recentCut ? 3 : 0) + b.score) - ((a.last > recentCut ? 3 : 0) + a.score));
   const recent = [...films.values()].filter(f => f.date && f.cast.length >= 3).sort((a, b) => b.date - a.date).slice(0, 10);
@@ -143,7 +153,7 @@ async function gBuild() {
 function gEnrich(onProgress) {
   if (GM.enr) return GM.enr;
   GM.enr = (async () => {
-    if (!optOn('letterboxd') || !lbUser()) return 0; await lbLoad(); if (!LB.n || !(await waitSeerr())) return 0;
+    if (cfg('quizLb') === false || !optOn('letterboxd') || !lbUser()) return 0; await lbLoad(); if (!LB.n || !(await waitSeerr())) return 0;
     const P = await gPool(); const keyOf = e => e.tmdb ? 't' + e.tmdb : 'n' + lbNorm(e.title) + '|' + (e.year || '');
     const near = e => { const k = lbNorm(e.title), y = +e.year || 0; return P.nameSeen.has(k + '|' + y) || P.nameSeen.has(k + '|' + (y - 1)) || P.nameSeen.has(k + '|' + (y + 1)); };
     const todo = [...new Set(LB.names.values())].filter(e => !(keyOf(e) in GTM) && !(e.tmdb && P.tmSeen.has(+e.tmdb)) && !near(e)).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 150);
@@ -229,7 +239,7 @@ async function gPlay(kind, opts) {
   const A = st.a; const seen = P.list.filter(a => A[a.k]);
   if (kind === 'train' || kind === 'cards') {
     const due = P.list.filter(a => A[a.k] && A[a.k][0] > 0 && A[a.k][1] <= d).sort((x, y) => A[x.k][1] - A[y.k][1] || A[x.k][0] - A[y.k][0]).slice(0, 15);
-    const newLeft = opts.extraNew ? 5 : Math.max(0, G_NEW - (st.newDay === d ? st.newN : 0));
+    const newLeft = opts.extraNew ? 5 : Math.max(0, gNewN() - (st.newDay === d ? st.newN : 0));
     const fresh = P.fresh.filter(a => gIsNew(st, a)).slice(0, Math.min(newLeft, Math.max(3, 18 - due.length)));
     let base = shuffleArr(due);
     if (!due.length && !fresh.length || opts.practice) base = seen.slice().sort((x, y) => (A[y.k][4] - A[y.k][3] * .3) - (A[x.k][4] - A[x.k][3] * .3) || A[x.k][0] - A[y.k][0]).slice(0, 12);
@@ -245,7 +255,7 @@ async function gPlay(kind, opts) {
     cast.forEach(a => { if (!A[a.k]) S.q.push({ a, mode: 'intro' }); });
     shuffleArr(cast).forEach(a => S.q.push({ a, mode: gRoleOk(a.roles[f.id]) ? 'role' : 'face2name', film: f }));
   } else if (kind === 'blitz') {
-    S.pool = seen.length >= 12 ? seen.concat(P.top.slice(0, 20)) : P.top.slice(0, 60); S.end = Date.now() + 60000;
+    S.pool = seen.length >= 12 ? seen.concat(P.top.slice(0, 20)) : P.top.slice(0, 60); S.end = Date.now() + gBlitzS() * 1000;
   } else if (kind === 'memory') {
     S.pool = gPick(seen.length >= 6 ? seen : P.top.slice(0, 40), 6, () => false);
   }
@@ -265,7 +275,7 @@ function gStage(S) {
   Object.assign(S, { layer, stage, hud, bar, close, finish });
   GM.play = { close };
   if (S.kind === 'memory') return gMemory(S);
-  if (S.kind === 'blitz') { S.timer = setInterval(() => { const left = Math.max(0, S.end - Date.now()); bar.firstChild.style.width = (left / 600) + '%'; if (!left) { clearInterval(S.timer); gSummary(S); } }, 100); }
+  if (S.kind === 'blitz') { S.timer = setInterval(() => { const left = Math.max(0, S.end - Date.now()); bar.firstChild.style.width = (left / (gBlitzS() * 10)) + '%'; if (!left) { clearInterval(S.timer); gSummary(S); } }, 100); }
   gNextQ(S);
 }
 function gHud(S) {
@@ -302,7 +312,7 @@ function gRender(S, q) {
       h('button', { class: 'btn white gm-next', onclick: next }, t('gNext'), h('kbd', {}, '⏎')));
     card.append(fb); fb.classList.add('show'); requestAnimationFrame(() => { const b = $('.gm-next', fb); if (b) b.focus({ preventScroll: true }); });
     S.onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } };
-    if (ok && q.mode !== 'type') S.auto = setTimeout(next, 2600);
+    if (ok && q.mode !== 'type' && cfg('quizAuto') !== false) S.auto = setTimeout(next, 2600);
   };
   const choose = (opts, render, wrapCls) => {
     let answered = false;
@@ -373,7 +383,7 @@ function gSummary(S) {
     S.badges.push(...gBadgesCheck(st)); gFlush();
   }
   const lv = gLvl(st.xp), up = lv > S.lvl0; const lo = gLvlXp(lv), hi = gLvlXp(lv + 1);
-  const goalDone = (st.days[gDay()] || 0) >= G_GOAL;
+  const goalDone = (st.days[gDay()] || 0) >= gGoal();
   const uniq = [...new Map(S.badges.map(b => [b[0], b])).values()];
   S.bar.firstChild.style.width = '100%';
   S.stage.replaceChildren(h('div', { class: 'gm-card gm-sum' + (up ? ' up' : '') },
@@ -401,7 +411,7 @@ function gRing(v, max) {
 }
 function gHeat(st) {
   const d = gDay(), weeks = 18; const wd = (new Date().getDay() + 6) % 7; const start = d - wd - (weeks - 1) * 7;
-  const cells = []; for (let x = start; x <= d; x++) { const v = st.days[x] || 0; cells.push(h('i', { class: 'l' + (v === 0 ? 0 : v < 40 ? 1 : v < G_GOAL ? 2 : v < 250 ? 3 : 4), title: new Date((x * 864e5) + new Date().getTimezoneOffset() * 60000).toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US') + ' · ' + v + ' XP' })); }
+  const cells = []; for (let x = start; x <= d; x++) { const v = st.days[x] || 0; cells.push(h('i', { class: 'l' + (v === 0 ? 0 : v < 40 ? 1 : v < gGoal() ? 2 : v < 250 ? 3 : 4), title: new Date((x * 864e5) + new Date().getTimezoneOffset() * 60000).toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US') + ' · ' + v + ' XP' })); }
   return h('div', { class: 'gm-heat' }, cells);
 }
 function gActorDialog(a) {
@@ -420,7 +430,7 @@ async function quizView(page) {
   gDash(wrap, st, P);
   if (film) { history.replaceState(null, '', '#/c/quiz'); gPlay('cast', { film }); }
   /* Letterboxd films outside the library: fetch their casts in the background, then redraw */
-  if (optOn('letterboxd') && lbUser()) {
+  if (cfg('quizLb') !== false && optOn('letterboxd') && lbUser()) {
     const note = $('.gm-lbnote', wrap);
     gEnrich((n, of) => { if (note && note.isConnected) { note.hidden = false; note.textContent = t('gLbLoad') + ' · ' + n + '/' + of; } }).then(added => {
       if (note) note.hidden = true; if (added && wrap.isConnected && !GM.play) { wrap.replaceChildren(); gDash(wrap, GM.st, GM.pool); }
@@ -431,13 +441,13 @@ function gDash(wrap, st, P) {
   wrap.replaceChildren(); const d = gDay(); const A = st.a;
   const lv = gLvl(st.xp), lo = gLvlXp(lv), hi = gLvlXp(lv + 1); const todayXp = st.days[d] || 0; const streak = gStreakNow(st);
   const due = P.list.filter(a => A[a.k] && A[a.k][0] > 0 && A[a.k][1] <= d).length;
-  const newLeft = Math.min(P.list.filter(a => gIsNew(st, a)).length, Math.max(0, G_NEW - (st.newDay === d ? st.newN : 0)));
+  const newLeft = Math.min(P.list.filter(a => gIsNew(st, a)).length, Math.max(0, gNewN() - (st.newDay === d ? st.newN : 0)));
   const mastered = P.list.filter(a => gBox(st, a.k) >= 5).length, learning = P.list.filter(a => A[a.k] && A[a.k][0] > 0 && A[a.k][0] < 5).length;
   wrap.append(h('div', { class: 'gm-head' },
     h('div', { class: 'gm-lv' }, h('div', { class: 'gm-lvn' }, h('small', {}, t('gLevel')), h('b', {}, String(lv))), h('div', { class: 'gm-lvi' }, h('h1', {}, t('gTitle')), h('p', {}, gTitleOf(lv) + ' · ' + st.xp.toLocaleString() + ' XP'), h('div', { class: 'gm-xpb' }, h('i', { style: 'width:' + Math.round((st.xp - lo) / (hi - lo) * 100) + '%' })), h('small', {}, (hi - st.xp) + ' XP ' + t('gToNext') + ' ' + (lv + 1)))),
     h('div', { class: 'gm-pills' },
       h('div', { class: 'gm-pill' + (streak ? ' hot' : '') }, h('span', { class: 'e' }, '🔥'), h('div', {}, h('b', {}, String(streak)), h('small', {}, streak === 1 ? t('gStreak1') : t('gStreak')))),
-      h('div', { class: 'gm-pill' }, h('div', { class: 'gm-ringw' }, gRing(todayXp, G_GOAL), h('span', {}, Math.min(100, Math.round(todayXp / G_GOAL * 100)) + '%')), h('div', {}, h('b', {}, todayXp + ' / ' + G_GOAL), h('small', {}, t('gGoal')))))));
+      h('div', { class: 'gm-pill' }, h('div', { class: 'gm-ringw' }, gRing(todayXp, gGoal()), h('span', {}, Math.min(100, Math.round(todayXp / gGoal() * 100)) + '%')), h('div', {}, h('b', {}, todayXp + ' / ' + gGoal()), h('small', {}, t('gGoal')))))));
   wrap.append(h('p', { class: 'gm-lbnote', hidden: true }));
   if (P.list.length < 8) { wrap.append(h('div', { class: 'nf-empty' }, t('gTooFew'))); if (optOn('letterboxd') && lbUser() && !hasSeerr()) wrap.append(h('p', { class: 'gm-loading' }, t('gNoSeerr'))); return; }
   /* daily training */
@@ -461,7 +471,7 @@ function gDash(wrap, st, P) {
       }))));
   }
   /* games */
-  const mode = (k, e, title, sub, extra) => h('button', { class: 'gm-mode m-' + k, onclick: () => gPlay(k) }, h('span', { class: 'e' }, e), h('b', {}, title), h('small', {}, sub), extra ? h('span', { class: 'gm-rec' }, extra) : null);
+  const mode = (k, e, title, sub, extra) => !gModeOn(k) ? null : h('button', { class: 'gm-mode m-' + k, onclick: () => gPlay(k) }, h('span', { class: 'e' }, e), h('b', {}, title), h('small', {}, sub), extra ? h('span', { class: 'gm-rec' }, extra) : null);
   wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gModes')), h('div', { class: 'gm-modes' },
     mode('blitz', '⚡', t('gBlitz'), t('gBlitzSub'), st.bestBlitz ? '🏆 ' + st.bestBlitz : ''), mode('memory', '🧠', t('gMemory'), t('gMemorySub'), st.bestMemory ? '🏆 ' + st.bestMemory + ' s' : ''),
     mode('type', '⌨️', t('gTypeM'), t('gTypeSub'), st.typed ? '✓ ' + st.typed : ''), mode('cast', '🎭', t('gCastM'), t('gCastSub')), mode('cards', '🃏', t('gCards'), t('gCardsSub')))));
@@ -498,7 +508,7 @@ function gDash(wrap, st, P) {
 }
 /* detail page: "practise the cast" next to the cast heading of a watched film */
 function gCastBtn(it, body) {
-  if (it.Type !== 'Movie' || !ud(it).Played) return;
+  if (!cfg('quiz') || it.Type !== 'Movie' || !ud(it).Played) return;
   const hd = $$('.nf-sect h2', body).find(x => x.textContent === t('cast')); if (!hd) return;
   hd.classList.add('gm-casth'); hd.append(h('a', { class: 'nf-chip gm-castbtn', href: '#/c/quiz?film=j' + it.Id }, '🎭 ' + t('gCastBtn')));
 }
