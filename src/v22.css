@@ -138,3 +138,4 @@
 .dl-row .st { text-align: right; flex: none; display: flex; flex-direction: column; gap: 3px; } .dl-row .st em { font-style: normal; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.1); } .dl-row .st small { color: #7d7d86; font-size: 11.5px; }
 .dl-row.k-done .st em { background: rgba(52,199,89,.16); color: #7cf0a3; } .dl-row.k-failed .st em { background: rgba(255,90,80,.16); color: #ff9b9b; } .dl-row.k-work .st em { background: rgba(106,169,255,.16); color: #9ccaff; } .dl-row.k-queued .st em { background: rgba(255,207,138,.14); color: #ffcf8a; }
 .dl-row .bar i { display: block; height: 100%; background: #6aa9ff; border-radius: 4px; }
+.sp-navlink[hidden], .sp-chip[hidden] { display: none !important; }

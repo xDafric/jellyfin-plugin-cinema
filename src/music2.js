@@ -98,3 +98,19 @@ async function albumMissing(n, al, tracks) {
   const sec = h('section', { class: 'alb-missing' }, h('div', { class: 'am-h' }, h('h2', {}, t('missingSongs') + ' · ' + its.length), h('button', { class: 'btn grey', onclick: async e => { const b = e.currentTarget; b.disabled = true; try { await requestAurral({ id: rg, title: al.Name, artistName: artist }, 'album'); toast(t('requested')); b.replaceChildren(ic('check'), t('requestedOk')); } catch (er) { b.disabled = false; toast(((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } } }, ic('plus'), t('reqAll'))), trackList(its, { id: 'miss-' + rg, noAlbum: true, noCover: true, number: 'idx' }));
   $$('.sp-th', sec).forEach(x => x.remove()); n.append(sec);
 }
+
+/* an artist you do not have: photo, popular songs (preview and request) and releases to add */
+async function mExtArtist(n, q) {
+  const name = (q && q.get('n')) || ''; let mbid = (q && q.get('m')) || '';
+  if (!name) { n.append(h('div', { class: 'nf-empty' }, t('empty'))); return; }
+  /* an artist that is in the library after all: go there */
+  try { const lib = await loadLibrary(); const own = lib.artists.find(a => norm(a.Name) === norm(name)); if (own) { location.replace('#/c/music/artist/' + own.Id); return; } } catch (e) { }
+  const dzA = await dzArtist(name).catch(() => null);
+  if (!mbid && aurralOn()) { try { const r = await aget('/api/search', { q: name, scope: 'artist', limit: 5 }); const l = aList(r); const hit = l.find(o => norm(aName(o)) === norm(name)) || l[0]; if (hit) mbid = hit.id || hit.mbid || ''; } catch (e) { } }
+  pageHead(n, { type: t('artist'), title: name, round: true, img: dzA && dzA.img || '', meta: [t('notOwned')] });
+  const ar = { Id: null, Name: name, ProviderIds: { MusicBrainzArtist: mbid } };
+  if (mbid && aurralReq()) { const b = h('button', { class: 'sp-pillbtn' }, ic('plus'), t('request')); b.onclick = async () => { b.disabled = true; try { await requestAurral({ id: mbid, name }, 'artist'); toast(t('requested')); b.replaceChildren(ic('check'), t('requestedOk')); b.classList.add('done'); } catch (er) { b.disabled = false; toast(((er.responseJSON && (er.responseJSON.error || er.responseJSON.message)) || er.statusText || 'error')); } }; n.append(h('div', { class: 'sp-actions' }, b)); }
+  const popBox = h('div', {}), popMore = h('div', { class: 'sp-morewrap' }); n.append(h('h2', { style: 'margin-top:8px' }, t('popularTracks')), popBox, popMore);
+  artistPopular(ar, [], popBox, popMore);
+  if (mbid) await artistDisco(n, ar, []);
+}

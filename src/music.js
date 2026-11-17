@@ -8,9 +8,16 @@ const emit = () => P.subs.forEach(f => { try { f(); } catch (e) { } });
 const TF = 'Fields=PrimaryImageAspectRatio,Genres,ProductionYear,DateCreated,ParentId,AlbumId,AlbumPrimaryImageTag,Artists,ArtistItems';
 const AUD_F = 'PrimaryImageAspectRatio,Genres,ProductionYear,DateCreated,ParentId,AlbumId,AlbumPrimaryImageTag,Artists,ArtistItems,RunTimeTicks,UserData';
 const trackImg = (it, w) => imgUrl(it, 'Primary', w || 120);
-const artistLinks = it => (it.ArtistItems || []).length ? it.ArtistItems.map((a, i) => [i ? ', ' : '', h('a', { href: '#/c/music/artist/' + a.Id, onclick: e => e.stopPropagation() }, a.Name)]) : (it.AlbumArtist || (it.Artists || [])[0] || '');
+const artistLinks = it => (it.ArtistItems || []).length ? it.ArtistItems.map((a, i) => [i ? ', ' : '', h('a', { href: '#/c/music/artist/' + a.Id, onclick: e => e.stopPropagation() }, a.Name)]) : extArtistLinks(it);
 const artistText = it => (it.ArtistItems || []).length ? it.ArtistItems.map(a => a.Name).join(', ') : (it.AlbumArtist || (it.Artists || []).join(', ') || '');
 
+/* artists of a song you do not have: every name opens a page with their songs and releases */
+function extArtistLinks(it) {
+  const s = it.AlbumArtist || (it.Artists || [])[0] || ''; if (!s || !it._ext) return s;
+  const mb = (it._tr && it._tr.artistMbid) || '';
+  return s.split(/(\s*(?:,|&|\bfeat\.?|\bft\.?)\s*)/i).map((p, i) => i % 2 || !p.trim() ? p : h('a', { href: '#/c/music/xartist/x?n=' + encodeURIComponent(p.trim()) + (mb && s === p ? '&m=' + mb : ''), onclick: e => e.stopPropagation() }, p.trim()));
+}
+const playable = it => !!it && !(it._ext && !it._preview);
 function streamUrl(it) {
   if (it._preview) return /^https?:/.test(it._preview) ? it._preview : withKey(ApiClient.getUrl('Cinema/aurral/' + it._preview.replace(/^\//, '')));
   return ApiClient.getUrl('Audio/' + it.Id + '/universal', {
@@ -21,7 +28,7 @@ function streamUrl(it) {
 const rep = (kind, extra) => { try { const it = cur(); if (!it || it._ext) return; const o = Object.assign({ ItemId: it.Id, PlaySessionId: P.psid, PositionTicks: Math.floor(P.audio.currentTime * 1e7), IsPaused: P.audio.paused, CanSeek: true, MediaSourceId: it.Id, PlayMethod: 'DirectStream', QueueableMediaTypes: ['Audio'] }, extra); ApiClient['reportPlayback' + kind](o); } catch (e) { } };
 function loadCurrent(autoplay) {
   const it = cur(); if (!it) return;
-  if (it._ext && !it._preview) { toast(t('noPreview') + ': ' + it.Name); setTimeout(() => next(), 600); return; }
+  if (!playable(it)) return;
   if (P.reportedStart) rep('Stopped');
   P.psid = 'cx' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   P.audio.src = streamUrl(it);
@@ -32,6 +39,7 @@ function loadCurrent(autoplay) {
 function playList(tracks, idx, opts) {
   opts = opts || {};
   if (!tracks.length) return;
+  if (!playable(tracks[idx || 0])) { toast(t('noPreview') + ': ' + tracks[idx || 0].Name); return; } /* keep what is playing now */
   P.orig = tracks.slice(); idx = idx || 0;
   if (opts.shuffle != null) P.shuffle = opts.shuffle;
   if (P.shuffle) { const first = P.orig[idx]; P.q = [first].concat(shuffleArr(P.orig.filter((_, k) => k !== idx))); P.i = 0; } else { P.q = P.orig.slice(); P.i = idx; }
@@ -41,9 +49,11 @@ function playList(tracks, idx, opts) {
 function next(auto) {
   if (!P.q.length) return;
   if (auto && P.repeat === 2) { P.audio.currentTime = 0; P.audio.play(); return; }
-  if (P.i + 1 < P.q.length) { P.i++; loadCurrent(); } else if (P.repeat === 1) { P.i = 0; loadCurrent(); } else { P.audio.pause(); P.audio.currentTime = 0; if (P.reportedStart) { rep('Stopped'); P.reportedStart = false; } emit(); }
+  let nx = -1; for (let k = P.i + 1; k < P.q.length; k++) if (playable(P.q[k])) { nx = k; break; }
+  if (nx < 0 && P.repeat === 1) nx = P.q.findIndex(playable);
+  if (nx >= 0) { P.i = nx; loadCurrent(); } else { P.audio.pause(); P.audio.currentTime = 0; if (P.reportedStart) { rep('Stopped'); P.reportedStart = false; } emit(); }
 }
-function prev() { if (P.audio.currentTime > 3 || P.i <= 0) { P.audio.currentTime = 0; return; } P.i--; loadCurrent(); }
+function prev() { let pv = -1; for (let k = P.i - 1; k >= 0; k--) if (playable(P.q[k])) { pv = k; break; } if (P.audio.currentTime > 3 || pv < 0) { P.audio.currentTime = 0; return; } P.i = pv; loadCurrent(); }
 function toggle() { if (!cur()) return; P.audio.paused ? P.audio.play().catch(() => { }) : P.audio.pause(); }
 function toggleShuffle() {
   P.shuffle = !P.shuffle; const c = cur();
@@ -325,7 +335,7 @@ function buildSP() {
   }
   C.fillLib = fillLib;
   const side = h('div', { class: 'sp-side' },
-    h('div', { class: 'sp-card sp-top' }, h('a', { class: 'sp-navlink', href: '#/c/music', 'data-k': 'home' }, ic('home'), t('home')), h('a', { class: 'sp-navlink', href: '#/c/music/search', 'data-k': 'search' }, ic('search'), t('search')), h('a', { class: 'sp-navlink', href: '#/c/music/discover', 'data-k': 'discover' }, ic('star'), t('discoverShort')), aurralOn() ? h('a', { class: 'sp-navlink', href: '#/c/music/downloads', 'data-k': 'downloads' }, ic('download'), t('mdl')) : null, h('a', { class: 'sp-navlink', href: '#/home' }, ic('film'), t('moviesTv'))),
+    h('div', { class: 'sp-card sp-top' }, h('a', { class: 'sp-navlink', href: '#/c/music', 'data-k': 'home' }, ic('home'), t('home')), h('a', { class: 'sp-navlink', href: '#/c/music/search', 'data-k': 'search' }, ic('search'), t('search')), h('a', { class: 'sp-navlink', href: '#/c/music/discover', 'data-k': 'discover' }, ic('star'), t('discoverShort')), h('a', { class: 'sp-navlink', href: '#/c/music/downloads', 'data-k': 'downloads', hidden: !aurralOn() }, ic('download'), t('mdl')), h('a', { class: 'sp-navlink', href: '#/home' }, ic('film'), t('moviesTv'))),
     h('div', { class: 'sp-card sp-lib' }, h('div', { class: 'sp-libhead' }, h('span', { style: 'display:flex;gap:10px;align-items:center' }, ic('lib'), t('library')), h('button', { 'aria-label': t('createPl'), onclick: () => promptName(t('createPl'), async n => { const r = await createPlaylist(n, []); go('#/c/music/playlist/' + r.Id); }) }, ic('plus'))), chips, libList));
   /* main */
   const scroll = h('div', { class: 'sp-scroll' });
@@ -352,7 +362,8 @@ function setHeader(opts) {
     const nm = (ME && ME.Name) || 'U';
     if (v0) hd.replaceChildren(h('button', { class: 'sp-hbtn', 'aria-label': 'Back', onclick: () => history.back() }, ic('left')));
     else hd.replaceChildren((() => { const a = h('a', { class: 'sp-avatar', href: '#/c/settings', 'aria-label': t('settings') }, nm[0].toUpperCase()); if (!ME) me().then(u => { a.textContent = (u.Name || 'U')[0].toUpperCase(); }); return a; })(),
-      h('div', { class: 'sp-chips' }, [['', t('all'), '#/c/music'], ['discover', t('discoverShort'), '#/c/music/discover'], ['library', t('library'), '#/c/music/library']].concat(aurralOn() ? [['downloads', t('mdl'), '#/c/music/downloads']] : []).map(([k, l, hr]) => h('a', { class: 'sp-chip' + (v0 === k ? ' on' : ''), href: hr }, l))));
+      h('div', { class: 'sp-chips' }, [['', t('all'), '#/c/music'], ['discover', t('discoverShort'), '#/c/music/discover'], ['library', t('library'), '#/c/music/library']]
+.concat([['downloads', t('mdl'), '#/c/music/downloads']]).map(([k, l, hr]) => h('a', { class: 'sp-chip' + (v0 === k ? ' on' : ''), href: hr, 'data-k': k, hidden: k === 'downloads' && !aurralOn() }, l))));
   } else hd.replaceChildren(h('button', { class: 'sp-hbtn', 'aria-label': 'Back', onclick: () => history.back() }, ic('left')), h('button', { class: 'sp-hbtn', 'aria-label': 'Forward', onclick: () => history.forward() }, ic('right')));
   if (opts.search) { const inp = h('input', { type: 'text', placeholder: t('searchMusic'), value: opts.q || '', autocomplete: 'off' }); let tm; inp.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => go('#/c/music/search' + (inp.value.trim() ? '/' + encodeURIComponent(inp.value.trim()) : '')), 350); }); hd.append(h('div', { class: 'sp-hsearch' }, ic('search'), inp)); setTimeout(() => { if (!opts.q) inp.focus(); }, 50); }
   hd.append(h('div', { style: 'flex:1' }));
@@ -366,6 +377,7 @@ C.renderMusic = async function (r) {
   $$('.sp-navlink[data-k]', sp.side).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'discover' && view === 'discover') || (a.dataset.k === 'downloads' && view === 'downloads')));
   $$('a[data-k]', sp.tabs).forEach(a => a.classList.toggle('on', (a.dataset.k === 'home' && !view) || (a.dataset.k === 'search' && view === 'search') || (a.dataset.k === 'lib' && (view === 'library'))));
   $$('.sp-li', sp.libList).forEach(l => l.classList.toggle('on', !!id && l.dataset.id === id || (view === 'liked' && l.dataset.id === 'liked')));
+  document.querySelectorAll('#cx-sp [data-k="downloads"]').forEach(a => { a.hidden = !aurralOn(); });
   C.scrollPos[C.lastKey] = sp.scroll.scrollTop; C.lastKey = r.raw;
   sp.content.replaceChildren(h('div', { class: 'spinner' })); sp.el.style.setProperty('--tint', '#333'); sp.bgEl.style.setProperty('--tint', '#2a2a2a');
   setHeader({ search: view === 'search', q: view === 'search' ? decodeURIComponent(id || '') : '' });
@@ -383,6 +395,7 @@ C.renderMusic = async function (r) {
     else if (view === 'mix') await mMix(node, decodeURIComponent(id));
     else if (view === 'library') await mLibrary(node);
     else if (view === 'downloads') await mDownloads(node);
+    else if (view === 'xartist') await mExtArtist(node, r.q);
   } catch (e) { console.error('[cinema music]', e); node.append(h('div', { class: 'nf-empty' }, t('empty'))); }
   try { if (view === 'search' && id) { const sk = h('div', { class: 'sk-wrap' }, skelShelf(), skelShelf()); node.append(sk); try { await aurralSearchShelves(node, decodeURIComponent(id)); } finally { sk.remove(); } aurralTrackSearch(node, decodeURIComponent(id)); } else if (!view) { await aurralDiscoverShelves(node); musicRecs(node); } } catch (e) { }
   sp.content.replaceWith(node); sp.content = node;

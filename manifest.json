@@ -9,6 +9,14 @@
         "imageUrl":  "",
         "versions":  [
                          {
+                             "version":  "1.1.43.0",
+                             "changelog":  "Music: artists of songs you do not have open their own page, songs without a preview no longer skip through the queue, the downloads tab is always reachable.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.43.0.zip",
+                             "checksum":  "cd3a829e288faef22393a53cb1380134",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.42.0",
                              "changelog":  "Fix: popular songs and the music download page no longer wait forever (they checked too early whether the page was already shown).",
                              "targetAbi":  "12.4.0.0",
