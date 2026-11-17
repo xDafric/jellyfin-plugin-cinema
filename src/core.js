@@ -127,7 +127,7 @@ async function playVideo(it, opts) {
       const ch = await items({ ParentId: it.Id, Limit: 1, SortBy: 'SortName' }); if (ch.Items[0]) id = ch.Items[0].Id;
     }
   } catch (e) { }
-  if (window.CinemaTV) { try { const full = await getItem(id); COVER.hide(); CinemaTV.play(id, opts.startTicks != null ? opts.startTicks : (ud(full).PlaybackPositionTicks || 0)); } catch (e) { COVER.hide(); toast((e.message || 'error')); } return; }
+  if (window.CinemaTV || window.CinemaNative) { try { const full = await getItem(id); COVER.hide(); (window.CinemaTV || window.CinemaNative).play(id, opts.startTicks != null ? opts.startTicks : (ud(full).PlaybackPositionTicks || 0)); } catch (e) { COVER.hide(); toast((e.message || 'error')); } return; }
   if (playerMode() === 'native') { playNative(id); return; }
   try { const full = await getItem(id); COVER.hide(); await openPlayer(full, opts.startTicks); } catch (e) { console.warn('[cinema] player', e); COVER.hide(); playNative(id); }
 }
@@ -244,6 +244,7 @@ async function renderNF(r) {
   else if (view === 'wrapped') await wrappedView(page);
   else if (view === 'tonight') await tonightView(page);
   else if (view === 'storage') await storageView(page);
+  else if (view === 'downloads') await downloadsView(page);
   else page.append(h('div', { class: 'nf-empty' }, '404'));
   done();
 }
@@ -338,7 +339,7 @@ async function itemView(page, id) {
     h('div', { class: 'nf-meta' }, it.CommunityRating ? h('span', { class: 'match' }, Math.round(it.CommunityRating * 10) + '% ★') : null, yearOf(it) ? h('span', {}, yearOf(it)) : null, it.OfficialRating ? h('span', { class: 'badge' }, it.OfficialRating) : null, it.RunTimeTicks && !isSeries ? h('span', {}, fmtMin(it.RunTimeTicks)) : null, isSeries && it.ChildCount ? h('span', {}, it.ChildCount + ' ' + t('seasons')) : null),
     (it.Taglines || [])[0] ? h('p', { class: 'nf-tagline' }, it.Taglines[0]) : null,
     h('p', { class: 'ov', onclick: e => e.currentTarget.classList.toggle('open') }, it.Overview || ''),
-    h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: () => playVideo(it) }, ic('play'), prog ? t('resume') : t('play')),
+    h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: () => playVideo(it) }, ic('play'), prog ? t('resume') : t('play')), dlButton(it),
       trailer ? h('a', { class: 'btn grey', href: trailer.Url, target: '_blank', rel: 'noopener' }, ic('film'), t('trailer')) : null, favBtn, seenBtn, moreBtn),
     prog ? h('div', { class: 'nf-resume-bar' }, h('i', { style: 'width:' + prog + '%' })) : null,
     h('dl', { class: 'nf-facts' }, (it.Genres || []).length ? [h('dt', {}, t('genres')), h('dd', {}, it.Genres.join(', '))] : null, dir ? [h('dt', {}, t('director')), h('dd', {}, dir)] : null, (it.Studios || []).length ? [h('dt', {}, t('studio')), h('dd', {}, it.Studios.map(s => s.Name).join(', '))] : null));
@@ -359,7 +360,7 @@ async function itemView(page, id) {
         h('div', { class: 'n' }, ep.IndexNumber != null ? ep.IndexNumber : ''),
         h('div', Object.assign({ class: 'th' }, bg(imgUrl(ep, 'Primary', 500) || imgUrl(ep, 'Backdrop', 500))), pct(ep) ? h('div', { class: 'prog' }, h('i', { style: 'width:' + pct(ep) + '%' })) : null),
         h('div', {}, h('div', { class: 'tt' }, h('span', {}, ep.Name), ud(ep).Played ? h('span', { class: 'seen' }, '') : null), h('div', { class: 'ds clamp3' }, ep.Overview || '')),
-        h('div', { class: 'rt', style: 'color:#bbb' }, ep.RunTimeTicks ? fmtMin(ep.RunTimeTicks) : ''))));
+        h('div', { class: 'rt', style: 'color:#bbb' }, ep.RunTimeTicks ? fmtMin(ep.RunTimeTicks) : '', dlMini(ep)))));
       if (focusEp && focusEp.Id) { const el = $('[data-id="' + focusEp.Id + '"]', list); if (el) { el.style.background = '#2a2a2a'; setTimeout(() => el.scrollIntoView({ block: 'center' }), 50); } focusEp = null; }
     }
     seasons.forEach(s => chips.append(h('button', { class: 'nf-chip', 'data-id': s.Id, onclick: () => loadSeason(s) }, s.Name)));

@@ -23,4 +23,13 @@
     <string name="fill">Fill</string>
     <string name="stretch">Stretch</string>
     <string name="speed">Speed</string>
+    <string name="downloads_channel">Downloads</string>
+    <string name="update_title">Update available</string>
+    <string name="update_msg">Cinema %1$s is available (installed: %2$s).</string>
+    <string name="update_get">Download</string>
+    <string name="update_later">Later</string>
+    <string name="pip">Picture in picture</string>
+    <string name="brightness">Brightness</string>
+    <string name="volume">Volume</string>
+    <string name="playback_channel">Playback</string>
 </resources>
