@@ -8,7 +8,7 @@ function tabHref(name) {
 }
 function navKey(r, kind) {
   const p0 = (r.parts[0] || 'home').replace(/\.html$/, ''), v = r.parts[1];
-  if (kind === 'overlay') return p0 === 'home' ? 'home' : ({ movies: 'movies', shows: 'shows', list: 'favorites', music: 'music', discover: 'discover', calendar: 'calendar', watchlist: 'watchlist', person: '', requests: 'requests', settings: '' }[v] || '');
+  if (kind === 'overlay') return p0 === 'home' ? 'home' : ({ movies: 'movies', shows: 'shows', list: 'favorites', music: 'music', discover: 'discover', calendar: 'calendar', watchlist: 'watchlist', person: '', requests: 'requests', settings: '', quiz: 'quiz' }[v] || '');
   if (p0 === 'home') {
     const tab = r.q.get('tab'); if (tab === '1') return 'favorites'; if (tab === '2') return 'watchlist';
     const b = $$('.headerTabs .emby-tab-button').find(x => x.dataset.index === tab); const m = b && /je-native-tab-btn-(\w+)/.exec(b.id || '');
@@ -71,10 +71,11 @@ function buildTop() {
   const links = h('div', { class: 'nf-links' },
     L_('home', t('home'), '#/home'), L_('movies', t('movies'), '#/c/movies'), L_('shows', t('shows'), '#/c/shows'),
     navOn('watchlist') ? L_('watchlist', 'Watchlist', '#/c/watchlist') : null, navOn('discover') ? L_('discover', t('discover'), '#/c/discover') : null,
-    navOn('requests') ? L_('requests', t('requests'), '#/c/requests', 'opt') : null, navOn('calendar') ? L_('calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'opt') : null, navOn('music') ? L_('music', t('music'), '#/c/music') : null);
+    navOn('requests') ? L_('requests', t('requests'), '#/c/requests', 'opt') : null, navOn('calendar') ? L_('calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'opt') : null, navOn('music') ? L_('music', t('music'), '#/c/music') : null, navOn('quiz') ? L_('quiz', t('gTitle'), '#/c/quiz', 'opt') : null);
   const more = h('div', { class: 'nf-menu-wrap nf-more' });
   const mkPop = items_ => h('div', { class: 'nf-pop hide' }, items_.map(([k, label, href, cls, ico]) => h('a', { 'data-cx': 1, 'data-k': k, class: cls || '', href: typeof href === 'function' ? '#' : href, onclick: e => { if (typeof href === 'function') { e.preventDefault(); go(href()); } } }, ico ? ic(ico, 'ic-s') : null, label)));
-  const moreItems = [['requests', t('requests'), '#/c/requests', 'm-opt', 'plus'], ['calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'm-opt', 'cal'], ['favorites', t('mylist'), '#/c/list', '', 'list'], ['bookmarks', t('bookmarks'), () => tabHref('bookmarks'), '', 'star'], ['live', 'Live TV', '#/livetv', '', 'tv'], ['games', 'Games', '#/games', '', 'film']];
+  const moreItems = [navOn('quiz') ? ['quiz', t('gTitle'), '#/c/quiz', 'm-opt', 'star'] : null, ['requests', t('requests'), '#/c/requests', 'm-opt', 'plus'], ['calendar', t('calendar'), () => (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'm-opt', 'cal'], ['favorites', t('mylist'), '#/c/list', '', 'list'], ['bookmarks', t('bookmarks'), () => tabHref('bookmarks'), '', 'star'], ['live', 'Live TV', '#/livetv', '', 'tv'], ['games', 'Games', '#/games', '', 'film']];
+  moreItems.splice(0, moreItems.length, ...moreItems.filter(Boolean));
   const popMore = mkPop(moreItems); const popMore2 = mkPop(moreItems.map(x => x.slice())); popMore2.classList.add('up'); uiRoot.append(popMore2);
   more.append(h('button', { class: 'nf-pillbtn', onclick: e => { e.stopPropagation(); closePops(popMore); popMore.classList.toggle('hide'); } }, t('more'), ic('down', 'ic-s')), popMore);
   const sInput = h('input', { type: 'text', placeholder: t('search') + '…', autocomplete: 'off' });
@@ -84,7 +85,7 @@ function buildTop() {
   const av = h('div', { class: 'nf-avatar' }, 'U');
   const umItem = (iconNode, label, href, fn, cls) => h('a', { 'data-cx': 1, class: 'um-item ' + (cls || ''), href: href || '#', onclick: e => { if (!href || href === '#') e.preventDefault(); closePops(); fn && fn(e); } }, h('span', { class: 'um-ic' }, iconNode), h('span', { class: 'um-l' }, label), ic('right', 'um-ch'));
   const umAv = h('div', { class: 'um-av' }, 'U'), umName = h('div', { class: 'um-name' }, '');
-  const mobileItems = [['discover', t('discover'), '#/c/discover', 'star'], ['watchlist', 'Watchlist', '#/c/watchlist', 'plus'], ['favorites', t('mylist'), '#/c/list', 'list'], ['requests', t('requests'), '#/c/requests', 'queue'], ['calendar', t('calendar'), (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'cal'], ['live', 'Live TV', '#/livetv', 'tv']].map(([k, label, href, i]) => umItem(ic(i, 'ic-s'), label, href, null, 'm-only'));
+  const mobileItems = [['discover', t('discover'), '#/c/discover', 'star'], ['watchlist', 'Watchlist', '#/c/watchlist', 'plus'], ['favorites', t('mylist'), '#/c/list', 'list'], ['requests', t('requests'), '#/c/requests', 'queue'], ['calendar', t('calendar'), (plug().radarr || plug().sonarr) ? '#/c/calendar' : tabHref('calendar'), 'cal'], ['quiz', t('gTitle'), '#/c/quiz', 'star'], ['live', 'Live TV', '#/livetv', 'tv']].filter(x => x[0] !== 'quiz' || navOn('quiz')).map(([k, label, href, i]) => umItem(ic(i, 'ic-s'), label, href, null, 'm-only'));
   const skinSw = h('button', { class: 'set-switch' + (skinOn() ? ' on' : ''), 'aria-label': t('pskin'), onclick: e => { e.stopPropagation(); setSkin(!skinOn()); skinSw.classList.toggle('on', skinOn()); } }, h('i'));
   const plugSlot = h('div', { class: 'um-sec plug-slot', 'data-cx': 1 });
   const popUser = h('div', { class: 'nf-pop nf-user hide' },

@@ -6,6 +6,7 @@ A Netflix and Spotify style interface for Jellyfin 12, with a server plugin that
 - Spotify-style music app with its own player, playlists, queue and search.
 - Watchlist, Seerr discovery and requests, download progress, release calendar, music requests through Aurral.
 - Home sections you can reorder and add to, stored per user.
+- Film Quiz (`#/c/quiz`): learn the actors from the films you watched (Jellyfin and Letterboxd) with spaced repetition, several games, levels, streaks and badges. Progress is stored per user.
 
 Needs Jellyfin 12.4. No other plugin is required: Cinema loads its interface itself before the page renders.
 
