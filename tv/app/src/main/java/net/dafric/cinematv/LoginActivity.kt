@@ -31,8 +31,8 @@ class LoginActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = Store(this)
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#111113")) }
+        UiMode.apply(this, root)
         setContentView(root)
         if (store.loggedIn) { openMain(); return }
         serverStep()
@@ -62,12 +62,16 @@ class LoginActivity : Activity() {
         imeOptions = EditorInfo.IME_ACTION_NEXT
     }
     private fun panel(vararg kids: View): LinearLayout = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
-        val lp = FrameLayout.LayoutParams(dp(640), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER)
-        layoutParams = lp
+        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL or Gravity.CENTER_VERTICAL
+        val w = minOf(dp(640), resources.displayMetrics.widthPixels - dp(40))
+        layoutParams = FrameLayout.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL)
         kids.forEach { k -> addView(k, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) }) }
     }
-    private fun show(v: View) { qcJob?.cancel(); root.removeAllViews(); root.addView(v) }
+    /** In a scroll view so the keyboard on a phone never covers the fields. */
+    private fun show(v: View) {
+        qcJob?.cancel(); root.removeAllViews()
+        root.addView(ScrollView(this).apply { isFillViewport = true; isVerticalScrollBarEnabled = false; addView(v) }, FrameLayout.LayoutParams(-1, -1))
+    }
 
     /* ---- step 1: server ---- */
     private fun serverStep() {
@@ -85,7 +89,7 @@ class LoginActivity : Activity() {
         }
         field.setOnEditorActionListener { _, a, _ -> if (a == EditorInfo.IME_ACTION_NEXT || a == EditorInfo.IME_ACTION_DONE) { next.performClick(); true } else false }
         val box = panel(title("Cinema"), sub(getString(R.string.server_hint)), field, next, status, found)
-        (box.getChildAt(0).layoutParams as LinearLayout.LayoutParams).topMargin = 0
+        (box.getChildAt(0).layoutParams as LinearLayout.LayoutParams).topMargin = dp(24)
         show(box); next.requestFocus()
         scope.launch {
             val servers = withContext(Dispatchers.IO) { discover() }
@@ -122,12 +126,13 @@ class LoginActivity : Activity() {
 
     /* ---- step 2: Quick Connect or password ---- */
     private fun authStep() {
-        val codeView = TextView(this).apply { textSize = 64f; setTextColor(Color.WHITE); typeface = Typeface.MONOSPACE; gravity = Gravity.CENTER; letterSpacing = .2f; text = "······" }
+        val codeView = TextView(this).apply { textSize = if (resources.displayMetrics.widthPixels < dp(560)) 44f else 64f; setTextColor(Color.WHITE); typeface = Typeface.MONOSPACE; gravity = Gravity.CENTER; letterSpacing = .2f; text = "······" }
         val hint = sub(getString(R.string.qc_hint)).apply { gravity = Gravity.CENTER }
         val status = sub("").apply { gravity = Gravity.CENTER }
         val pwBtn = button(getString(R.string.use_password), false) { passwordStep() }
         val backBtn = button(getString(R.string.change_server), false) { serverStep() }
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; addView(pwBtn); addView(backBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(16) }) }
+        val narrow = resources.displayMetrics.widthPixels < dp(640)
+        val row = LinearLayout(this).apply { orientation = if (narrow) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; addView(pwBtn); addView(backBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { if (narrow) topMargin = dp(10) else leftMargin = dp(16) }) }
         show(panel(title(store.serverName.ifEmpty { "Jellyfin" }), hint, codeView, status, row)); pwBtn.requestFocus()
         qcJob = scope.launch {
             val init = withContext(Dispatchers.IO) { runCatching { Http.request("POST", store.url + "/QuickConnect/Initiate", store.authHeader(false), "") }.getOrNull() }

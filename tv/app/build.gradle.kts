@@ -9,8 +9,8 @@ android {
         applicationId = "net.dafric.cinematv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.4.0"
+        versionCode = 20
+        versionName = "2.0.0"
     }
     signingConfigs {
         create("release") {
@@ -23,7 +23,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            /* the keystore is not in git: without it the release build is left unsigned instead of failing */
+            if (file("../cinema-tv.keystore").exists()) signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -37,4 +38,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-hls:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
     implementation("androidx.media3:media3-datasource:1.5.1")
+    implementation("androidx.media3:media3-session:1.5.1")
+    implementation("androidx.media3:media3-exoplayer-workmanager:1.5.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 }
