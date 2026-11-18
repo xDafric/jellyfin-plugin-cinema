@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.47.0",
+                             "changelog":  "Video player: keeps audio and subtitle language between episodes, up-next card at the credits with countdown, automatic transcode fallback, keyboard shortcuts with on-screen feedback, system media controls, position saved on close. Desktop app: videos play again, window full screen in the player, media keys for episodes.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.47.0.zip",
+                             "checksum":  "fbecadc53a136b6bb75992329fac86f1",
+                             "timestamp":  "2026-11-18T21:00:00Z"
+                         },
+                         {
                              "version":  "1.1.46.0",
                              "changelog":  "Downloads page for the Android app, media key handling for the desktop app.",
                              "targetAbi":  "12.4.0.0",

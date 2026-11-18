@@ -16,13 +16,14 @@ Only injected on the server origin; the UI feature-detects it.
 
 | Member | Behaviour in 0.1 |
 |---|---|
-| `capabilities()` | `{apiLevel:1, platform:'desktop', os, appVersion, player:'browser', nativePlayer:false, download:false, mediaKeys:true, deepLink:true, openExternal:true, exit:true}` |
+| `capabilities()` | `{apiLevel:1, platform:'desktop', os, appVersion, player:'browser', nativePlayer:false, download:false, mediaKeys:true, deepLink:true, openExternal:true, exit:true, fullscreen:true}` |
 | `play(item, startTicks, opts)` | returns `false`: the UI plays with its own `<video>`. Returns `true` once libmpv is added (`player:'mpv'`) |
 | `stop()` | returns `false` (nothing native playing) |
 | `openExternal(url)` | opens http(s) URLs in the system browser, returns boolean |
 | `exit()` | quits the app |
+| `setFullscreen(on?)` | window full screen for the video player: `true`/`false`, or no argument to toggle. Resolves to the previous state so the player can restore it |
 
-Not implemented yet (capability flags are `false`): `download`, `downloads`, `setBrightness/setVolume`. Note: the current UI only checks `window.CinemaTV` (`src/core.js`); a change there to also read `CinemaNative` is outside this task.
+Not implemented yet (capability flags are `false`): `download`, `downloads`, `setBrightness/setVolume`. The UI hands playback to `CinemaNative.play()` and falls back to its own `<video>` player when that returns `false`.
 
 ## Build (Windows)
 Prerequisites: Node 22, Rust stable (MSVC toolchain), Visual Studio Build Tools with the C++ workload, WebView2 (included in Windows 11).

@@ -127,7 +127,9 @@ async function playVideo(it, opts) {
       const ch = await items({ ParentId: it.Id, Limit: 1, SortBy: 'SortName' }); if (ch.Items[0]) id = ch.Items[0].Id;
     }
   } catch (e) { }
-  if (window.CinemaTV || window.CinemaNative) { try { const full = await getItem(id); COVER.hide(); (window.CinemaTV || window.CinemaNative).play(id, opts.startTicks != null ? opts.startTicks : (ud(full).PlaybackPositionTicks || 0)); } catch (e) { COVER.hide(); toast((e.message || 'error')); } return; }
+  /* native player of the shell; a shell without one (desktop 0.x) returns false and the Cinema player below takes over */
+  const shell = window.CinemaTV || window.CinemaNative;
+  if (shell && typeof shell.play === 'function') { try { const full = await getItem(id); COVER.hide(); if (shell.play(id, opts.startTicks != null ? opts.startTicks : (ud(full).PlaybackPositionTicks || 0)) !== false) return; COVER.show(); } catch (e) { COVER.hide(); toast((e.message || 'error')); return; } }
   if (playerMode() === 'native') { playNative(id); return; }
   try { const full = await getItem(id); COVER.hide(); await openPlayer(full, opts.startTicks); } catch (e) { console.warn('[cinema] player', e); COVER.hide(); playNative(id); }
 }

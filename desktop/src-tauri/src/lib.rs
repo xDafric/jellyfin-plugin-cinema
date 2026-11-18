@@ -196,6 +196,22 @@ fn toggle_fullscreen(app: AppHandle, window: WebviewWindow) -> Result<(), String
     window.set_fullscreen(!fs).map_err(|e| e.to_string())
 }
 
+/// Sets window full screen (`on`), or toggles it when `on` is missing. Returns the state before the call,
+/// so the player can put the window back the way it found it.
+#[tauri::command]
+fn set_fullscreen(app: AppHandle, window: WebviewWindow, on: Option<bool>) -> Result<bool, String> {
+    caller_is_server(&app, &window).ok_or("not allowed")?;
+    let was = window.is_fullscreen().map_err(|e| e.to_string())?;
+    let want = on.unwrap_or(!was);
+    if want != was {
+        window.set_fullscreen(want).map_err(|e| e.to_string())?;
+        if !want {
+            let _ = window.set_focus();
+        }
+    }
+    Ok(was)
+}
+
 fn open_url_external(app: &AppHandle, url: &str) -> Result<(), String> {
     let u = Url::parse(url).map_err(|_| "invalid url".to_string())?;
     if u.scheme() != "http" && u.scheme() != "https" {
@@ -227,7 +243,7 @@ fn build_window(app: &AppHandle, cfg: &Config) -> tauri::Result<WebviewWindow> {
                     "identifier": "server-origin",
                     "windows": ["main"],
                     "remote": { "urls": [format!("{origin}/*")] },
-                    "permissions": ["allow-store-credentials", "allow-clear-credentials", "allow-open-external", "allow-exit-app", "allow-toggle-fullscreen"]
+                    "permissions": ["allow-store-credentials", "allow-clear-credentials", "allow-open-external", "allow-exit-app", "allow-toggle-fullscreen", "allow-set-fullscreen"]
                 });
                 let _ = app.add_capability(cap.to_string());
             }
@@ -409,7 +425,8 @@ pub fn run() {
             clear_credentials,
             open_external,
             exit_app,
-            toggle_fullscreen
+            toggle_fullscreen,
+            set_fullscreen
         ])
         .setup(|app| {
             let handle = app.handle().clone();

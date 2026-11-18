@@ -38,7 +38,8 @@
     mediaKeys: true,
     deepLink: true,
     openExternal: true,
-    exit: true
+    exit: true,
+    fullscreen: true
   };
   var bridge = {
     capabilities: function () { return JSON.parse(JSON.stringify(caps)); },
@@ -53,7 +54,11 @@
         return true;
       } catch (e) { return false; }
     },
-    exit: function () { call('exit_app').catch(function () { }); }
+    exit: function () { call('exit_app').catch(function () { }); },
+    // Window full screen for the video player. on: true/false, or omitted to toggle. Resolves to the previous state.
+    setFullscreen: function (on) {
+      return call('set_fullscreen', { on: typeof on === 'boolean' ? on : null }).then(function (was) { return !!was; });
+    }
   };
   Object.defineProperty(window, 'CinemaNative', { value: Object.freeze(bridge), configurable: false });
 

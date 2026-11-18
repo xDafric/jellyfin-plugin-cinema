@@ -563,6 +563,16 @@ async function playLibItem(o) {
 /* hardware media keys from desktop/TV shells: music first when a track is loaded and nothing else is playing, otherwise the video element */
 window.cxMedia = k => {
   try {
+    /* the Cinema video player is open: it owns the keys (next = next episode, previous = back to the start) */
+    if (typeof PL !== 'undefined' && PL.open && PL.v) {
+      const v = PL.v;
+      if (k === 'playpause') v.paused ? v.play().catch(() => { }) : v.pause();
+      else if (k === 'play') v.play().catch(() => { });
+      else if (k === 'pause' || k === 'stop') v.pause();
+      else if (k === 'next') { if (PL.nextItem) playNextEp(); }
+      else if (k === 'prev' || k === 'previous') seekTo(0);
+      return true;
+    }
     const v = document.querySelector('video');
     const useVideo = v && (v.currentSrc || v.src) && (!v.paused || !cur());
     if (useVideo) {

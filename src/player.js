@@ -50,19 +50,29 @@ const PL = { el: null, v: null, hls: null, item: null, ms: null, psid: null, met
 const pcfg = (k, d) => (cfg('pl_' + k) != null ? cfg('pl_' + k) : d);
 const psave = (k, v) => saveCfg({ ['pl_' + k]: v });
 
+/* per-item state, reset for every movie or episode */
+const freshItemState = () => ({ ms: null, audio: null, sub: -1, encodeSub: false, subTouched: false, forceTx: false, netRetry: 0, prefDone: false, ncDismiss: false, ncStart: null, lastPos: 0, segments: [] });
+/* audio and subtitle language chosen for a series, so the next episode keeps them */
+const prefKey = it => it && it.SeriesId ? 'cx-pltr-' + it.SeriesId : null;
+function trackPref(it) { const k = prefKey(it); if (!k) return {}; try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } }
+function saveTrackPref(it, patch) { const k = prefKey(it); if (!k) return; try { localStorage.setItem(k, JSON.stringify(Object.assign(trackPref(it), patch))); } catch (e) { } }
+const sameLang = (a, b) => !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
+
 async function openPlayer(it, startTicks) {
   closePlayer(true);
-  Object.assign(PL, { item: it, open: true, started: false, sub: -1, audio: null, nextItem: null, ms: null, segments: [], encodeSub: false, subTouched: false });
+  Object.assign(PL, freshItemState(), { item: it, open: true, started: false, nextItem: null });
   buildPlayerUI(it);
   history.pushState({ cxplayer: 1 }, '');
   window.addEventListener('popstate', onPop); document.addEventListener('keydown', onKey, true);
   P.audio && !P.audio.paused && P.audio.pause();
   let full = it; try { full = await getItem(it.Id); } catch (e) { }
-  PL.item = full; setTitle(full); loadNext(full); loadSegments(full);
+  PL.item = full; setTitle(full); loadNext(full); loadSegments(full); updMediaSession();
   await startStream(startTicks != null ? startTicks : (ud(full).PlaybackPositionTicks || 0));
 }
 async function startStream(startTicks, opts) {
-  opts = opts || {}; const it = PL.item; setStatus(t('plPreparing')); stopTimers(); detach();
+  opts = opts || {}; const it = PL.item; setStatus(opts.status || t('plPreparing')); stopTimers(); detach();
+  if (opts.forceTranscode) PL.forceTx = true;
+  const forceTx = PL.forceTx; const gen = PL.gen = (PL.gen || 0) + 1;
   try {
     const qual = QUALITIES.find(x => x[0] === String(pcfg('quality', 'auto'))) || QUALITIES[0];
     const prof = deviceProfile(); prof.MaxStreamingBitrate = qual[1];
@@ -70,20 +80,28 @@ async function startStream(startTicks, opts) {
     if (PL.audio != null) q.AudioStreamIndex = PL.audio;
     if (PL.ms) q.MediaSourceId = PL.ms.Id;
     if (PL.encodeSub && PL.sub >= 0) q.SubtitleStreamIndex = PL.sub;
-    const info = await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Items/' + it.Id + '/PlaybackInfo', q), data: JSON.stringify({ DeviceProfile: prof }), contentType: 'application/json', dataType: 'json' });
+    const body = { DeviceProfile: prof }; if (forceTx) Object.assign(body, { EnableDirectPlay: false, EnableDirectStream: false });
+    const info = await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Items/' + it.Id + '/PlaybackInfo', q), data: JSON.stringify(body), contentType: 'application/json', dataType: 'json' });
+    if (!PL.open || !PL.item || PL.item.Id !== it.Id || gen !== PL.gen) return;
     if (info.ErrorCode) throw new Error(info.ErrorCode);
     const ms = (info.MediaSources || [])[0]; if (!ms) throw new Error('No playable source');
     PL.ms = ms; PL.psid = info.PlaySessionId || ('cx' + Date.now());
+    /* first stream of an episode: keep the audio language picked for this series */
+    if (PL.audio == null && !PL.prefDone) {
+      const want = trackPref(it).audio; const a = want && (ms.MediaStreams || []).find(s => s.Type === 'Audio' && sameLang(s.Language, want));
+      if (a && a.Index !== ms.DefaultAudioStreamIndex) { PL.audio = a.Index; return startStream(startTicks, opts); }
+    }
     if (PL.audio == null && ms.DefaultAudioStreamIndex != null) PL.audio = ms.DefaultAudioStreamIndex;
     let url, method;
-    if (ms.SupportsDirectPlay && !opts.forceTranscode && qual[0] === 'auto') { method = 'DirectPlay'; url = absUrl('Videos/' + it.Id + '/stream') + '?Static=true&MediaSourceId=' + ms.Id + '&DeviceId=' + ApiClient.deviceId() + '&PlaySessionId=' + PL.psid + (ms.ETag ? '&Tag=' + ms.ETag : ''); }
+    if (ms.SupportsDirectPlay && !forceTx && qual[0] === 'auto') { method = 'DirectPlay'; url = absUrl('Videos/' + it.Id + '/stream') + '?Static=true&MediaSourceId=' + ms.Id + '&DeviceId=' + ApiClient.deviceId() + '&PlaySessionId=' + PL.psid + (ms.ETag ? '&Tag=' + ms.ETag : ''); }
     else if (ms.TranscodingUrl) { method = /m3u8/.test(ms.TranscodingUrl) ? 'Transcode' : 'DirectStream'; url = absUrl(ms.TranscodingUrl); }
     else if (ms.SupportsDirectPlay) { method = 'DirectPlay'; url = absUrl('Videos/' + it.Id + '/stream') + '?Static=true&MediaSourceId=' + ms.Id + '&DeviceId=' + ApiClient.deviceId() + '&PlaySessionId=' + PL.psid; }
     else throw new Error('Server offered no stream');
     PL.method = method; PL.url = withKey(url);
     await attach(PL.url, startTicks ? startTicks / 1e7 : 0);
+    if (gen !== PL.gen) return;
     buildTrackMenus(); buildChapters();
-  } catch (e) { console.warn('[cinema player]', e); showError(e.message || String(e)); }
+  } catch (e) { console.warn('[cinema player]', e); if (gen === PL.gen) showError(e.message || String(e)); }
 }
 async function attach(url, startSec) {
   const v = PL.v; v.removeAttribute('src'); v.load(); v.playbackRate = PL.speed;
@@ -107,24 +125,43 @@ function closePlayer(silent) {
   stopTimers(); detach(); if (PL.el) { PL.el.remove(); PL.el = null; PL.v = null; }
   window.removeEventListener('popstate', onPop); document.removeEventListener('keydown', onKey, true);
   if (PL.nfs) setNativeFs(false);
+  if (PL.dfs && PL.dfsPrev === false) setDeskFs(false);
+  PL.dfs = false; PL.dfsPrev = null; clearMediaSession();
   if (fsEl()) try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { }
   try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { }
   PL.open = false; PL.started = false; COVER.hide();
   if (!silent) setTimeout(() => refreshView(), 120);
 }
 function onPop() { closePlayer(); }
+/* closing the tab or the app: save the position with a request that survives the page */
+window.addEventListener('pagehide', () => {
+  if (!PL.open || !PL.started || !PL.item || !PL.ms) return;
+  try {
+    const body = { ItemId: PL.item.Id, MediaSourceId: PL.ms.Id, PlaySessionId: PL.psid, PositionTicks: ticks(), PlayMethod: PL.method || 'DirectPlay' };
+    fetch(withKey(ApiClient.getUrl('Sessions/Playing/Stopped')), { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => { });
+    PL.started = false;
+  } catch (e) { }
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && PL.open && PL.started) report('Progress', { EventName: 'timeupdate' }); });
 function backFromPlayer() { if (history.state && history.state.cxplayer) history.back(); else closePlayer(); }
 
 async function loadNext(it) {
   PL.nextItem = null; if (PL.el) PL.el.classList.remove('has-next');
   if (it.Type !== 'Episode' || !it.SeriesId) return;
-  try { const r = await api('Shows/' + it.SeriesId + '/Episodes', { userId: uid(), startItemId: it.Id, limit: 2, Fields: F_BASE }); const n = (r.Items || []).find(x => x.Id !== it.Id); PL.nextItem = n || null; PL.el && PL.el.classList.toggle('has-next', !!n); } catch (e) { }
+  try { const r = await api('Shows/' + it.SeriesId + '/Episodes', { userId: uid(), startItemId: it.Id, limit: 2, Fields: F_BASE }); const n = (r.Items || []).find(x => x.Id !== it.Id); PL.nextItem = n || null; PL.el && PL.el.classList.toggle('has-next', !!n); updMediaSession(); } catch (e) { }
 }
 async function loadSegments(it) {
   PL.segments = [];
   try { const r = await api('MediaSegments/' + it.Id); PL.segments = (r.Items || []).map(s => ({ type: s.Type, start: s.StartTicks / 1e7, end: s.EndTicks / 1e7 })); } catch (e) { }
 }
-function playNextEp() { if (PL.nextItem) { const n = PL.nextItem; report('Stopped'); PL.started = false; PL.item = n; PL.ms = null; PL.audio = null; PL.sub = -1; PL.encodeSub = false; PL.subTouched = false; setTitle(n); loadNext(n); loadSegments(n); getItem(n.Id).then(f => { PL.item = f; }).catch(() => { }); startStream(0); } }
+function playNextEp() {
+  if (!PL.nextItem) return; const n = PL.nextItem;
+  report('Stopped'); PL.started = false; Object.assign(PL, freshItemState(), { item: n });
+  if (PL.el) $('.pl-nextcard', PL.el).classList.remove('show');
+  setTitle(n); loadNext(n); loadSegments(n); updMediaSession();
+  getItem(n.Id).then(f => { if (PL.item && PL.item.Id === f.Id) { PL.item = f; buildChapters(); updMediaSession(); } }).catch(() => { });
+  startStream(0);
+}
 function playEpisode(ep) { PL.nextItem = ep; playNextEp(); }
 
 /* ---------- UI helpers ---------- */
@@ -146,14 +183,22 @@ function buildTrackMenus() {
   if (!PL.el || !PL.ms) return;
   const streams = PL.ms.MediaStreams || []; const audios = streams.filter(s => s.Type === 'Audio'); const subs = streams.filter(s => s.Type === 'Subtitle' && (s.DeliveryUrl || s.DeliveryMethod === 'Encode'));
   const am = $('.pl-menu-audio', PL.el), sm = $('.pl-menu-subs', PL.el);
-  am.replaceChildren(h('div', { class: 'pl-mh' }, t('plAudio')), ...audios.map(a => mbtn(a.DisplayTitle || a.Language || ('#' + a.Index), a.Index === PL.audio, () => { if (a.Index === PL.audio) return; PL.audio = a.Index; closeMenus(); startStream(ticks()); })));
+  am.replaceChildren(h('div', { class: 'pl-mh' }, t('plAudio')), ...audios.map(a => mbtn(a.DisplayTitle || a.Language || ('#' + a.Index), a.Index === PL.audio, () => { if (a.Index === PL.audio) return; PL.audio = a.Index; if (a.Language) saveTrackPref(PL.item, { audio: a.Language }); closeMenus(); startStream(ticks()); })));
   sm.replaceChildren(h('div', { class: 'pl-mh' }, t('plSubs')), mbtn(t('plOff'), PL.sub === -1, () => setSub(-1)), ...subs.map(s => mbtn(s.DisplayTitle || s.Language || ('#' + s.Index), s.Index === PL.sub, () => setSub(s.Index), s.DeliveryMethod === 'Encode' ? h('small', {}, t('plBurn')) : null)), h('div', { class: 'pl-sep' }), mbtn(t('plSubStyle'), false, () => { closeMenus(); openSettings('subs'); }));
   $('.pl-btn-audio', PL.el).classList.toggle('hide', audios.length < 2); $('.pl-btn-subs', PL.el).classList.toggle('hide', !subs.length);
-  const def = subs.find(s => s.DeliveryUrl && s.IsDefault); if (def && PL.sub === -1 && !PL.subTouched && !PL.encodeSub) setSub(def.Index, true);
+  if (PL.prefDone || PL.subTouched || PL.encodeSub || PL.sub !== -1) { PL.prefDone = true; return; }
+  PL.prefDone = true;
+  /* the subtitle choice made for this series wins over the file's default */
+  const pref = trackPref(PL.item).sub;
+  if (pref === 'off') return;
+  const pick = pref && pref.lang ? (subs.find(s => sameLang(s.Language, pref.lang) && !!s.IsForced === !!pref.forced && s.DeliveryUrl) || subs.find(s => sameLang(s.Language, pref.lang) && s.DeliveryUrl) || subs.find(s => sameLang(s.Language, pref.lang)))
+    : subs.find(s => s.DeliveryUrl && s.IsDefault);
+  if (pick) setSub(pick.Index, true);
 }
 function setSub(idx, auto) {
   setTimeout(applySubDelay, 900);
-  const v = PL.v; const s = idx >= 0 ? PL.ms.MediaStreams.find(x => x.Index === idx) : null; if (!auto) PL.subTouched = true;
+  const v = PL.v; const s = idx >= 0 ? PL.ms.MediaStreams.find(x => x.Index === idx) : null;
+  if (!auto) { PL.subTouched = true; saveTrackPref(PL.item, { sub: s ? (s.Language ? { lang: s.Language, forced: !!s.IsForced } : undefined) : 'off' }); }
   const wasEncode = PL.encodeSub; PL.sub = idx; v.querySelectorAll('track').forEach(x => x.remove()); PL.subsEl.replaceChildren();
   if (s && s.DeliveryMethod === 'Encode' && !s.DeliveryUrl) { PL.encodeSub = true; closeMenus(); startStream(ticks()); return; }
   PL.encodeSub = false; if (wasEncode) { closeMenus(); startStream(ticks()); return; }
@@ -187,13 +232,33 @@ function buildChapters() {
 function checkSegments() {
   const v = PL.v; if (!v || !PL.segments.length) return; const t0 = v.currentTime; const seg = PL.segments.find(s => (s.type === 'Intro' || s.type === 'Outro' || s.type === 'Recap' || s.type === 'Preview') && t0 >= s.start && t0 < s.end - 1);
   const btn = $('.pl-skipseg', PL.el);
+  /* during the credits of an episode the up-next card takes this place */
+  if (seg && seg.type === 'Outro' && PL.nextItem && !PL.ncDismiss) { btn.classList.remove('show'); return; }
   if (seg) { btn.classList.add('show'); $('span', btn).textContent = seg.type === 'Outro' ? t('plSkipCredits') : seg.type === 'Recap' ? t('plSkipRecap') : t('plSkipIntro'); btn.onclick = () => { v.currentTime = seg.end; btn.classList.remove('show'); }; if (pcfg('autoSkip', false) && seg.type === 'Intro') { v.currentTime = seg.end; btn.classList.remove('show'); } } else btn.classList.remove('show');
 }
+/* up next: appears when the credits start (Outro segment) or 20 s before the end, counts down and plays the next episode */
+const NEXT_COUNT = 10;
 function checkNextCard() {
-  const v = PL.v; const card_ = $('.pl-nextcard', PL.el); const d = v.duration; if (!PL.nextItem || !d || !isFinite(d)) { card_.classList.remove('show'); return; }
-  const left = d - v.currentTime; const out = PL.segments.find(s => s.type === 'Outro');
-  const show = left < 24 && left > 0 && pcfg('autoNext', true);
-  card_.classList.toggle('show', show); if (show) { $('.pl-nc-t', card_).textContent = (PL.nextItem.SeriesName ? '' : '') + 'S' + (PL.nextItem.ParentIndexNumber || 0) + ':E' + (PL.nextItem.IndexNumber || 0) + ' · ' + PL.nextItem.Name; $('.pl-nc-s', card_).textContent = t('plNextIn') + ' ' + Math.ceil(left) + ' s'; }
+  const v = PL.v; const card_ = $('.pl-nextcard', PL.el); const d = v.duration;
+  const hide = () => { card_.classList.remove('show'); PL.ncStart = null; };
+  if (!PL.nextItem || !d || !isFinite(d) || PL.ncDismiss) return hide();
+  const now = v.currentTime, left = d - now;
+  const out = PL.segments.find(s => s.type === 'Outro' && s.start > d * .5 && s.start < d - 2);
+  const from = out ? out.start : d - 20;
+  if (now < from || left <= 0) return hide();
+  if (PL.ncStart == null || now < PL.ncStart) PL.ncStart = now;
+  const auto = pcfg('autoNext', true);
+  const total = out ? Math.min(NEXT_COUNT, d - from) : d - from;
+  const remain = Math.max(0, out ? Math.min(left, total - (now - PL.ncStart)) : left);
+  if (!card_.classList.contains('show')) {
+    const n = PL.nextItem; const th = imgUrl(n, 'Primary', 400);
+    $('.pl-nc-th', card_).style.backgroundImage = th ? 'url("' + th + '")' : '';
+    $('.pl-nc-t', card_).textContent = 'S' + (n.ParentIndexNumber || 0) + ':E' + (n.IndexNumber || 0) + ' · ' + n.Name;
+  }
+  card_.classList.add('show'); card_.classList.toggle('auto', auto);
+  $('.pl-nc-s', card_).textContent = auto ? t('plNextIn') + ' ' + Math.ceil(remain) + ' s' : t('plUpNext');
+  $('.pl-nc-fill', card_).style.width = auto && total > 0 ? Math.min(100, (1 - remain / total) * 100) + '%' : '0%';
+  if (auto && out && remain <= 0 && !v.paused) playNextEp();
 }
 
 /* settings panel */
@@ -207,7 +272,7 @@ function openSettings(tab) {
     body.append(row(t('plQuality'), seg(QUALITIES.map(([k]) => [k, k === 'auto' ? t('plAuto') : (k === '20' ? '1080p+' : k === '8' ? '1080p' : k === '4' ? '720p' : '480p')]), pcfg('quality', 'auto'), v => { psave('quality', v); startStream(ticks()); }), t('plQualityHint')),
       row(t('plFit'), seg([['contain', t('plFitContain')], ['cover', t('plFitCover')], ['fill', t('plFitFill')]], pcfg('fit', 'contain'), v => { psave('fit', v); applyFit(); }), t('plFitHint')),
       row(t('plSkipLen'), seg([[5, '5 s'], [10, '10 s'], [15, '15 s'], [30, '30 s']], skipLen(), v => { psave('skipLen', +v); updSkipIcons(); })),
-      row(t('plSpeed'), seg([[0.5, '0.5×'], [0.75, '0.75×'], [1, '1×'], [1.25, '1.25×'], [1.5, '1.5×'], [2, '2×']], PL.speed, v => { PL.speed = +v; PL.v.playbackRate = +v; })));
+      row(t('plSpeed'), seg(SPEEDS.map(x => [x, x + '×']), PL.speed, v => { setSpeed(+v); })));
   } else if (tab === 'playback') {
     body.append(row(t('plAutoNext'), sw('autoNext', true), t('plAutoNextHint')), row(t('plAutoSkip'), sw('autoSkip', false), t('plAutoSkipHint')), row(t('plRemember'), sw('rememberVol', true)));
   } else if (tab === 'subs') {
@@ -221,7 +286,7 @@ function openSettings(tab) {
       row(t('plSubFont'), seg([['sans', 'Sans'], ['serif', 'Serif'], ['mono', 'Mono']], pcfg('subFont', 'sans'), v => { psave('subFont', v); applySubStyle(); })));
     body.append(h('div', { class: 'pl-subpreview' }, h('span', {}, t('plSubPreview'))));
   } else if (tab === 'keys') {
-    [['Space / K', t('plKPlay')], ['← →  /  J L', '±10 s'], ['↑ ↓', t('plKVol')], ['F', t('plKFs')], ['M', t('plKMute')], ['C', t('plSubs')], ['I', t('plInfo')], ['Esc', t('plKBack')]].forEach(([k, d]) => body.append(h('div', { class: 'pl-key' }, h('kbd', {}, k), h('span', {}, d))));
+    [['Space / K', t('plKPlay')], ['← →  /  J L', '±' + skipLen() + ' s'], ['Shift + ← →', '±' + skipLen() * 6 + ' s'], ['0 – 9', t('plKJump')], ['↑ ↓', t('plKVol')], ['< >', t('plSpeed')], [', .', t('plKFrame')], ['Shift + N', t('plNext')], ['F', t('plKFs')], ['M', t('plKMute')], ['C', t('plSubs')], ['A', t('plAudio')], ['P', 'Picture in picture'], ['I', t('plInfo')], ['Esc', t('plKBack')]].forEach(([k, d]) => body.append(h('div', { class: 'pl-key' }, h('kbd', {}, k), h('span', {}, d))));
   }
   panel.replaceChildren(h('div', { class: 'pl-stabs' }, tabs.map(k => h('button', { class: k === tab ? 'on' : '', onclick: () => openSettings(k) }, t('plTab_' + k))), h('button', { class: 'pl-sclose', onclick: () => panel.classList.remove('open'), 'aria-label': 'Close' }, ic('close'))), body);
   panel.classList.add('open'); closeMenus(); wake();
@@ -239,7 +304,7 @@ function buildPlayerUI(it) {
   v.addEventListener('playing', () => { wake(); applyFit(); }, { once: true });
   const seekFill = h('i'), seekBuf = h('em'), seekKnob = h('b'), bubble = h('div', { class: 'pl-bubble' }, h('div', { class: 'pl-thumb' }), h('span', {})), chapters = h('div', { class: 'pl-chapters' });
   const seek = h('div', { class: 'pl-seek' }, seekBuf, chapters, seekFill, seekKnob, bubble);
-  const tCur = h('span', {}, '0:00'), tDur = h('span', {}, '0:00');
+  const tCur = h('span', {}, '0:00'), tDur = h('span', { class: 'pl-tdur', role: 'button', title: t('plRemainHint'), onclick: e => { e.stopPropagation(); psave('remain', !pcfg('remain', false)); updTime(); } }, '0:00');
   const ppBtn = h('button', { class: 'pl-pp', 'aria-label': 'Play / Pause', onclick: () => togglePlay() }, pic('play'));
   const volBar = seekBarEl(f => { v.volume = f; v.muted = false; if (pcfg('rememberVol', true)) try { localStorage.setItem('cx-pvol', f); } catch (e) { } updVol(); });
   const muteBtn = h('button', { onclick: () => { v.muted = !v.muted; updVol(); }, 'aria-label': 'Mute' }, pic('vol'));
@@ -258,7 +323,9 @@ function buildPlayerUI(it) {
       h('button', { class: 'btn grey', onclick: () => { const p = ticks() || (ud(PL.item).PlaybackPositionTicks || 0); startStream(p, { forceTranscode: true }); } }, t('plTranscode')),
       h('button', { class: 'btn grey', onclick: () => { const id = PL.item.Id; closePlayer(); playNative(id); } }, t('plNative')))),
     h('button', { class: 'pl-skipseg btn white' }, pic('skip'), h('span', {}, t('plSkipIntro'))),
-    h('div', { class: 'pl-nextcard' }, h('div', { class: 'pl-nc-s' }), h('div', { class: 'pl-nc-t ell' }), h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: playNextEp }, pic('next'), t('plNext')), h('button', { class: 'btn grey', onclick: () => { psave('autoNext', false); $('.pl-nextcard', el).classList.remove('show'); } }, t('cancel')))),
+    h('div', { class: 'pl-nextcard' }, h('div', { class: 'pl-nc-th', onclick: playNextEp }, pic('play')), h('div', { class: 'pl-nc-body' }, h('div', { class: 'pl-nc-s' }), h('div', { class: 'pl-nc-t ell' }), h('div', { class: 'nf-btns' },
+      h('button', { class: 'btn white pl-nc-go', onclick: playNextEp }, h('i', { class: 'pl-nc-fill' }), pic('next'), h('span', {}, t('plNext'))),
+      h('button', { class: 'btn grey', onclick: () => { PL.ncDismiss = true; $('.pl-nextcard', el).classList.remove('show'); } }, t('plWatchCredits'))))),
     h('div', { class: 'pl-bar' }, seek, h('div', { class: 'pl-row' },
       ppBtn, tip(t('plBack10'), h('button', { onclick: () => skip(-skipLen()), class: 'pl-skip' }, skipIcon(-1))), tip(t('plFwd10'), h('button', { onclick: () => skip(skipLen()), class: 'pl-skip' }, skipIcon(1))),
       h('div', { class: 'pl-vol' }, muteBtn, volBar), h('div', { class: 'pl-time' }, tCur, h('span', { class: 'sl' }, ' / '), tDur), h('div', { style: 'flex:1' }),
@@ -278,19 +345,34 @@ function buildPlayerUI(it) {
   function updVol() { volBar.set(v.muted ? 0 : v.volume); muteBtn.replaceChildren(pic(v.muted || v.volume === 0 ? 'mute' : 'vol')); }
   updVol(); v.addEventListener('volumechange', updVol);
   const dur = () => (isFinite(v.duration) && v.duration > 0) ? v.duration : ((PL.item && PL.item.RunTimeTicks) || 0) / 1e7;
+  const timeWrap = () => $('.pl-time', el);
+  function updTime() {
+    const d = dur(), c = v.currentTime || 0; tCur.textContent = fmtT(c);
+    tDur.textContent = pcfg('remain', false) && d ? '−' + fmtT(d - c) : fmtT(d);
+    const tw = timeWrap(); if (tw && d) { const end = new Date(Date.now() + (d - c) / (v.playbackRate || 1) * 1000); tw.setAttribute('data-tip', t('plEndsAt') + ' ' + end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); }
+  }
   v.addEventListener('timeupdate', () => {
     const d = dur(); const f = d ? v.currentTime / d : 0; if (!seekDrag) { seekFill.style.width = f * 100 + '%'; seekKnob.style.left = f * 100 + '%'; }
-    tCur.textContent = fmtT(v.currentTime); tDur.textContent = fmtT(d);
+    if (v.currentTime > 0) PL.lastPos = v.currentTime;
+    updTime(); updPosState();
     if (v.buffered.length) { const e = v.buffered.end(v.buffered.length - 1); seekBuf.style.width = (d ? e / d : 0) * 100 + '%'; }
     if (Date.now() - PL.lastRep > 10000 && !v.paused) { PL.lastRep = Date.now(); report('Progress', { EventName: 'timeupdate' }); }
     checkSegments(); checkNextCard();
   });
-  v.addEventListener('playing', () => { el.classList.remove('loading', 'err'); if (!PL.started) { PL.started = true; report('Start'); } ppBtn.replaceChildren(pic('pause')); $('.pl-bigpp', el).replaceChildren(pic('pause')); el.classList.add('is-playing'); wake(); });
-  v.addEventListener('pause', () => { ppBtn.replaceChildren(pic('play')); $('.pl-bigpp', el).replaceChildren(pic('play')); el.classList.remove('is-playing'); report('Progress', { EventName: 'pause' }); wake(); });
+  v.addEventListener('playing', () => { el.classList.remove('loading', 'err'); if (!PL.started) { PL.started = true; report('Start'); } ppBtn.replaceChildren(pic('pause')); $('.pl-bigpp', el).replaceChildren(pic('pause')); el.classList.add('is-playing'); wake(); updPosState(true); });
+  v.addEventListener('pause', () => { ppBtn.replaceChildren(pic('play')); $('.pl-bigpp', el).replaceChildren(pic('play')); el.classList.remove('is-playing'); report('Progress', { EventName: 'pause' }); wake(); updPosState(true); });
+  v.addEventListener('seeked', () => updPosState(true)); v.addEventListener('ratechange', () => { updPosState(true); updTime(); });
   v.addEventListener('waiting', () => { if (!v.paused) { el.classList.add('loading'); $('.pl-status', el).textContent = ''; } });
   v.addEventListener('canplay', () => el.classList.remove('loading'));
-  v.addEventListener('ended', () => { if (PL.nextItem && pcfg('autoNext', true)) playNextEp(); else backFromPlayer(); });
-  v.addEventListener('error', () => { if (!PL.hls) showError(v.error ? (v.error.message || ('Media error ' + v.error.code)) : 'Playback error'); });
+  v.addEventListener('ended', () => { if (PL.nextItem && pcfg('autoNext', true) && !PL.ncDismiss) playNextEp(); else backFromPlayer(); });
+  /* a file the browser cannot decode falls back to a server transcode once; a dropped connection is retried twice */
+  v.addEventListener('error', () => {
+    if (PL.hls || !PL.open || !v.getAttribute('src')) return;
+    const code = v.error ? v.error.code : 0; const pos = Math.floor((PL.lastPos || v.currentTime || 0) * 1e7);
+    if ((code === 3 || code === 4) && PL.method === 'DirectPlay' && !PL.forceTx) { console.warn('[cinema player] direct play failed (' + code + '), transcoding'); startStream(pos, { forceTranscode: true, status: t('plFallback') }); return; }
+    if (code === 2 && PL.netRetry < 2) { PL.netRetry++; startStream(pos, { status: t('plRetry') }); return; }
+    showError(v.error ? (v.error.message || ('Media error ' + v.error.code)) : 'Playback error');
+  });
   let seekDrag = false;
   const frac = e => { const r = seek.getBoundingClientRect(); return Math.max(0, Math.min(1, ((e.touches ? e.touches[0].clientX : e.clientX) - r.left) / r.width)); };
   const tsInfo = () => { const tp = PL.item && PL.item.Trickplay; if (!tp || !PL.ms) return null; const byMs = tp[PL.ms.Id] || tp[Object.keys(tp)[0]]; if (!byMs) return null; const w = Object.keys(byMs).map(Number).sort((a, b) => a - b)[0]; return w ? Object.assign({ w }, byMs[w]) : null; };
@@ -304,19 +386,21 @@ function buildPlayerUI(it) {
   seek.addEventListener('pointermove', e => { const f = frac(e); showBubble(f); if (seekDrag) { seekFill.style.width = f * 100 + '%'; seekKnob.style.left = f * 100 + '%'; } });
   seek.addEventListener('pointerup', e => { if (seekDrag) { seekDrag = false; v.currentTime = frac(e) * dur(); report('Progress', { EventName: 'timeupdate' }); } });
   /* tap zones: single tap toggles controls, double tap seeks (touch) */
-  const flash = (txt, side) => { const f = $('.pl-flash', el); f.textContent = txt; f.className = 'pl-flash show ' + (side || ''); clearTimeout(f._t); f._t = setTimeout(() => { f.className = 'pl-flash'; }, 600); };
-  /* touch: tap = show/hide controls, double tap left/right = +-10 s, double tap middle = play/pause */
+    /* touch: tap = show/hide controls, double tap left/right = +-10 s, double tap middle = play/pause */
   /* touch: tap = controls, double tap + more taps = stacked skip, drag: left = brightness, right = volume, horizontal = scrub */
   const stk = $('.pl-stack', el), gest = $('.pl-gest', el); let stack = { side: null, total: 0, base: 0, timer: 0 };
   const showStack = () => { stk.className = 'pl-stack show ' + stack.side; stk.replaceChildren(skipIcon(stack.total > 0 ? 1 : -1), h('b', {}, (stack.total > 0 ? '+' : '') + stack.total + ' s')); };
   function stackSkip(side) {
-    const d = side === 'r' ? 10 : -10; if (stack.side !== side) { stack = { side, total: 0, base: v.currentTime, timer: 0 }; }
+    const d = side === 'r' ? skipLen() : -skipLen(); if (stack.side !== side) { stack = { side, total: 0, base: v.currentTime, timer: 0 }; }
     stack.total += d; showStack(); clearTimeout(stack.timer);
     stack.timer = setTimeout(() => { const dd = dur() || 1e9; v.currentTime = Math.max(0, Math.min(dd - 1, stack.base + stack.total)); stack = { side: null, total: 0, base: 0, timer: 0 }; stk.className = 'pl-stack'; }, 650);
   }
   PL.bri = PL.bri || 1; const applyBri = () => { v.style.filter = PL.bri === 1 ? '' : 'brightness(' + PL.bri + ')'; }; applyBri();
-  const showGest = (icon, frac, txt) => { gest.className = 'pl-gest show'; gest.replaceChildren(h('div', { class: 'gi' }, icon), frac == null ? null : h('div', { class: 'gb' }, h('i', { style: 'width:' + Math.round(frac * 100) + '%' })), txt ? h('b', {}, txt) : null); clearTimeout(gest._t); };
+  const showGest = (icon, frac, txt) => { gest.className = 'pl-gest show'; gest.replaceChildren(...[icon ? h('div', { class: 'gi' }, icon) : null, frac == null ? null : h('div', { class: 'gb' }, h('i', { style: 'width:' + Math.round(frac * 100) + '%' })), txt ? h('b', {}, txt) : null].filter(Boolean)); clearTimeout(gest._t); };
   const hideGest = () => { clearTimeout(gest._t); gest._t = setTimeout(() => { gest.className = 'pl-gest'; }, 450); };
+  /* on-screen feedback for keyboard and media keys */
+  PL.osd = (icon, frac, txt) => { showGest(icon, frac, txt); clearTimeout(gest._t); gest._t = setTimeout(() => { gest.className = 'pl-gest'; }, 900); };
+  PL.osdVol = () => { const nv = v.muted ? 0 : v.volume; PL.osd(pic(nv === 0 ? 'mute' : 'vol'), nv, Math.round(nv * 100) + '%'); };
   let ts = null, lastTap = 0, lastZone = '', prevIdle = false;
   const onCtl = t_ => t_.closest && t_.closest('button, a, input, .pl-seek, .pl-settings, .pl-menu, .pl-skipseg, .pl-nextcard, .pl-err');
   el.addEventListener('pointerdown', e => {
@@ -366,13 +450,52 @@ function seekBarEl(onChange) {
 }
 function wake() { if (!PL.el) return; PL.el.classList.remove('idle'); clearTimeout(PL.idleT); PL.idleT = setTimeout(() => { if (PL.v && !PL.v.paused && !$('.pl-menu.open, .pl-settings.open', PL.el)) PL.el.classList.add('idle'); }, 3200); }
 function togglePlay() { const v = PL.v; if (!v) return; v.paused ? v.play().catch(() => { }) : v.pause(); }
-function skip(s) { const v = PL.v; if (v) v.currentTime = Math.max(0, Math.min(v.duration || 1e9, v.currentTime + s)); wake(); }
+function skip(s, osd) { const v = PL.v; if (!v) return; v.currentTime = Math.max(0, Math.min(v.duration || 1e9, v.currentTime + s)); if (osd && PL.osd) PL.osd(skipIcon(s > 0 ? 1 : -1), null, (s > 0 ? '+' : '−') + Math.abs(s) + ' s'); wake(); }
+function seekTo(sec) { const v = PL.v; if (!v) return; const d = isFinite(v.duration) ? v.duration : 1e9; v.currentTime = Math.max(0, Math.min(d - .5, sec)); report('Progress', { EventName: 'timeupdate' }); wake(); }
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+function setSpeed(x) { if (!PL.v) return; PL.speed = x; PL.v.playbackRate = x; PL.osd && PL.osd(luSvg('gauge'), null, x + '×'); }
+
+/* system media controls (browser media hub, desktop app media keys, lock screen) */
+function updMediaSession() {
+  if (!('mediaSession' in navigator) || !PL.open || !PL.item) return; const it = PL.item, ep = it.Type === 'Episode', ms = navigator.mediaSession;
+  try {
+    const art = imgUrl(it, ep ? 'Primary' : 'Backdrop', 640) || imgUrl(it, 'Primary', 640);
+    ms.metadata = new MediaMetadata({ title: ep ? ('S' + (it.ParentIndexNumber || 0) + ':E' + (it.IndexNumber || 0) + ' · ' + it.Name) : it.Name, artist: ep ? (it.SeriesName || '') : String(yearOf(it) || ''), album: ep ? (it.SeasonName || '') : '', artwork: art ? [{ src: art, sizes: '640x360', type: 'image/jpeg' }] : [] });
+    const set = (a, fn) => { try { ms.setActionHandler(a, fn); } catch (e) { } };
+    set('play', () => PL.v && PL.v.play().catch(() => { })); set('pause', () => PL.v && PL.v.pause());
+    set('seekbackward', e => skip(-((e && e.seekOffset) || skipLen()), true)); set('seekforward', e => skip((e && e.seekOffset) || skipLen(), true));
+    set('seekto', e => { if (e && e.seekTime != null) seekTo(e.seekTime); });
+    set('previoustrack', () => seekTo(0)); set('nexttrack', PL.nextItem ? playNextEp : null);
+    set('stop', () => backFromPlayer());
+  } catch (e) { }
+}
+let posAt = 0;
+function updPosState(force) {
+  const v = PL.v; if (!v || !('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
+  const now = Date.now(); if (!force && now - posAt < 4000) return; posAt = now;
+  try { if (isFinite(v.duration) && v.duration > 0) navigator.mediaSession.setPositionState({ duration: v.duration, playbackRate: v.playbackRate || 1, position: Math.min(v.duration, v.currentTime) }); } catch (e) { }
+}
+function clearMediaSession() {
+  if (!('mediaSession' in navigator)) return; const ms = navigator.mediaSession;
+  try { ['play', 'pause', 'seekbackward', 'seekforward', 'seekto', 'previoustrack', 'nexttrack', 'stop'].forEach(a => { try { ms.setActionHandler(a, null); } catch (e) { } }); ms.metadata = null; } catch (e) { }
+  /* hand the controls back to the music player if a track is loaded */
+  try { if (typeof cur === 'function' && cur() && typeof setMedia === 'function') setMedia(); } catch (e) { }
+}
+
+/* full screen: Jellyfin shells (NativeShell), the Cinema desktop app (window full screen), or the browser Fullscreen API */
+const deskFs = () => { const n = window.CinemaNative; return n && typeof n.setFullscreen === 'function' ? n : null; };
 const nativeFs = () => { const n = window.NativeShell, i = window.NativeInterface; return n && n.enableFullscreen ? n : (i && i.enableFullscreen ? i : null); };
 function setNativeFs(on) { const n = nativeFs(); if (!n) return false; try { on ? n.enableFullscreen() : n.disableFullscreen(); PL.nfs = on; if (typeof onFsChange === 'function') onFsChange(); } catch (e) { return false; } return true; }
-function fsEl() { return PL.nfs || document.fullscreenElement || document.webkitFullscreenElement; }
+/* on: true / false, or undefined to toggle. The window state before the player touched it is restored on close. */
+function setDeskFs(on) {
+  const n = deskFs(); if (!n) return;
+  Promise.resolve(n.setFullscreen(on)).then(prev => { prev = !!prev; if (PL.dfsPrev == null) PL.dfsPrev = prev; PL.dfs = on == null ? !prev : !!on; onFsChange(); }).catch(() => { });
+}
+function fsEl() { return PL.nfs || PL.dfs || document.fullscreenElement || document.webkitFullscreenElement; }
 function toggleFs() {
   const el = PL.el, v = PL.v; if (!el) return;
   if (nativeFs()) { setNativeFs(!PL.nfs); return; }
+  if (deskFs()) { setDeskFs(); return; }
   if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) { } return; }
   const lock = () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } };
   const rq = el.requestFullscreen || el.webkitRequestFullscreen;
@@ -381,12 +504,27 @@ function toggleFs() {
 }
 const onFsChange = () => { if (PL.el) { const b = $('.pl-fs', PL.el); b && b.replaceChildren(pic(fsEl() ? 'fsx' : 'fs')); } }; document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
 function onKey(e) {
-  if (!PL.open || (e.target.closest && e.target.closest('input,textarea'))) return;
-  const k = e.key; let used = true;
-  if (k === ' ' || k === 'k') togglePlay(); else if (k === 'ArrowRight' || k === 'l') skip(skipLen()); else if (k === 'ArrowLeft' || k === 'j') skip(-skipLen());
-  else if (k === 'ArrowUp') PL.v.volume = Math.min(1, PL.v.volume + .1); else if (k === 'ArrowDown') PL.v.volume = Math.max(0, PL.v.volume - .1);
-  else if (k === 'f') toggleFs(); else if (k === 'm') PL.v.muted = !PL.v.muted; else if (k === 'i') showStats(); else if (k === 'c') { const b = $('.pl-btn-subs:not(.hide)', PL.el); b && toggleMenu('.pl-menu-subs'); }
-  else if (k === 'Escape') { if ($('.pl-settings.open, .pl-menu.open', PL.el)) { $('.pl-settings', PL.el).classList.remove('open'); closeMenus(); } else if (!document.fullscreenElement) backFromPlayer(); else used = false; } else used = false;
+  if (!PL.open || !PL.v || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]'))) return;
+  const v = PL.v, k = e.key, lk = k.length === 1 ? k.toLowerCase() : k; let used = true;
+  const vol = d => { v.muted = false; v.volume = Math.max(0, Math.min(1, Math.round((v.volume + d) * 20) / 20)); PL.osdVol && PL.osdVol(); };
+  const big = e.shiftKey ? 6 : 1;
+  if (k === ' ' || lk === 'k' || k === 'MediaPlayPause') togglePlay();
+  else if (k === 'ArrowRight' || lk === 'l') skip(skipLen() * big, true); else if (k === 'ArrowLeft' || lk === 'j') skip(-skipLen() * big, true);
+  else if (k === 'ArrowUp') vol(.05); else if (k === 'ArrowDown') vol(-.05);
+  else if (/^[0-9]$/.test(k)) { const d = isFinite(v.duration) ? v.duration : 0; if (d) seekTo(d * (+k) / 10); }
+  else if (k === 'Home') seekTo(0); else if (k === 'End') { if (isFinite(v.duration)) seekTo(v.duration - 3); }
+  else if (k === '>' || k === '<') { const i = SPEEDS.indexOf(PL.speed); const j = Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 2 : i) + (k === '>' ? 1 : -1))); setSpeed(SPEEDS[j]); }
+  else if ((k === '.' || k === ',') && v.paused) v.currentTime = Math.max(0, v.currentTime + (k === '.' ? 1 : -1) / 24);
+  else if (lk === 'n' && e.shiftKey && PL.nextItem) playNextEp();
+  else if (lk === 'f') toggleFs(); else if (lk === 'm') { v.muted = !v.muted; PL.osdVol && PL.osdVol(); } else if (lk === 'i') showStats();
+  else if (lk === 'c') { const b = $('.pl-btn-subs:not(.hide)', PL.el); b && toggleMenu('.pl-menu-subs'); }
+  else if (lk === 'a') { const b = $('.pl-btn-audio:not(.hide)', PL.el); b && toggleMenu('.pl-menu-audio'); }
+  else if (lk === 'p' && document.pictureInPictureEnabled) { document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture().catch(() => { }); }
+  else if (k === 'Escape') {
+    if ($('.pl-settings.open, .pl-menu.open', PL.el)) { $('.pl-settings', PL.el).classList.remove('open'); closeMenus(); }
+    else if (PL.dfs) setDeskFs(false);
+    else if (!document.fullscreenElement) backFromPlayer(); else used = false;
+  } else used = false;
   if (used) { e.preventDefault(); e.stopPropagation(); wake(); }
 }
 
@@ -398,3 +536,6 @@ function playNative(id) {
 
 Object.assign(TX.en, { plFit: 'Picture fit', plFitContain: 'Fit', plFitCover: 'Fill', plFitFill: 'Stretch', plFitHint: 'Fit keeps the whole picture, Fill crops it to the screen, Stretch distorts it.', plSkipLen: 'Skip length', plSubDelay: 'Subtitle delay', plSubDelayHint: 'Positive values show subtitles later.' });
 Object.assign(TX.de, { plFit: 'Bildformat', plFitContain: 'Anpassen', plFitCover: 'Füllen', plFitFill: 'Strecken', plFitHint: 'Anpassen zeigt das ganze Bild, Füllen schneidet es auf den Bildschirm zu, Strecken verzerrt es.', plSkipLen: 'Sprunglänge', plSubDelay: 'Untertitel-Verzögerung', plSubDelayHint: 'Positive Werte zeigen Untertitel später.' });
+Object.assign(TX.en, { plUpNext: 'Up next', plWatchCredits: 'Watch credits', plFallback: 'Switching to a compatible stream…', plEndsAt: 'Ends at', plRemainHint: 'Show remaining time', plKJump: 'Jump to 0–90 %', plKFrame: 'Frame by frame (paused)' });
+Object.assign(TX.de, { plUpNext: 'Als Nächstes', plWatchCredits: 'Abspann ansehen', plFallback: 'Wechsle zu einem kompatiblen Stream…', plEndsAt: 'Endet um', plRemainHint: 'Restzeit anzeigen', plKJump: 'Springe zu 0–90 %', plKFrame: 'Bild für Bild (pausiert)' });
+LU.gauge = '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/> <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/> <path d="M13.41 10.59l2.59 -2.59"/> <path d="M7 12a5 5 0 0 1 5 -5"/>';

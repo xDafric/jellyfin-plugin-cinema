@@ -11,6 +11,7 @@ fn main() {
             "open_external",
             "exit_app",
             "toggle_fullscreen",
+            "set_fullscreen",
         ]),
     );
     tauri_build::try_build(attrs).expect("failed to run tauri-build")
