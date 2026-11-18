@@ -16,6 +16,10 @@
     <string name="off">Off</string>
     <string name="next_episode">Next episode</string>
     <string name="skip_intro">Skip intro</string>
+    <string name="skip_credits">Skip credits</string>
+    <string name="skip_recap">Skip recap</string>
+    <string name="watch_credits">Watch credits</string>
+    <string name="next_in">Next episode in %1$d s</string>
     <string name="play_failed">Playback failed</string>
     <string name="none_available">Nothing to choose</string>
     <string name="ends_at">Ends at</string>

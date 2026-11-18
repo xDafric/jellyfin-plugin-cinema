@@ -29,6 +29,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.media3.common.*
+import androidx.media3.common.util.Util
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -54,7 +55,10 @@ class PlayerActivity : Activity() {
 
     private var item = JSONObject(); private var source = JSONObject(); private var psid = ""; private var method = "DirectPlay"
     private var itemId = ""; private var startTicks = 0L
-    private var segments = listOf<LongArray>()
+    /** Media segment: start / end in ms and Jellyfin type (Intro, Outro, Recap). */
+    private class Seg(val start: Long, val end: Long, val type: String)
+    private var segments = listOf<Seg>()
+    private var ncDismiss = false; private var ncStart = -1L
     private var chapters = listOf<Pair<Long, String>>()
     private var defaultsApplied = false; private var lastReport = 0L; private var stopped = false
     private var nextItem: JSONObject? = null
@@ -70,6 +74,8 @@ class PlayerActivity : Activity() {
     private lateinit var overlay: FrameLayout; private lateinit var titleView: TextView; private lateinit var subtitleView: TextView; private lateinit var badges: LinearLayout
     private lateinit var seek: SeekView; private lateinit var curTime: TextView; private lateinit var remTime: TextView; private lateinit var endsAt: TextView
     private lateinit var ppBtn: IconBtn; private lateinit var audioBtn: IconBtn; private lateinit var subsBtn: IconBtn; private lateinit var nextBtn: IconBtn
+    private lateinit var nextCard: LinearLayout; private lateinit var nextThumb: ImageView; private lateinit var nextTitle: TextView; private lateinit var nextCount: TextView
+    private lateinit var nextGo: IconBtn; private lateinit var nextCancel: IconBtn; private lateinit var nextFill: View; private lateinit var nextTrack: FrameLayout
     private lateinit var skipBtn: IconBtn; private lateinit var spinner: ProgressBar; private lateinit var toast: TextView; private lateinit var centerIcon: ImageView
     private lateinit var preview: LinearLayout; private lateinit var previewImg: ImageView; private lateinit var previewTime: TextView; private lateinit var previewChap: TextView
     private var overlayOn = false
@@ -82,6 +88,8 @@ class PlayerActivity : Activity() {
     private lateinit var aspectBtn: IconBtn; private lateinit var speedBtn: IconBtn; private var aspectMode = 0
     private val hideRunnable = Runnable { if (player.isPlaying && !scrubbing) showOverlay(false) }
     private val commitRunnable = Runnable { commitScrub() }
+
+    private companion object { const val NEXT_COUNT_MS = 10_000L }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -195,6 +203,28 @@ class PlayerActivity : Activity() {
 
         skipBtn = IconBtn(this, R.drawable.t_next, getString(R.string.skip_intro), 48, false).apply { visibility = View.GONE; setOnClickListener { skipSegment() } }
         root.addView(skipBtn, FrameLayout.LayoutParams(-2, dp(48), Gravity.BOTTOM or Gravity.END).apply { rightMargin = dp(44); bottomMargin = dp(170) })
+
+        /* up next: same panel look as the dialogs (#1C1C21, rounded), same buttons as the control row */
+        nextThumb = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor("#22222A")) }; clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
+            setOnClickListener { playNext() } }
+        nextCount = TextView(this).apply { textSize = 13f; setTextColor(Color.parseColor("#C8C8D0")); typeface = Typeface.DEFAULT_BOLD }
+        nextTitle = TextView(this).apply { textSize = if (phone) 15f else 18f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+        nextFill = View(this).apply { background = GradientDrawable().apply { cornerRadius = dp(2).toFloat(); setColor(Color.WHITE) } }
+        nextTrack = FrameLayout(this).apply { background = GradientDrawable().apply { cornerRadius = dp(2).toFloat(); setColor(Color.parseColor("#33FFFFFF")) }; addView(nextFill, FrameLayout.LayoutParams(0, -1)) }
+        nextGo = IconBtn(this, R.drawable.t_next, getString(R.string.next_episode), 44, false).apply { setOnClickListener { playNext() } }
+        nextCancel = IconBtn(this, R.drawable.t_play, getString(R.string.watch_credits), 44, false).apply { setOnClickListener { dismissNextCard() } }
+        val ncBtns = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false
+            addView(nextGo, LinearLayout.LayoutParams(-2, dp(44))); addView(nextCancel, LinearLayout.LayoutParams(-2, dp(44)).apply { leftMargin = dp(12) }) }
+        val ncText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false
+            addView(nextCount); addView(nextTitle, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(2) })
+            addView(nextTrack, LinearLayout.LayoutParams(-1, dp(4)).apply { topMargin = dp(10); bottomMargin = dp(14) }); addView(ncBtns) }
+        val thumbW = if (phone) 120 else 176
+        nextCard = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; visibility = View.GONE; clipChildren = false; clipToPadding = false
+            setPadding(dp(16), dp(16), dp(20), dp(16))
+            background = GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(Color.parseColor("#F01C1C21")); setStroke(dp(1), Color.parseColor("#1AFFFFFF")) }
+            elevation = dp(8).toFloat()
+            addView(nextThumb, LinearLayout.LayoutParams(dp(thumbW), dp(thumbW * 9 / 16))); addView(ncText, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(16) }) }
+        root.addView(nextCard, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply { rightMargin = dp(if (phone) 16 else 44); bottomMargin = dp(if (phone) 150 else 170); leftMargin = dp(16) })
         setContentView(root)
     }
 
@@ -219,7 +249,7 @@ class PlayerActivity : Activity() {
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 spinner.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
-                if (state == Player.STATE_ENDED) { if (nextItem != null) playNext() else finish() }
+                if (state == Player.STATE_ENDED) { if (nextItem != null && !ncDismiss) playNext() else finish() }
                 if (state == Player.STATE_READY) { netRetries = 0; updateUi() }
             }
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -248,7 +278,7 @@ class PlayerActivity : Activity() {
                 else fail(e.errorCodeName, player.currentPosition)
             }
         })
-        if (!uiLoop) { uiLoop = true; ui.post(object : Runnable { override fun run() { updateUi(); checkSegment(); if (System.currentTimeMillis() - lastReport > 10_000 && player.isPlaying) report("Progress"); ui.postDelayed(this, 500) } }) }
+        if (!uiLoop) { uiLoop = true; ui.post(object : Runnable { override fun run() { updateUi(); checkSegment(); checkNextCard(); if (System.currentTimeMillis() - lastReport > 10_000 && player.isPlaying) report("Progress"); ui.postDelayed(this, 500) } }) }
     }
 
     /* ---------------- playback ---------------- */
@@ -262,7 +292,7 @@ class PlayerActivity : Activity() {
     }
 
     private suspend fun start(id: String, ticks: Long) {
-        itemId = id; startTicks = ticks; defaultsApplied = false; nextItem = null; segments = emptyList(); sheets.evictAll(); tpWidth = 0
+        itemId = id; startTicks = ticks; defaultsApplied = false; nextItem = null; segments = emptyList(); ncDismiss = false; ncStart = -1; hideNextCard(); sheets.evictAll(); tpWidth = 0
         val local = withContext(Dispatchers.IO) { Downloads.completed(this@PlayerActivity, id) }
         offlineLocal = local != null
         /* a finished download is played from the device; the server is only asked for extras (chapters, previews) and may be unreachable */
@@ -327,7 +357,9 @@ class PlayerActivity : Activity() {
     private suspend fun startStream(forceTranscode: Boolean, resumeMs: Long) {
         if (offlineLocal) { startLocal(resumeMs); return }
         val body = JSONObject().put("DeviceProfile", deviceProfile()).toString()
-        val q = "UserId=${store.userId}&StartTimeTicks=${resumeMs * 10_000}&MaxStreamingBitrate=120000000&AutoOpenLiveStream=true" + if (forceTranscode) "&EnableDirectPlay=false&EnableDirectStream=false" else ""
+        var q = "UserId=${store.userId}&StartTimeTicks=${resumeMs * 10_000}&MaxStreamingBitrate=120000000&AutoOpenLiveStream=true" + if (forceTranscode) "&EnableDirectPlay=false&EnableDirectStream=false" else ""
+        /* a transcode carries one audio track: ask for the language chosen for this series */
+        if (forceTranscode) prefAudioIndex()?.let { q += "&AudioStreamIndex=$it" }
         val r = withContext(Dispatchers.IO) { runCatching { Http.request("POST", "${store.url}/Items/$itemId/PlaybackInfo?$q", store.authHeader(), body, 20000) }.getOrNull() }
         if (r == null || !r.ok) { fail(if (r == null) "NETWORK" else "HTTP " + r.code, resumeMs); return }
         val j = r.json(); psid = j.optString("PlaySessionId"); val srcs = j.optJSONArray("MediaSources")
@@ -359,17 +391,48 @@ class PlayerActivity : Activity() {
         stopped = false; report("Start")
     }
 
+    /* ---------------- audio / subtitle language per series ---------------- */
+    private val trackPrefs by lazy { getSharedPreferences("player_tracks", Context.MODE_PRIVATE) }
+    private fun seriesKey(): String? = item.optString("SeriesId").ifEmpty { null }
+    private fun prefGet(kind: String): String? = seriesKey()?.let { trackPrefs.getString("$it.$kind", null) }
+    private fun prefSet(kind: String, v: String) { val k = seriesKey() ?: return; trackPrefs.edit().putString("$k.$kind", v).apply() }
+    private fun normLang(l: String?): String? = l?.takeIf { it.isNotBlank() && it != "und" }?.let { runCatching { Util.normalizeLanguageCode(it) }.getOrNull() ?: it.lowercase() }
+    private fun prefAudioIndex(): Int? {
+        val want = prefGet("audio") ?: return null
+        val streams = item.optJSONArray("MediaSources")?.optJSONObject(0)?.optJSONArray("MediaStreams") ?: return null
+        return (0 until streams.length()).map { streams.getJSONObject(it) }.firstOrNull { it.optString("Type") == "Audio" && normLang(it.optString("Language")) == want }?.optInt("Index")
+    }
+    private fun rememberTrack(type: Int, f: Format?) {
+        if (type == C.TRACK_TYPE_AUDIO) { normLang(f?.language)?.let { prefSet("audio", it) }; return }
+        if (f == null) { prefSet("sub", "off"); return }
+        normLang(f.language)?.let { prefSet("sub", it + if (f.selectionFlags and C.SELECTION_FLAG_FORCED != 0) "!forced" else "") }
+    }
+    /** Picks the track of [type] whose language matches; forced subtitles only when that was the choice. */
+    private fun pickByLang(tracks: Tracks, type: Int, lang: String, forced: Boolean?): Boolean {
+        val cands = tracks.groups.filter { it.type == type }.flatMap { g -> (0 until g.length).map { g to it } }.filter { (g, i) -> normLang(g.getTrackFormat(i).language) == lang }
+        val best = cands.firstOrNull { (g, i) -> forced == null || ((g.getTrackFormat(i).selectionFlags and C.SELECTION_FLAG_FORCED) != 0) == forced } ?: cands.firstOrNull() ?: return false
+        selectGroup(best.first, best.second); return true
+    }
+
     private fun applyDefaultTracks(tracks: Tracks) {
+        /* the choice made for this series wins over the file's defaults */
+        val wantA = prefGet("audio"); val wantS = prefGet("sub")
+        val audioDone = wantA != null && pickByLang(tracks, C.TRACK_TYPE_AUDIO, wantA, null)
+        val subDone = when {
+            wantS == "off" -> { player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build(); true }
+            wantS != null -> pickByLang(tracks, C.TRACK_TYPE_TEXT, wantS.removeSuffix("!forced"), wantS.endsWith("!forced"))
+            else -> false
+        }
         val streams = source.optJSONArray("MediaStreams") ?: return
         fun streamsOf(t: String) = (0 until streams.length()).map { streams.getJSONObject(it) }.filter { it.optString("Type") == t }
         val defSub = source.optInt("DefaultSubtitleStreamIndex", -1)
-        if (defSub >= 0 && method == "DirectPlay") {
+        if (!subDone && defSub >= 0 && method == "DirectPlay") {
             val subs = streamsOf("Subtitle"); val pos = subs.indexOfFirst { it.optInt("Index") == defSub }
             val groups = tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT }
             if (pos >= 0 && pos < groups.size) selectGroup(groups[pos])
         }
         val defAudio = source.optInt("DefaultAudioStreamIndex", -1)
-        if (defAudio >= 0 && method == "DirectPlay") {
+        if (!audioDone && defAudio >= 0 && method == "DirectPlay") {
             val aud = streamsOf("Audio"); val pos = aud.indexOfFirst { it.optInt("Index") == defAudio }
             val groups = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
             if (pos > 0 && pos < groups.size) selectGroup(groups[pos])
@@ -400,8 +463,8 @@ class PlayerActivity : Activity() {
     private fun chooseTrack(type: Int) {
         val groups = player.currentTracks.groups.filter { it.type == type }
         val names = ArrayList<String>(); val actions = ArrayList<() -> Unit>(); var checked = 0
-        if (type == C.TRACK_TYPE_TEXT) { names.add(getString(R.string.off)); actions.add { player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build() } }
-        groups.forEach { g -> for (i in 0 until g.length) { if (g.isTrackSelected(i)) checked = names.size; names.add(trackLabel(g.getTrackFormat(i), type, names.size)); actions.add { selectGroup(g, i) } } }
+        if (type == C.TRACK_TYPE_TEXT) { names.add(getString(R.string.off)); actions.add { player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build(); rememberTrack(type, null) } }
+        groups.forEach { g -> for (i in 0 until g.length) { if (g.isTrackSelected(i)) checked = names.size; names.add(trackLabel(g.getTrackFormat(i), type, names.size)); actions.add { selectGroup(g, i); rememberTrack(type, g.getTrackFormat(i)) } } }
         if (type == C.TRACK_TYPE_TEXT && player.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)) checked = 0
         if (names.isEmpty() || (type == C.TRACK_TYPE_TEXT && names.size == 1)) { flash(getString(R.string.none_available)); return }
         val dlg = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle(if (type == C.TRACK_TYPE_AUDIO) R.string.audio else R.string.subtitles)
@@ -424,10 +487,10 @@ class PlayerActivity : Activity() {
     }
 
     private suspend fun loadSegments(id: String) {
-        val r = withContext(Dispatchers.IO) { runCatching { Http.request("GET", "${store.url}/MediaSegments/$id?includeSegmentTypes=Intro", store.authHeader()) }.getOrNull() } ?: return
-        if (!r.ok) return
+        val r = withContext(Dispatchers.IO) { runCatching { Http.request("GET", "${store.url}/MediaSegments/$id?includeSegmentTypes=Intro&includeSegmentTypes=Recap&includeSegmentTypes=Outro", store.authHeader()) }.getOrNull() } ?: return
+        if (!r.ok || id != itemId) return
         val arr = r.json().optJSONArray("Items") ?: return
-        segments = (0 until arr.length()).map { arr.getJSONObject(it) }.map { longArrayOf(it.optLong("StartTicks") / 10_000, it.optLong("EndTicks") / 10_000) }
+        segments = (0 until arr.length()).map { arr.getJSONObject(it) }.map { Seg(it.optLong("StartTicks") / 10_000, it.optLong("EndTicks") / 10_000, it.optString("Type")) }
     }
 
     private suspend fun loadNext() {
@@ -440,15 +503,50 @@ class PlayerActivity : Activity() {
         nextBtn.visibility = if (nextItem != null) View.VISIBLE else View.GONE
     }
 
-    private fun playNext() { val n = nextItem ?: return; report("Stopped"); scope.launch { player.stop(); start(n.getString("Id"), 0) } }
+    private fun playNext() { val n = nextItem ?: return; hideNextCard(); report("Stopped"); scope.launch { player.stop(); start(n.getString("Id"), 0) } }
 
-    private fun checkSegment() {
-        val pos = player.currentPosition; val seg = segments.firstOrNull { pos in it[0]..(it[1] - 1500) }
-        val show = seg != null
-        if (show && skipBtn.visibility != View.VISIBLE) { skipBtn.visibility = View.VISIBLE; if (!overlayOn) skipBtn.requestFocus() }
-        if (!show && skipBtn.visibility == View.VISIBLE) skipBtn.visibility = View.GONE
+    /** Skip button for intro, recap and (when no up-next card takes over) the credits. */
+    private fun activeSegment(): Seg? {
+        val pos = player.currentPosition
+        return segments.firstOrNull { pos in it.start..(it.end - 1500) && (it.type != "Outro" || nextItem == null || ncDismiss) }
     }
-    private fun skipSegment() { val pos = player.currentPosition; segments.firstOrNull { pos in it[0]..it[1] }?.let { player.seekTo(it[1]) }; skipBtn.visibility = View.GONE }
+    private fun checkSegment() {
+        val seg = if (inPip) null else activeSegment()
+        if (seg != null) skipBtn.setLabel(getString(when (seg.type) { "Outro" -> R.string.skip_credits; "Recap" -> R.string.skip_recap; else -> R.string.skip_intro }))
+        if (seg != null && skipBtn.visibility != View.VISIBLE) { skipBtn.visibility = View.VISIBLE; if (!overlayOn) skipBtn.requestFocus() }
+        if (seg == null && skipBtn.visibility == View.VISIBLE) skipBtn.visibility = View.GONE
+    }
+    private fun skipSegment() { activeSegment()?.let { player.seekTo(it.end) }; skipBtn.visibility = View.GONE }
+
+    /* ---------------- up next ---------------- */
+    /** Shows the card when the credits start (Outro segment) or 20 s before the end; after the credits countdown the next episode starts. */
+    private fun checkNextCard() {
+        val n = nextItem; val d = player.duration
+        if (n == null || ncDismiss || d <= 0 || offlineLocal) { hideNextCard(); return }
+        val pos = player.currentPosition; val left = d - pos
+        val out = segments.firstOrNull { it.type == "Outro" && it.start > d / 2 && it.start < d - 2000 }
+        val from = out?.start ?: (d - 20_000)
+        if (pos < from || left <= 0 || scrubbing) { hideNextCard(); return }
+        if (ncStart < 0 || pos < ncStart) ncStart = pos
+        val total = if (out != null) minOf(NEXT_COUNT_MS, d - from) else d - from
+        val remain = (if (out != null) minOf(left, total - (pos - ncStart)) else left).coerceAtLeast(0)
+        if (!inPip && nextCard.visibility != View.VISIBLE) showNextCard(n)
+        nextCount.text = getString(R.string.next_in, ((remain + 999) / 1000).toInt())
+        val w = nextTrack.width; if (w > 0 && total > 0) { val lp = nextFill.layoutParams; lp.width = (w * (1f - remain.toFloat() / total)).toInt().coerceIn(0, w); nextFill.layoutParams = lp }
+        if (out != null && remain <= 0 && player.isPlaying) playNext()
+    }
+    private fun showNextCard(n: JSONObject) {
+        nextTitle.text = "S${n.optInt("ParentIndexNumber")}:E${n.optInt("IndexNumber")} · ${n.optString("Name")}"
+        nextThumb.setImageDrawable(null)
+        val id = n.optString("Id"); val url = "${store.url}/Items/$id/Images/Primary?maxWidth=400"
+        scope.launch { val b = withContext(Dispatchers.IO) { Http.bytes(url, store.authHeader())?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } }; if (b != null && nextItem?.optString("Id") == id) nextThumb.setImageBitmap(b) }
+        nextCard.alpha = 0f; nextCard.translationY = dp(16).toFloat(); nextCard.visibility = View.VISIBLE
+        nextCard.animate().alpha(1f).translationY(0f).setDuration(260).start()
+        skipBtn.visibility = View.GONE
+        if (!overlayOn) nextGo.requestFocus()
+    }
+    private fun hideNextCard() { if (::nextCard.isInitialized && nextCard.visibility != View.GONE) nextCard.visibility = View.GONE }
+    private fun dismissNextCard() { ncDismiss = true; hideNextCard(); if (overlayOn) ppBtn.requestFocus() }
 
     /* ---------------- reporting ---------------- */
     private fun report(kind: String) {
@@ -609,7 +707,7 @@ class PlayerActivity : Activity() {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPip = isInPictureInPictureMode
-        if (inPip) { pipSeen = true; showOverlay(false); centerIcon.visibility = View.GONE; toast.visibility = View.GONE; skipBtn.visibility = View.GONE }
+        if (inPip) { pipSeen = true; showOverlay(false); centerIcon.visibility = View.GONE; toast.visibility = View.GONE; skipBtn.visibility = View.GONE; hideNextCard() }
     }
 
     /* ---------------- media session + notification (phone / tablet) ---------------- */
@@ -658,6 +756,15 @@ class PlayerActivity : Activity() {
             }
         }
         if (skipBtn.visibility == View.VISIBLE && !overlayOn && (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER)) { skipSegment(); return true }
+        /* up-next card: left / right moves between its buttons, OK presses, back dismisses it */
+        if (nextCard.visibility == View.VISIBLE && !overlayOn) {
+            when (k) {
+                KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> { dismissNextCard(); return true }
+                KeyEvent.KEYCODE_DPAD_LEFT -> { nextGo.requestFocus(); return true }
+                KeyEvent.KEYCODE_DPAD_RIGHT -> { nextCancel.requestFocus(); return true }
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> { (if (nextCancel.hasFocus()) nextCancel else nextGo).performClick(); return true }
+            }
+        }
         if (!overlayOn) {
             when (k) {
                 KeyEvent.KEYCODE_DPAD_LEFT -> { scrubStep(-1, e.repeatCount); return true }

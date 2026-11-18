@@ -22,7 +22,7 @@ class Store(ctx: Context) {
     fun clearLogin() { p.edit().remove("token").remove("userId").remove("userName").apply() }
     fun authHeader(withToken: Boolean = true): String {
         val dev = (Build.MODEL ?: "Android TV").replace("\"", "")
-        return "MediaBrowser Client=\"Cinema\", Device=\"$dev\", DeviceId=\"$deviceId\", Version=\"2.0.0\"" + if (withToken && token.isNotEmpty()) ", Token=\"$token\"" else ""
+        return "MediaBrowser Client=\"Cinema\", Device=\"$dev\", DeviceId=\"$deviceId\", Version=\"2.1.0\"" + if (withToken && token.isNotEmpty()) ", Token=\"$token\"" else ""
     }
 }
 

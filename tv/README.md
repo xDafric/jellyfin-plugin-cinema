@@ -12,6 +12,11 @@ Remote-controlled client for the Cinema Jellyfin plugin. The interface is the sa
 
 Build: `./gradlew assembleRelease` (JDK 17+, Android SDK 35). The signing keystore is not part of the repository.
 
+## 2.1.0: player
+- Up next: a card with the next episode appears when the credits start (Jellyfin `Outro` media segment) or 20 s before the end, counts down 10 s and plays it. "Watch credits" hides it for this episode (no autoplay at the end). Remote: left/right between the buttons, OK presses, Back dismisses.
+- Audio and subtitle language chosen in the player is remembered per series and applied to the following episodes (also to server transcodes for audio).
+- Skip button for intros, recaps and credits (credits only when no next episode follows).
+
 ## 2.0.0: one APK for TV, phone and tablet
 `UiMode` (UiModeManager) picks the interface at start. TV mode is unchanged. Phone/tablet mode loads the responsive web UI (no `cx-tv`, bridge `window.CinemaNative`),
 with touch player (edge swipes for brightness/volume, double tap +-10 s, pinch fit/fill, timeline drag, picture in picture), media notification/lock-screen
