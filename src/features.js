@@ -50,17 +50,17 @@ function applyCfg() { const r = document.documentElement; r.style.setProperty('-
 
 /* ---------- peek popover (replaces card hover) ---------- */
 const PEEK = { el: null, t: 0, hideT: 0, cur: null };
-/* a wheel tick that arrives over the hover preview: same easing as the browser's own wheel scrolling, one running animation, no restart per tick */
-const GLIDE = { raf: 0, host: null, target: 0 };
-function glideBy(host, dy) {
-  if (GLIDE.host !== host || !GLIDE.raf) GLIDE.target = host.scrollTop; GLIDE.host = host;
-  const max = host.scrollHeight - host.clientHeight; GLIDE.target = Math.max(0, Math.min(max, GLIDE.target + dy));
-  if (GLIDE.raf) return; const prev = host.style.scrollBehavior; host.style.scrollBehavior = 'auto';
-  const step = () => { const d = GLIDE.target - host.scrollTop; if (Math.abs(d) < .6) { host.scrollTop = GLIDE.target; GLIDE.raf = 0; host.style.scrollBehavior = prev; return; } host.scrollTop += d * .24; GLIDE.raf = requestAnimationFrame(step); };
-  GLIDE.raf = requestAnimationFrame(step);
-}
+/* The preview lives inside the page's scroll container (position: absolute), not above it: the mouse wheel over it then scrolls the page
+   natively, at the browser's own speed and smoothness, and the preview moves away with its card. (A floating preview captured the wheel
+   and the page had to be scrolled by script, which felt slow and different.) */
 function scrollHost() { return (C.mode === 'sp' && C.sp && C.sp.scroll) || (C.nf && C.nf.el) || document.scrollingElement; }
-function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); PEEK.el.addEventListener('wheel', e => { const sh = scrollHost(); if (sh) glideBy(sh, e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * sh.clientHeight : e.deltaY); PEEK.el.style.pointerEvents = 'none'; hidePeek(); }, { passive: true }); getUI().append(PEEK.el); } return PEEK.el; }
+function peekEl() { if (!PEEK.el) { PEEK.el = h('div', { class: 'nf-peek', onpointerenter: () => clearTimeout(PEEK.hideT), onpointerleave: () => hidePeek(120) }); getUI().append(PEEK.el); } return PEEK.el; }
+/* host to place the preview in, and how to turn viewport coordinates into its coordinates */
+function peekHost() {
+  const sh = scrollHost();
+  if (sh && sh !== document.scrollingElement && sh !== document.documentElement && sh !== document.body && sh.isConnected) { const r = sh.getBoundingClientRect(); return { el: sh, dx: sh.scrollLeft - r.left, dy: sh.scrollTop - r.top }; }
+  return { el: document.body, dx: scrollX, dy: scrollY };
+}
 function hidePeek(delay) { clearTimeout(PEEK.t); clearTimeout(PEEK.hideT); PEEK.hideT = setTimeout(() => { if (PEEK.el) PEEK.el.classList.remove('show'); PEEK.cur = null; }, delay || 0); }
 function showPeek(anchor, d) {
   const el = peekEl(); const r = anchor.getBoundingClientRect();
@@ -73,10 +73,12 @@ function showPeek(anchor, d) {
     h('div', { class: 'pb' }, btns, h('div', { class: 'pm' }, d.meta.filter(Boolean).map((m, i) => h('span', { class: m.cls || '' }, m.t || m))), d.overview ? h('div', { class: 'po clamp2' }, d.overview) : null));
   el.classList.toggle('poster', !!d.poster);
   el.classList.toggle('poster', !!d.poster);
-  el.classList.remove('show'); el.style.visibility = 'hidden'; el.style.top = '0px'; el.style.left = left + 'px';
+  const ph = peekHost(); if (el.parentNode !== ph.el) ph.el.append(el);
+  el.style.position = 'absolute';
+  el.classList.remove('show'); el.style.visibility = 'hidden'; el.style.top = ph.dy + 'px'; el.style.left = (left + ph.dx) + 'px';
   requestAnimationFrame(() => {
     const H = el.offsetHeight; let top = r.top + r.height / 2 - H / 2 - 24; top = Math.max(80, Math.min(innerHeight - H - 12, top));
-    el.style.top = top + 'px'; el.style.visibility = ''; el.style.pointerEvents = ''; requestAnimationFrame(() => el.classList.add('show'));
+    el.style.top = (top + ph.dy) + 'px'; el.style.visibility = ''; el.style.pointerEvents = ''; requestAnimationFrame(() => el.classList.add('show'));
   });
   PEEK.cur = anchor;
 }
@@ -87,7 +89,7 @@ function attachPeek(el, anchor, getDesc) {
   el.addEventListener('click', () => hidePeek());
 }
 /* no previews while the page is moving (slow scrolling over cards used to open and close one after another) */
-const peekPause = e => { if (GLIDE.raf && e && !(PEEK.el && PEEK.el.contains(e.target))) { cancelAnimationFrame(GLIDE.raf); GLIDE.raf = 0; if (GLIDE.host) GLIDE.host.style.scrollBehavior = ''; } PEEK.noUntil = Date.now() + 550; clearTimeout(PEEK.t); hidePeek(); };
+const peekPause = () => { PEEK.noUntil = Date.now() + 550; clearTimeout(PEEK.t); if (PEEK.el && PEEK.el.classList.contains('show')) hidePeek(); };
 window.addEventListener('scroll', peekPause, { capture: true, passive: true });
 window.addEventListener('wheel', peekPause, { capture: true, passive: true });
 

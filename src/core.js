@@ -135,6 +135,20 @@ async function playVideo(it, opts) {
 }
 
 /* ---------- Netflix shell ---------- */
+/* artwork fades in once it is loaded and decoded instead of popping in line by line; pictures already in the cache show at once */
+const BG_OK = new Set();
+function fadeBg(el, src) {
+  if (!src) return el;
+  el.classList.add('fd');
+  if (BG_OK.has(src) || (typeof TVM !== 'undefined' && TVM)) { el.style.backgroundImage = 'url("' + src + '")'; el.classList.add('in', 'now'); return el; }
+  const im = new Image(); im.decoding = 'async';
+  const show = () => { BG_OK.add(src); el.style.backgroundImage = 'url("' + src + '")'; requestAnimationFrame(() => el.classList.add('in')); };
+  im.onload = () => { (im.decode ? im.decode() : Promise.resolve()).catch(() => { }).then(show); };
+  im.onerror = () => { el.style.backgroundImage = 'url("' + src + '")'; el.classList.add('in', 'now'); };
+  im.src = src;
+  if (im.complete && im.naturalWidth) { BG_OK.add(src); el.style.backgroundImage = 'url("' + src + '")'; el.classList.add('in', 'now'); im.onload = null; }
+  return el;
+}
 function card(it, kind, opts) {
   opts = opts || {};
   kind = kind || 'thumb';
@@ -144,7 +158,7 @@ function card(it, kind, opts) {
   const title = isEp ? (it.SeriesName || it.Name) : it.Name;
   const sub = isEp ? ('S' + (it.ParentIndexNumber || 0) + ':E' + (it.IndexNumber || 0) + ' · ' + it.Name) : '';
   const hash = itemHash(it) || ('#/details?id=' + it.Id);
-  const im = h('div', { class: 'im' }, src ? h('div', Object.assign({ class: 'bgi' }, bg(src))) : h('div', { class: 'ph' }, title));
+  const im = h('div', { class: 'im' }, src ? fadeBg(h('div', { class: 'bgi' }), src) : h('div', { class: 'ph' }, title));
   if (pct(it)) im.append(h('div', { class: 'prog' }, h('i', { style: 'width:' + pct(it) + '%' })));
   try { cardBadges(it, im); } catch (e) { }
   const el = h('div', { class: 'nf-card ' + kind, onclick: () => go(hash), oncontextmenu: e => itemMenu(e, it) }, im, h('div', { class: 'title ell' }, title));
@@ -224,9 +238,22 @@ async function renderNF(r) {
   C.scrollPos[C.lastKey] = C.nf.el.scrollTop; C.lastKey = key;
   const view = (a === 'c' ? b : 'home') || 'home';
   C.nf.el.style.scrollBehavior = 'auto';
-  const page = h('div', {}); main.replaceChildren(page);
+  const page = h('div', { class: 'cx-page' }); main.replaceChildren(page);
   const token = (C.token = (C.token || 0) + 1);
-  const done = () => { if (C.scrollPos[key]) C.nf.el.scrollTop = C.scrollPos[key]; else C.nf.el.scrollTop = 0; C.nf.el.style.scrollBehavior = ''; };
+  /* back to a page: return to where you were. Rows arrive after the page is built, so keep trying while it grows (up to 3 s) and stop as soon as you scroll yourself. */
+  const done = () => {
+    const el = C.nf.el, want = C.scrollPos[key] || 0, t0 = Date.now(); let stop = false;
+    if (!want) { el.scrollTop = 0; el.style.scrollBehavior = ''; return; }
+    const cancel = () => { stop = true; }; const evs = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+    evs.forEach(ev => el.addEventListener(ev, cancel, { once: true, passive: true }));
+    const finish = () => { evs.forEach(ev => el.removeEventListener(ev, cancel)); el.style.scrollBehavior = ''; };
+    const tryIt = () => {
+      if (stop || C.token !== token) return finish();
+      el.scrollTop = want;
+      if (Math.abs(el.scrollTop - want) > 2 && Date.now() - t0 < 3000) setTimeout(tryIt, 60); else finish();
+    };
+    tryIt();
+  };
   if (view === 'home') await homeView2(page);
   else if (view === 'movies') await browseView(page, 'Movie');
   else if (view === 'shows') await browseView(page, 'Series');

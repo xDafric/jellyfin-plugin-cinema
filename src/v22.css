@@ -166,3 +166,15 @@
   #cx-player .pl-nextcard { width: auto; left: 14px; right: 14px; }
   #cx-player .pl-nc-th { flex-basis: 108px; }
 }
+
+/* ---------- smoothness: page fade, artwork fade-in, reduced motion ---------- */
+.cx-page { animation: cxPageIn .32s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes cxPageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.bgi.fd { opacity: 0; transition: opacity .45s ease, transform .8s cubic-bezier(.2,.7,.2,1); }
+.bgi.fd.in { opacity: 1; }
+.bgi.fd.now { transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.nf-peek { will-change: opacity, transform; }
+html.cx-tv .cx-page { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  #cx-ui *, #cx-ui *::before, #cx-ui *::after, #cx-player * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
