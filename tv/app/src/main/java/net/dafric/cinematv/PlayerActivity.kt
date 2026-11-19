@@ -27,6 +27,7 @@ import android.util.LruCache
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.*
 import androidx.media3.common.*
@@ -249,15 +250,21 @@ class PlayerActivity : Activity() {
         overlay.addView(View(this).apply { setBackgroundColor(Color.parseColor("#99000000")) }, FrameLayout.LayoutParams(-1, -1))
         val content = FrameLayout(this); overlay.addView(content, FrameLayout.LayoutParams(-1, -1))
         overlay.setOnApplyWindowInsetsListener { _, ins ->
-            val c = if (Build.VERSION.SDK_INT >= 28) ins.displayCutout else null
-            content.setPadding(c?.safeInsetLeft ?: 0, c?.safeInsetTop ?: 0, c?.safeInsetRight ?: 0, c?.safeInsetBottom ?: 0); ins
+            if (Build.VERSION.SDK_INT >= 30) {
+                val b = ins.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+                content.setPadding(b.left, b.top, b.right, b.bottom)
+            } else {
+                val c = if (Build.VERSION.SDK_INT >= 28) ins.displayCutout else null
+                content.setPadding(c?.safeInsetLeft ?: 0, c?.safeInsetTop ?: 0, c?.safeInsetRight ?: 0, c?.safeInsetBottom ?: 0)
+            }
+            ins
         }
         /* top: cast, title, close */
         titleView = TextView(this).apply { textSize = 17f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }
         subtitleView = TextView(this).apply { textSize = 12f; setTextColor(Color.parseColor("#C8C8D0")); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }
         badges = LinearLayout(this)
         val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; addView(titleView, LinearLayout.LayoutParams(-1, -2)); addView(subtitleView, LinearLayout.LayoutParams(-1, -2)) }
-        val top = FrameLayout(this).apply { setPadding(dp(8), dp(8), dp(8), dp(8)) }
+        val top = FrameLayout(this).apply { setPadding(dp(4), dp(8), dp(4), dp(8)) }
         top.addView(titles, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER).apply { leftMargin = dp(56); rightMargin = dp(56) })
         top.addView(IconBtn(this, R.drawable.t_cast, null, 48, true, 1, .5f).apply { setOnClickListener { openCast() } }, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.START or Gravity.CENTER_VERTICAL))
         top.addView(IconBtn(this, R.drawable.t_close, null, 48, true, 1, .5f).apply { setOnClickListener { finish() } }, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.END or Gravity.CENTER_VERTICAL))
@@ -287,17 +294,46 @@ class PlayerActivity : Activity() {
         aspectBtn = IconBtn(this, R.drawable.t_aspect, null, 44, true, 1, .5f).apply { setOnClickListener { cycleAspect() } }
         episodesBtn = IconBtn(this, R.drawable.t_list, null, 44, true, 1, .5f).apply { visibility = View.GONE; setOnClickListener { showEpisodes() } }
         nextBtn = IconBtn(this, R.drawable.t_next, null, 44, true, 1, .5f).apply { visibility = View.GONE; setOnClickListener { playNext() } }
-        val moreBtn = IconBtn(this, R.drawable.t_more, null, 44, true, 1, .5f).apply { setOnClickListener { showMore() } }
-        val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val cell = { v: View -> tools.addView(v, LinearLayout.LayoutParams(0, dp(44), 1f)) }
-        cell(lockBtn); cell(speedBtn); cell(aspectBtn); cell(episodesBtn); cell(nextBtn)
-        if (Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) cell(IconBtn(this, R.drawable.t_pip, null, 44, true, 1, .5f).apply { setOnClickListener { enterPip() } })
-        cell(moreBtn)
-        val bottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), 0, dp(20), dp(8)) }
-        bottom.addView(bar, LinearLayout.LayoutParams(-1, -2))
-        bottom.addView(audioBtn, LinearLayout.LayoutParams(-2, dp(40)).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = dp(2) })
-        bottom.addView(tools, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(6) })
-        content.addView(bottom, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+        pipBtn = if (Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) IconBtn(this, R.drawable.t_pip, null, 40, true, 1, .55f).apply { setOnClickListener { enterPip() } } else null
+        moreBtn = IconBtn(this, R.drawable.t_more, null, 40, true, 1, .55f).apply { setOnClickListener { showMore() } }
+        for (b in listOf(lockBtn, speedBtn, aspectBtn, episodesBtn, nextBtn)) { b.minimumHeight = dp(40) }
+        phoneBottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), 0, dp(16), dp(4)) }
+        phoneBottom.addView(bar, LinearLayout.LayoutParams(-1, -2))
+        phoneRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        phoneBottom.addView(phoneRow, LinearLayout.LayoutParams(-1, -2))
+        content.addView(phoneBottom, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+        phoneTop = top
+        arrangePhoneBottom()
+    }
+
+    private lateinit var phoneBottom: LinearLayout; private lateinit var phoneRow: LinearLayout; private lateinit var phoneTop: View
+    private var pipBtn: IconBtn? = null; private lateinit var moreBtn: IconBtn
+    private var arrangedLand: Boolean? = null
+
+    /** One row in landscape (lock | audio & subtitles | tools); in portrait the audio button gets its own line above the tools. */
+    private fun arrangePhoneBottom() {
+        val dm = resources.displayMetrics; val land = dm.widthPixels > dm.heightPixels
+        if (arrangedLand == land) return; arrangedLand = land
+        val all = listOf<View?>(lockBtn, audioBtn, speedBtn, aspectBtn, episodesBtn, nextBtn, pipBtn, moreBtn)
+        all.filterNotNull().forEach { (it.parent as? android.view.ViewGroup)?.removeView(it) }
+        phoneRow.removeAllViews()
+        fun cell(v: View, w: Int = -2) = phoneRow.addView(v, LinearLayout.LayoutParams(w, dp(40)))
+        fun gap() = phoneRow.addView(Space(this), LinearLayout.LayoutParams(0, 1, 1f))
+        if (land) {
+            phoneRow.orientation = LinearLayout.HORIZONTAL
+            cell(lockBtn, dp(40)); gap(); cell(audioBtn); gap()
+            listOf<View?>(speedBtn, aspectBtn, episodesBtn, nextBtn, pipBtn, moreBtn).filterNotNull().forEach { cell(it, dp(40)) }
+        } else {
+            phoneBottom.addView(audioBtn, 1, LinearLayout.LayoutParams(-2, dp(40)).apply { gravity = Gravity.CENTER_HORIZONTAL })
+            phoneRow.orientation = LinearLayout.HORIZONTAL
+            val tools = listOf<View?>(lockBtn, speedBtn, aspectBtn, episodesBtn, nextBtn, pipBtn, moreBtn).filterNotNull()
+            tools.forEach { phoneRow.addView(it, LinearLayout.LayoutParams(0, dp(40), 1f)) }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (phone && ::phoneBottom.isInitialized) arrangePhoneBottom()
     }
 
     /** Brightness / volume indicator, double-tap seek hints and the unlock button of the phone player. */
