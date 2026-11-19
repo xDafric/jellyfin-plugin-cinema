@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.55.0",
+                             "changelog":  "Jellyfin player now looks like the Cinema player did: round back button, bold title, thin red seek bar with white knob and time bubble, white play disc, round soft buttons, rounded dark menus.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.55.0.zip",
+                             "checksum":  "fbc2c7c270ae254338897a19f080065b",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.54.0",
                              "changelog":  "Jellyfin player is now the base everywhere (desktop app and web), restyled with the Cinema look: red progress bar, soft gradients, calmer buttons. The Cinema player stays available as an optional setting.",
                              "targetAbi":  "12.4.0.0",

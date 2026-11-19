@@ -215,22 +215,38 @@ html.cx-tv .nf-rows > .nf-row { animation: none; }
   .cx-tabs a:focus, .cx-tabs a:focus-visible, .cx-tabs button:focus { outline: 0 !important; }
 }
 
-/* ---------- Jellyfin's own player, restyled (design only, the player itself stays the stock one) ---------- */
+/* ---------- Jellyfin's own player, in the look of the Cinema player (design only, the player itself stays the stock one) ---------- */
 #videoOsdPage { font-family: Inter, system-ui, -apple-system, sans-serif; }
-#videoOsdPage .videoOsdBottom { background: linear-gradient(0deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.5) 55%, rgba(0,0,0,0) 100%); padding-left: 28px; padding-right: 28px; padding-bottom: 18px; }
-#videoOsdPage .osdHeader { background: linear-gradient(rgba(0,0,0,.85), rgba(0,0,0,0)) !important; padding-top: 8px; }
-#videoOsdPage .osdHeader .pageTitle { font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; }
-#videoOsdPage .osdTimeText { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; opacity: .92; }
-#videoOsdPage .endsAtText { opacity: .75; font-size: 13px; }
-#videoOsdPage .mdl-slider-background-lower, #videoOsdPage .mdl-slider-background-flex-container .mdl-slider-background-lower { background-color: #e50914 !important; }
+#videoOsdPage .osdHeader { background: linear-gradient(to bottom, rgba(0,0,0,.75), rgba(0,0,0,0)) !important; padding: 18px 28px 56px !important; box-shadow: none; }
+#videoOsdPage .osdHeader .headerButton:not(.headerBack):not(.headerCastButton):not(.headerSyncButton) { display: none; }
+#videoOsdPage .osdHeader .headerBack { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.12); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); display: grid; place-items: center; transition: background .2s, transform .15s; margin: 0; padding: 0; }
+#videoOsdPage .osdHeader .headerBack:hover { background: rgba(255,255,255,.24); transform: scale(1.06); }
+#videoOsdPage .osdHeader .pageTitle { font-size: 20px; font-weight: 800; letter-spacing: -.01em; margin-left: 16px; }
+#videoOsdPage .videoOsdBottom { background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,0)) !important; padding: 70px 28px 22px !important; }
+#videoOsdPage .osdTimeText, #videoOsdPage .endsAtText { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: #dadade; }
+/* seek bar: 6 px, red progress, soft track, white knob on hover */
+#videoOsdPage .sliderContainer { height: 18px; }
+#videoOsdPage .mdl-slider-background-flex-container { border-radius: 6px; overflow: hidden; }
+#videoOsdPage .mdl-slider-background-flex-container, #videoOsdPage .mdl-slider-background-upper, #videoOsdPage .mdl-slider-background-lower { height: 6px !important; border-radius: 6px; transition: height .15s; }
+#videoOsdPage .sliderContainer:hover .mdl-slider-background-flex-container, #videoOsdPage .sliderContainer:hover .mdl-slider-background-upper, #videoOsdPage .sliderContainer:hover .mdl-slider-background-lower { height: 8px !important; }
+#videoOsdPage .mdl-slider-background-lower { background-color: #e50914 !important; }
 #videoOsdPage .mdl-slider-background-upper { background-color: rgba(255,255,255,.22) !important; }
-#videoOsdPage .mdl-slider::-webkit-slider-thumb { background: #e50914 !important; box-shadow: 0 0 0 4px rgba(229,9,20,.28); }
-#videoOsdPage .mdl-slider::-moz-range-thumb { background: #e50914 !important; }
-#videoOsdPage .sliderMarker.unwatched { background-color: rgba(255,255,255,.32); }
-#videoOsdPage .sliderMarker.watched { background-color: #e50914; }
-#videoOsdPage .sliderBubble { background: rgba(22,22,26,.94) !important; border: 1px solid rgba(255,255,255,.1); border-radius: 10px !important; box-shadow: 0 8px 24px rgba(0,0,0,.5); color: #fff; font-weight: 600; }
-#videoOsdPage .paper-icon-button-light { color: #fff; border-radius: 50%; transition: background .15s, transform .15s; }
+#videoOsdPage .mdl-slider::-webkit-slider-thumb { background: #fff !important; width: 16px; height: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.5); border: 0; }
+#videoOsdPage .mdl-slider::-moz-range-thumb { background: #fff !important; width: 16px; height: 16px; border: 0; }
+#videoOsdPage .sliderMarker { display: none; }
+#videoOsdPage .sliderBubble { background: rgba(20,20,22,.92) !important; border: 0; border-radius: 8px !important; padding: 4px 9px !important; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #fff; box-shadow: none; }
+/* buttons: round, soft hover, the play button is a white disc */
+#videoOsdPage .osdControls .paper-icon-button-light, #videoOsdPage .videoOsdBottom .paper-icon-button-light { width: 42px; height: 42px; padding: 0 !important; border-radius: 50%; color: #fff; display: inline-grid; place-items: center; transition: background .15s, transform .15s; }
 #videoOsdPage .paper-icon-button-light:hover, #videoOsdPage .paper-icon-button-light:focus-visible { background: rgba(255,255,255,.14); }
-#videoOsdPage .btnPause .material-icons, #videoOsdPage .btnPause .icon { font-size: 2.3rem; }
-#videoOsdPage .osdControls .paper-icon-button-light { padding: .55em; }
-#videoOsdPage .videoOsdBottom .emby-slider-background, #videoOsdPage .osdVolumeSlider { accent-color: #e50914; }
+#videoOsdPage .paper-icon-button-light:active { transform: scale(.92); }
+#videoOsdPage .btnPause { width: 48px !important; height: 48px !important; background: #fff !important; color: #000 !important; }
+#videoOsdPage .btnPause:hover { background: #e8e8ea !important; }
+#videoOsdPage .btnPause .material-icons, #videoOsdPage .btnPause .icon { color: #000; font-size: 1.8rem; }
+#videoOsdPage .osdVolumeSlider { accent-color: #e50914; }
+/* the settings and audio menus */
+.actionSheet .actionSheetContent, .actionSheetContent { border-radius: 22px !important; background: rgba(22,22,26,.94) !important; -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+.actionSheetMenuItem { border-radius: 12px; }
+#videoOsdPage .mdl-slider-background-flex, #videoOsdPage .mdl-slider-background-flex-inner { height: 6px !important; border-radius: 6px; background-color: transparent !important; transition: height .15s; }
+#videoOsdPage .sliderContainer:hover .mdl-slider-background-flex, #videoOsdPage .sliderContainer:hover .mdl-slider-background-flex-inner { height: 8px !important; }
+#videoOsdPage .mdl-slider-background-flex-inner { background-color: rgba(255,255,255,.22) !important; }
+#videoOsdPage .mdl-slider-background-upper { background-color: rgba(255,255,255,.28) !important; }
