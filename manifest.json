@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.53.0",
+                             "changelog":  "Phone tab bar fixed: one solid bar with centred icons and labels, no stretched bottom padding, blur also in Safari.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.53.0.zip",
+                             "checksum":  "cc586825bb1d3b628902bb154223a71a",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.52.0",
                              "changelog":  "Detail backdrop keeps one size, Spotlight row first and taste rows after Top 10, music pill volume opens above the pill, quiz daily goal ring fixed, typed answers from the first correct answer on, hidden titles show up as films you do not own in search, Discover and actor pages.",
                              "targetAbi":  "12.4.0.0",

@@ -207,3 +207,10 @@ html.cx-tv .nf-rows > .nf-row { animation: none; }
 .np-pop::after { content: ""; position: absolute; left: -10px; right: -10px; top: 100%; height: 14px; }
 .np-vol:hover .np-pop, .np-vol:focus-within .np-pop { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
 @media (max-width: 800px) { .np-pop { display: none; } .np-vol input { display: block; } }
+
+/* phone tab bar: one solid bar, icons and labels centred, no extra bottom padding, Safari blur, no focus box */
+@media (max-width: 800px) {
+  #cx.mode-nf .cx-tabs, #cx-ui .cx-tabs { height: 60px; padding: 0 !important; background: rgba(24,24,28,.97) !important; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 10px 30px rgba(0,0,0,.55); }
+  .cx-tabs a, .cx-tabs button { -webkit-tap-highlight-color: transparent; outline: 0 !important; background: none !important; box-shadow: none !important; height: 100%; }
+  .cx-tabs a:focus, .cx-tabs a:focus-visible, .cx-tabs button:focus { outline: 0 !important; }
+}
