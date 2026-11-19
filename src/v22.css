@@ -214,3 +214,23 @@ html.cx-tv .nf-rows > .nf-row { animation: none; }
   .cx-tabs a, .cx-tabs button { -webkit-tap-highlight-color: transparent; outline: 0 !important; background: none !important; box-shadow: none !important; height: 100%; }
   .cx-tabs a:focus, .cx-tabs a:focus-visible, .cx-tabs button:focus { outline: 0 !important; }
 }
+
+/* ---------- Jellyfin's own player, restyled (design only, the player itself stays the stock one) ---------- */
+#videoOsdPage { font-family: Inter, system-ui, -apple-system, sans-serif; }
+#videoOsdPage .videoOsdBottom { background: linear-gradient(0deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.5) 55%, rgba(0,0,0,0) 100%); padding-left: 28px; padding-right: 28px; padding-bottom: 18px; }
+#videoOsdPage .osdHeader { background: linear-gradient(rgba(0,0,0,.85), rgba(0,0,0,0)) !important; padding-top: 8px; }
+#videoOsdPage .osdHeader .pageTitle { font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; }
+#videoOsdPage .osdTimeText { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; opacity: .92; }
+#videoOsdPage .endsAtText { opacity: .75; font-size: 13px; }
+#videoOsdPage .mdl-slider-background-lower, #videoOsdPage .mdl-slider-background-flex-container .mdl-slider-background-lower { background-color: #e50914 !important; }
+#videoOsdPage .mdl-slider-background-upper { background-color: rgba(255,255,255,.22) !important; }
+#videoOsdPage .mdl-slider::-webkit-slider-thumb { background: #e50914 !important; box-shadow: 0 0 0 4px rgba(229,9,20,.28); }
+#videoOsdPage .mdl-slider::-moz-range-thumb { background: #e50914 !important; }
+#videoOsdPage .sliderMarker.unwatched { background-color: rgba(255,255,255,.32); }
+#videoOsdPage .sliderMarker.watched { background-color: #e50914; }
+#videoOsdPage .sliderBubble { background: rgba(22,22,26,.94) !important; border: 1px solid rgba(255,255,255,.1); border-radius: 10px !important; box-shadow: 0 8px 24px rgba(0,0,0,.5); color: #fff; font-weight: 600; }
+#videoOsdPage .paper-icon-button-light { color: #fff; border-radius: 50%; transition: background .15s, transform .15s; }
+#videoOsdPage .paper-icon-button-light:hover, #videoOsdPage .paper-icon-button-light:focus-visible { background: rgba(255,255,255,.14); }
+#videoOsdPage .btnPause .material-icons, #videoOsdPage .btnPause .icon { font-size: 2.3rem; }
+#videoOsdPage .osdControls .paper-icon-button-light { padding: .55em; }
+#videoOsdPage .videoOsdBottom .emby-slider-background, #videoOsdPage .osdVolumeSlider { accent-color: #e50914; }

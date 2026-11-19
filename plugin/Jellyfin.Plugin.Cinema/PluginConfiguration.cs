@@ -46,7 +46,7 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public bool FeatMusicDiscovery { get; set; } = true;
 
-    public bool FeatOwnPlayer { get; set; } = true;
+    public bool FeatOwnPlayer { get; set; } = false;
 
     public bool FeatMediaInfo { get; set; } = true;
 

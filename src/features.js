@@ -36,7 +36,8 @@ function cfg(k) {
 const isMobile = () => matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches;
 const devGet = k => { try { return localStorage.getItem('cx-dev-' + k); } catch (e) { return null; } };
 const devSet = (k, v) => { try { v == null ? localStorage.removeItem('cx-dev-' + k) : localStorage.setItem('cx-dev-' + k, v); } catch (e) { } };
-const playerMode = () => { if (!feat('ownPlayer')) return 'native'; const v = devGet('player'); if (v === 'own' || v === 'native') return v; return isMobile() ? 'native' : 'own'; };
+/* Jellyfin's own player is the base everywhere (it handles every format and transcode); the Cinema player is only used when someone switches it on by hand */
+const playerMode = () => (feat('ownPlayer') && devGet('player') === 'own') ? 'own' : 'native';
 const userSet = k => CFGU[k] !== undefined;
 async function loadCfg() {
   try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); const raw = (dp.CustomPrefs || {}).cfg; if (raw) CFGU = JSON.parse(raw) || {}; } catch (e) { }
