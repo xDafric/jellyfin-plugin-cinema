@@ -1,0 +1,59 @@
+/* ---------- Jellyfin's own player in the Cinema look: floating glass panel, round controls, Tabler icons, clean alignment (design only; the player itself stays the stock one) ---------- */
+#videoOsdPage { font-family: Inter, system-ui, -apple-system, sans-serif; }
+/* every stock glyph is drawn as a mask of the Tabler icon chosen in osdskin.js */
+#videoOsdPage .videoOsdBottom .material-icons, body .osdHeader .material-icons { font-size: 0 !important; width: 24px; height: 24px; display: inline-block; background-color: currentColor; -webkit-mask: var(--cxm) center / contain no-repeat; mask: var(--cxm) center / contain no-repeat; vertical-align: middle; line-height: 0; }
+#videoOsdPage .videoOsdBottom .material-icons.autorenew { display: none; }
+/* top: round glass back button, title, cast */
+body .osdHeader { background: linear-gradient(to bottom, rgba(0,0,0,.7), rgba(0,0,0,0)) !important; padding: 20px 28px 64px !important; box-shadow: none; }
+body .osdHeader .headerButton:not(.headerBackButton):not(.headerCastButton):not(.headerSyncButton) { display: none !important; }
+body .osdHeader .headerButton { width: 46px; height: 46px; padding: 0; margin: 0 0 0 8px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(255,255,255,.12); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: background .2s, transform .15s; }
+body .osdHeader .headerButton:hover { background: rgba(255,255,255,.24); transform: scale(1.06); }
+body .osdHeader .headerBackButton { margin-left: 0; }
+body .osdHeader .pageTitle { font-size: 20px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 0 16px; }
+/* bottom: one floating glass panel */
+#videoOsdPage .videoOsdBottom { background: none !important; left: 24px !important; right: 24px !important; bottom: 26px !important; margin: 0 auto; max-width: 1180px; padding: 0 !important; }
+#videoOsdPage .videoOsdBottom .osdControls { padding: 16px 24px 12px; border-radius: 28px; background: rgba(22,22,26,.8); -webkit-backdrop-filter: blur(28px) saturate(1.5); backdrop-filter: blur(28px) saturate(1.5); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+#videoOsdPage .osdMainTextContainer, #videoOsdPage .osdSecondaryMediaInfo { display: none; }
+#videoOsdPage .osdTextContainer.startTimeText, #videoOsdPage .osdTextContainer.endTimeText { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: #dadade; min-width: 52px; }
+#videoOsdPage .osdTextContainer.startTimeText { text-align: left; }
+#videoOsdPage .osdTextContainer.endTimeText { text-align: right; }
+/* seek bar: 6 px, red progress, soft track, white knob, bubble */
+#videoOsdPage .sliderContainer { height: 22px; margin: 0 10px; }
+#videoOsdPage .mdl-slider-background-flex-container, #videoOsdPage .mdl-slider-background-flex, #videoOsdPage .mdl-slider-background-flex-inner, #videoOsdPage .mdl-slider-background-upper, #videoOsdPage .mdl-slider-background-lower { height: 6px !important; border-radius: 6px; transition: height .15s; }
+#videoOsdPage .sliderContainer:hover .mdl-slider-background-flex-container, #videoOsdPage .sliderContainer:hover .mdl-slider-background-flex, #videoOsdPage .sliderContainer:hover .mdl-slider-background-flex-inner, #videoOsdPage .sliderContainer:hover .mdl-slider-background-upper, #videoOsdPage .sliderContainer:hover .mdl-slider-background-lower { height: 8px !important; }
+#videoOsdPage .mdl-slider-background-flex, #videoOsdPage .mdl-slider-background-flex-container { background-color: transparent !important; }
+#videoOsdPage .mdl-slider-background-flex-inner { background-color: rgba(255,255,255,.22) !important; }
+#videoOsdPage .mdl-slider-background-upper { background-color: rgba(255,255,255,.3) !important; }
+#videoOsdPage .mdl-slider-background-lower { background-color: #e50914 !important; }
+#videoOsdPage .mdl-slider::-webkit-slider-thumb { background: #fff !important; width: 16px; height: 16px; border: 0; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+#videoOsdPage .mdl-slider::-moz-range-thumb { background: #fff !important; width: 16px; height: 16px; border: 0; }
+#videoOsdPage .sliderMarker { display: none; }
+#videoOsdPage .sliderBubble { background: rgba(20,20,22,.92) !important; border: 0; border-radius: 8px !important; padding: 4px 9px !important; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #fff; box-shadow: none; }
+/* button row: time left, transport centred, tools right, one baseline */
+#videoOsdPage .osdControls .buttons { position: relative; display: flex; align-items: center; gap: 4px; min-height: 56px; margin-top: 2px; }
+#videoOsdPage .osdControls .buttons > div:first-child { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px; }
+#videoOsdPage .osdTimeText { margin: 0 0 0 4px; font-size: 13px; color: #b9b9c0; font-weight: 500; font-variant-numeric: tabular-nums; }
+#videoOsdPage .btnSubtitles { margin-left: auto !important; }
+#videoOsdPage .btnRecord, #videoOsdPage .btnPreviousChapter, #videoOsdPage .btnNextChapter, #videoOsdPage .btnUserRating, #videoOsdPage .btnAirPlay { display: none !important; }
+#videoOsdPage .videoOsdBottom .paper-icon-button-light { width: 44px; height: 44px; padding: 0 !important; margin: 0; border-radius: 50%; color: #fff; display: inline-grid; place-items: center; background: none; transition: background .15s, transform .15s; }
+#videoOsdPage .videoOsdBottom .paper-icon-button-light:hover, #videoOsdPage .videoOsdBottom .paper-icon-button-light:focus-visible { background: rgba(255,255,255,.14); }
+#videoOsdPage .videoOsdBottom .paper-icon-button-light:active { transform: scale(.92); }
+#videoOsdPage .btnPause { width: 56px !important; height: 56px !important; background: #fff !important; color: #000 !important; }
+#videoOsdPage .btnPause:hover { background: #e8e8ea !important; }
+#videoOsdPage .btnPause .material-icons { width: 28px; height: 28px; background-color: #000; }
+#videoOsdPage .btnRewind .material-icons, #videoOsdPage .btnFastForward .material-icons { width: 26px; height: 26px; }
+/* volume */
+#videoOsdPage .volumeButtons { display: flex; align-items: center; gap: 2px; }
+#videoOsdPage .osdVolumeSliderContainer { width: 96px; margin: 0 8px 0 2px; }
+#videoOsdPage .osdVolumeSlider { accent-color: #e50914; }
+/* menus (settings, audio, subtitles) */
+.actionSheet .actionSheetContent, .actionSheetContent { border-radius: 22px !important; background: rgba(22,22,26,.94) !important; -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+.actionSheetMenuItem { border-radius: 12px; }
+@media (max-width: 800px) {
+  #videoOsdPage .videoOsdBottom { left: 10px !important; right: 10px !important; bottom: 12px !important; }
+  #videoOsdPage .videoOsdBottom .osdControls { padding: 12px 14px 8px; border-radius: 22px; }
+  #videoOsdPage .osdControls .buttons { flex-wrap: wrap; justify-content: space-between; min-height: 0; }
+  #videoOsdPage .osdControls .buttons > div:first-child { position: static; transform: none; order: -1; width: 100%; justify-content: center; margin-bottom: 4px; }
+  #videoOsdPage .btnSubtitles { margin-left: 0 !important; }
+  #videoOsdPage .osdVolumeSliderContainer { display: none; }
+}

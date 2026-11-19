@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.56.0",
+                             "changelog":  "Jellyfin player redesigned: floating glass control panel, Tabler icons, centred transport, tidy alignment, round glass header buttons, unused buttons removed.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.56.0.zip",
+                             "checksum":  "c7538ef630c8c42ed2657a22c38e74b3",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.55.0",
                              "changelog":  "Jellyfin player now looks like the Cinema player did: round back button, bold title, thin red seek bar with white knob and time bubble, white play disc, round soft buttons, rounded dark menus.",
                              "targetAbi":  "12.4.0.0",

@@ -1,7 +1,7 @@
 // node build.js  ->  dist/cinema.js  (single file for JavaScript Injector)
 const fs = require('fs'), path = require('path');
 const r = f => fs.readFileSync(path.join(__dirname, 'src', f), 'utf8');
-const css = r('style.css') + String.fromCharCode(10) + r('extra.css') + String.fromCharCode(10) + r('plugins.css') + String.fromCharCode(10) + r('v3.css') + String.fromCharCode(10) + r('v4.css') + String.fromCharCode(10) + r('v5.css') + String.fromCharCode(10) + r('v6.css') + String.fromCharCode(10) + r('v7.css') + String.fromCharCode(10) + r('v8.css') + String.fromCharCode(10) + r('v9.css') + String.fromCharCode(10) + r('v10.css') + String.fromCharCode(10) + r('v11.css') + String.fromCharCode(10) + r('v12.css') + String.fromCharCode(10) + r('v13.css') + String.fromCharCode(10) + r('v14.css') + String.fromCharCode(10) + r('v15.css') + String.fromCharCode(10) + r('v16.css') + String.fromCharCode(10) + r('tv.css') + String.fromCharCode(10) + r('hidden.css') + String.fromCharCode(10) + r('login.css') + String.fromCharCode(10) + r('dash.css') + String.fromCharCode(10) + r('v17.css') + String.fromCharCode(10) + r('v18.css') + String.fromCharCode(10) + r('v19.css') + String.fromCharCode(10) + r('game.css') + String.fromCharCode(10) + r('wrapped.css') + String.fromCharCode(10) + r('onboard.css') + String.fromCharCode(10) + r('v20.css') + String.fromCharCode(10) + r('v21.css') + String.fromCharCode(10) + r('v22.css') + String.fromCharCode(10) + r('app.css');
+const css = r('style.css') + String.fromCharCode(10) + r('extra.css') + String.fromCharCode(10) + r('plugins.css') + String.fromCharCode(10) + r('v3.css') + String.fromCharCode(10) + r('v4.css') + String.fromCharCode(10) + r('v5.css') + String.fromCharCode(10) + r('v6.css') + String.fromCharCode(10) + r('v7.css') + String.fromCharCode(10) + r('v8.css') + String.fromCharCode(10) + r('v9.css') + String.fromCharCode(10) + r('v10.css') + String.fromCharCode(10) + r('v11.css') + String.fromCharCode(10) + r('v12.css') + String.fromCharCode(10) + r('v13.css') + String.fromCharCode(10) + r('v14.css') + String.fromCharCode(10) + r('v15.css') + String.fromCharCode(10) + r('v16.css') + String.fromCharCode(10) + r('tv.css') + String.fromCharCode(10) + r('hidden.css') + String.fromCharCode(10) + r('login.css') + String.fromCharCode(10) + r('dash.css') + String.fromCharCode(10) + r('v17.css') + String.fromCharCode(10) + r('v18.css') + String.fromCharCode(10) + r('v19.css') + String.fromCharCode(10) + r('game.css') + String.fromCharCode(10) + r('wrapped.css') + String.fromCharCode(10) + r('onboard.css') + String.fromCharCode(10) + r('v20.css') + String.fromCharCode(10) + r('v21.css') + String.fromCharCode(10) + r('v22.css') + String.fromCharCode(10) + r('osd.css') + String.fromCharCode(10) + r('app.css');
 const out = `/* Cinema UI - Netflix + Spotify style frontend for Jellyfin 12. Kill switch: add #nocinema to the URL or run cinemaUI.off() */
 (function () {
 'use strict';
@@ -32,6 +32,7 @@ ${r('requests.js')}
 ${r('reco.js')}
 ${r('calhist.js')}
 ${r('dd.js')}
+${r('osdskin.js')}
 ${r('homerows.js')}
 ${r('musicx.js')}
 ${r('music2.js')}
