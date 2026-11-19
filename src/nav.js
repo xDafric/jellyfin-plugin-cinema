@@ -51,7 +51,7 @@ async function route() {
   if (!overlay) { if (C.updateNPill) C.updateNPill(); if (p0 !== 'details') COVER.hide(); return; }
   root.classList.toggle('mode-nf', !isMusic); document.title = BRAND + (isMusic ? ' · ' + t('music') : '');
   const mode = isMusic ? 'sp' : 'nf';
-  if (C.mode !== mode) { C.mode = mode; $('#cx-nf', root) && ($('#cx-nf', root).style.display = isMusic ? 'none' : 'block'); $('#cx-sp', root) && ($('#cx-sp', root).style.display = isMusic ? 'grid' : 'none'); }
+  if (C.mode !== mode) { if (C.curPage) { C.curPage.away = isMusic; if (isMusic && C.nf) C.scrollPos[C.curPage.key] = C.nf.el.scrollTop; } C.mode = mode; $('#cx-nf', root) && ($('#cx-nf', root).style.display = isMusic ? 'none' : 'block'); $('#cx-sp', root) && ($('#cx-sp', root).style.display = isMusic ? 'grid' : 'none'); }
   try { isMusic ? await C.renderMusic(r) : await renderNF(r); } catch (e) { console.error('[cinema]', e); }
   if (C.updateNPill) C.updateNPill();
 }

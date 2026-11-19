@@ -231,15 +231,35 @@ async function heroFor(types) {
 
 function showSpinner() { C.nf.main.replaceChildren(h('div', { class: 'spinner' })); }
 
+/* pages that are kept alive while you look at another page: going back shows them again at once, in the same state and at the same scroll position */
+const KEEP_VIEWS = new Set(['home', 'movies', 'shows', 'discover', 'watchlist', 'list', 'browse', 'calendar']);
+const KEEP_MAX = () => (typeof TVM !== 'undefined' && TVM) ? 2 : 6, KEEP_TTL = 4 * 60 * 1000;
+/* `cur` also marks the page on screen: it is not kept when you leave it (your own change made it out of date) */
+function invalidatePages(cur) { if (C.pages) C.pages.clear(); if (cur && C.curPage) C.curPage.stale = true; }
 async function renderNF(r) {
   if (!C.nf) buildNF();
   const [a, b, c] = [r.parts[0], r.parts[1], r.parts[2]]; const c3 = r.parts[3];
   const main = C.nf.main; const key = r.raw;
-  C.scrollPos[C.lastKey] = C.nf.el.scrollTop; C.lastKey = key;
   const view = (a === 'c' ? b : 'home') || 'home';
+  if (!(C.curPage && C.curPage.away)) C.scrollPos[C.lastKey] = C.nf.el.scrollTop; C.lastKey = key;
+  /* put the page we are leaving aside, then bring back a kept page if there is a fresh one */
+  C.pages = C.pages || new Map(); const prev = C.curPage; const same = !!prev && prev.key === key && !prev.away; /* the same page again (refresh): build it new */
+  if (same && prev.restored && Date.now() - prev.restored < 900) return; /* the router asks twice for one navigation */
+  if (prev && prev.away) { prev.away = false; if (prev.key === key && prev.done && !prev.stale && prev.el.isConnected && Date.now() - prev.at < KEEP_TTL) { C.nf.el.scrollTop = C.scrollPos[key] || 0; return; } }
+  if (prev && !same && prev.keep && prev.done && !prev.stale && prev.el.isConnected) { C.pages.delete(prev.key); C.pages.set(prev.key, { el: prev.el, scroll: C.scrollPos[prev.key] || 0, at: prev.at, view: prev.view }); while (C.pages.size > KEEP_MAX()) C.pages.delete(C.pages.keys().next().value); }
+  C.curPage = null; C.token = (C.token || 0) + 1;
+  const hit = KEEP_VIEWS.has(view) && !same ? C.pages.get(key) : null;
+  if (hit && Date.now() - hit.at < KEEP_TTL) {
+    C.pages.delete(key); hit.el.classList.add('still'); C.nf.el.style.scrollBehavior = 'auto'; main.replaceChildren(hit.el);
+    C.nf.el.scrollTop = hit.scroll; requestAnimationFrame(() => { C.nf.el.scrollTop = hit.scroll; C.nf.el.style.scrollBehavior = ''; });
+    C.curPage = { key, el: hit.el, keep: true, view, at: hit.at, done: true, restored: Date.now() }; return;
+  }
+  if (hit) C.pages.delete(key);
   C.nf.el.style.scrollBehavior = 'auto';
+  if (!C.scrollPos[key]) C.nf.el.scrollTop = 0; /* a new page starts at the top at once, not after it has loaded */
   const page = h('div', { class: 'cx-page' }); main.replaceChildren(page);
-  const token = (C.token = (C.token || 0) + 1);
+  const cp = KEEP_VIEWS.has(view) ? (C.curPage = { key, el: page, keep: true, view, at: Date.now(), done: false }) : null;
+  const token = C.token;
   /* back to a page: return to where you were. Rows arrive after the page is built, so keep trying while it grows (up to 3 s) and stop as soon as you scroll yourself. */
   const done = () => {
     const el = C.nf.el, want = C.scrollPos[key] || 0, t0 = Date.now(); let stop = false;
@@ -275,6 +295,7 @@ async function renderNF(r) {
   else if (view === 'storage') await storageView(page);
   else if (view === 'downloads') await downloadsView(page);
   else page.append(h('div', { class: 'nf-empty' }, '404'));
+  if (cp) cp.done = true;
   done();
 }
 

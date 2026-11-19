@@ -3,7 +3,7 @@ const COVER = (() => { let el = null; return { show() { if (!el) { el = h('div',
 
 /* watchlist = Jellyfin "Likes" (same data KefinTweaks uses), optionally mirrored to the Seerr watchlist */
 const isWatch = it => ud(it).Likes === true;
-async function toggleWatch(it) {
+async function toggleWatch(it) { try { invalidatePages(true); } catch (e) { }
   const on = !isWatch(it);
   try {
     if (on) await ApiClient.updateUserItemRating(uid(), it.Id, true); else await ApiClient.clearUserItemRating(uid(), it.Id);
@@ -13,7 +13,7 @@ async function toggleWatch(it) {
   } catch (e) { toast((e.message || 'error')); }
   return on;
 }
-async function toggleFav(it) { const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData = Object.assign(ud(it), { IsFavorite: on }); return on; }
+async function toggleFav(it) { try { invalidatePages(true); } catch (e) { } const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData = Object.assign(ud(it), { IsFavorite: on }); return on; }
 async function togglePlayed(it) { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData = Object.assign(ud(it), { Played: on }); toast(on ? t('markedWatched') : t('markedUnwatched')); return on; }
 
 /* settings: server defaults (plugin) overridden per user (Jellyfin DisplayPreferences, synced across devices) */
@@ -42,7 +42,7 @@ async function loadCfg() {
   try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); const raw = (dp.CustomPrefs || {}).cfg; if (raw) CFGU = JSON.parse(raw) || {}; } catch (e) { }
   applyCfg();
 }
-async function saveCfg(patch) {
+async function saveCfg(patch) { try { invalidatePages(); } catch (e) { }
   Object.keys(patch).forEach(k => { if (patch[k] === undefined || patch[k] === null) delete CFGU[k]; else CFGU[k] = patch[k]; }); applyCfg();
   try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); dp.CustomPrefs = Object.assign(dp.CustomPrefs || {}, { cfg: JSON.stringify(CFGU) }); await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }), data: JSON.stringify(dp), contentType: 'application/json' }); } catch (e) { console.warn('[cinema] save cfg failed', e); }
 }

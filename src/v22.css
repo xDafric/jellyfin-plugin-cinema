@@ -178,3 +178,7 @@ html.cx-tv .cx-page { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   #cx-ui *, #cx-ui *::before, #cx-ui *::after, #cx-player * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* kept pages come back without replaying the entrance animation */
+.cx-page.still { animation: none; }
+.cx-page { min-height: 70vh; }

@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.49.0",
+                             "changelog":  "Video player: HLS always through hls.js, automatic fallback chain (direct play, transcode, safest transcode) instead of the error screen. Pages stay alive while you look at another page: back is instant with the same scroll position, no reload, no layout shift.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.49.0.zip",
+                             "checksum":  "9bb31ef998254499751cb33fc32ca2b5",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.48.0",
                              "changelog":  "Mouse wheel over the hover preview scrolls at normal speed, pages and artwork fade in, back returns to the previous scroll position, reduced-motion support.",
                              "targetAbi":  "12.4.0.0",

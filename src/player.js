@@ -1,7 +1,10 @@
 /* ---------- Cinema video player v2: PlaybackInfo, direct play / HLS, custom controls, subtitles, skip intro, chapters ---------- */
-const HLS_URL = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js';
+const HLS_URLS = ['https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js', 'https://unpkg.com/hls.js@1.5.13/dist/hls.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js'];
 let hlsLoading = null;
-const loadHls = () => window.Hls ? Promise.resolve(window.Hls) : (hlsLoading || (hlsLoading = new Promise((res, rej) => { const s = document.createElement('script'); s.src = HLS_URL; s.onload = () => res(window.Hls); s.onerror = () => rej(new Error('hls.js failed to load')); document.head.append(s); })));
+const loadHls = () => window.Hls ? Promise.resolve(window.Hls) : (hlsLoading || (hlsLoading = (async () => {
+  for (const u of HLS_URLS) { try { await new Promise((res, rej) => { const s = document.createElement('script'); s.src = u; s.onload = res; s.onerror = () => { s.remove(); rej(new Error('x')); }; document.head.append(s); }); if (window.Hls) return window.Hls; } catch (e) { } }
+  hlsLoading = null; throw new Error('hls.js failed to load');
+})()));
 const tok = () => ApiClient.accessToken();
 const absUrl = u => /^https?:/i.test(u) ? u : ApiClient.serverAddress().replace(/\/$/, '') + (u.startsWith('/') ? u : '/' + u);
 const withKey = u => /[?&](api_key|ApiKey)=/i.test(u) ? u : u + (u.includes('?') ? '&' : '?') + 'ApiKey=' + encodeURIComponent(tok());
@@ -33,11 +36,11 @@ const applyFit = () => { if (PL.v) PL.v.style.objectFit = FIT[pcfg('fit', 'conta
 function applySubDelay() { const d = +(PL.subDelay || 0); const tr = PL.v && [...PL.v.textTracks].find(x => x.mode === 'hidden' || x.mode === 'showing'); if (!tr || !tr.cues) return; for (const c of tr.cues) { if (c._os == null) { c._os = c.startTime; c._oe = c.endTime; } c.startTime = Math.max(0, c._os + d); c.endTime = Math.max(.01, c._oe + d); } }
 
 function deviceProfile() {
-  const hevc = !!(window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="hvc1.1.6.L120.90,mp4a.40.2"'));
+  const hevc = !PL.safe && !!(window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="hvc1.1.6.L120.90,mp4a.40.2"'));
   const vcodecs = 'h264' + (hevc ? ',hevc' : '');
   const tp = [];
   if (hevc) tp.push({ Container: 'mp4', Type: 'Video', AudioCodec: 'aac,mp3,opus,flac', VideoCodec: 'hevc,h264', Context: 'Streaming', Protocol: 'hls', MaxAudioChannels: '6', MinSegments: '1', BreakOnNonKeyFrames: true });
-  tp.push({ Container: 'ts', Type: 'Video', AudioCodec: 'aac,mp3', VideoCodec: 'h264', Context: 'Streaming', Protocol: 'hls', MaxAudioChannels: '6', MinSegments: '1', BreakOnNonKeyFrames: true });
+  tp.push({ Container: 'ts', Type: 'Video', AudioCodec: PL.safe ? 'aac' : 'aac,mp3', VideoCodec: 'h264', Context: 'Streaming', Protocol: 'hls', MaxAudioChannels: PL.safe ? '2' : '6', MinSegments: '1', BreakOnNonKeyFrames: true });
   return { Name: 'Cinema', MaxStreamingBitrate: 120000000, MaxStaticBitrate: 100000000, MusicStreamingTranscodingBitrate: 384000,
     DirectPlayProfiles: [{ Container: 'mp4,m4v,mov', Type: 'Video', VideoCodec: vcodecs, AudioCodec: 'aac,mp3,opus,flac,vorbis' }, { Container: 'webm', Type: 'Video', VideoCodec: 'vp8,vp9,av1', AudioCodec: 'vorbis,opus' }],
     TranscodingProfiles: tp, ContainerProfiles: [],
@@ -51,7 +54,7 @@ const pcfg = (k, d) => (cfg('pl_' + k) != null ? cfg('pl_' + k) : d);
 const psave = (k, v) => saveCfg({ ['pl_' + k]: v });
 
 /* per-item state, reset for every movie or episode */
-const freshItemState = () => ({ ms: null, audio: null, sub: -1, encodeSub: false, subTouched: false, forceTx: false, netRetry: 0, prefDone: false, ncDismiss: false, ncStart: null, lastPos: 0, segments: [] });
+const freshItemState = () => ({ ms: null, audio: null, sub: -1, encodeSub: false, subTouched: false, forceTx: false, safe: false, netRetry: 0, prefDone: false, ncDismiss: false, ncStart: null, lastPos: 0, segments: [] });
 /* audio and subtitle language chosen for a series, so the next episode keeps them */
 const prefKey = it => it && it.SeriesId ? 'cx-pltr-' + it.SeriesId : null;
 function trackPref(it) { const k = prefKey(it); if (!k) return {}; try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } }
@@ -71,7 +74,7 @@ async function openPlayer(it, startTicks) {
 }
 async function startStream(startTicks, opts) {
   opts = opts || {}; const it = PL.item; setStatus(opts.status || t('plPreparing')); stopTimers(); detach();
-  if (opts.forceTranscode) PL.forceTx = true;
+  if (opts.forceTranscode) PL.forceTx = true; if (opts.safe) PL.safe = true;
   const forceTx = PL.forceTx; const gen = PL.gen = (PL.gen || 0) + 1;
   try {
     const qual = QUALITIES.find(x => x[0] === String(pcfg('quality', 'auto'))) || QUALITIES[0];
@@ -106,11 +109,13 @@ async function startStream(startTicks, opts) {
 async function attach(url, startSec) {
   const v = PL.v; v.removeAttribute('src'); v.load(); v.playbackRate = PL.speed;
   const isHls = /m3u8/i.test(url);
-  if (isHls && !v.canPlayType('application/vnd.apple.mpegurl')) {
-    const Hls = await loadHls(); if (!Hls.isSupported()) throw new Error('This browser cannot play HLS');
+  const apple = /Apple/.test(navigator.vendor || '') && !/Chrome|Chromium|Edg/.test(navigator.userAgent);
+  let HlsLib = null; if (isHls && !apple) { try { HlsLib = await loadHls(); if (!HlsLib.isSupported()) HlsLib = null; } catch (e) { HlsLib = null; } }
+  if (isHls && (HlsLib || !v.canPlayType('application/vnd.apple.mpegurl'))) {
+    const Hls = HlsLib || await loadHls(); if (!Hls.isSupported()) throw new Error('This browser cannot play HLS');
     const hls = new Hls({ startPosition: startSec || -1, maxBufferLength: 40, backBufferLength: 30, enableWorker: true, manifestLoadingMaxRetry: 3, levelLoadingMaxRetry: 3, fragLoadingMaxRetry: 4 });
     PL.hls = hls; let netRetry = 0, mediaRetry = 0;
-    hls.on(Hls.Events.ERROR, (e, d) => { if (!d.fatal) return; if (d.type === Hls.ErrorTypes.NETWORK_ERROR && netRetry++ < 3) { setStatus(t('plRetry')); hls.startLoad(); } else if (d.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetry++ < 3) hls.recoverMediaError(); else showError((d.details || 'Playback error') + (d.response && d.response.code ? ' (' + d.response.code + ')' : '')); });
+    hls.on(Hls.Events.ERROR, (e, d) => { if (!d.fatal) return; if (d.type === Hls.ErrorTypes.NETWORK_ERROR && netRetry++ < 3) { setStatus(t('plRetry')); hls.startLoad(); } else if (d.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetry++ < 3) hls.recoverMediaError(); else escalate((d.details || 'Playback error') + (d.response && d.response.code ? ' (' + d.response.code + ')' : '')); });
     hls.loadSource(url); hls.attachMedia(v);
   } else { v.src = url; if (startSec) v.addEventListener('loadedmetadata', () => { v.currentTime = startSec; }, { once: true }); }
   try { await v.play(); } catch (e) { if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') throw e; }
@@ -143,7 +148,7 @@ window.addEventListener('pagehide', () => {
   } catch (e) { }
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && PL.open && PL.started) report('Progress', { EventName: 'timeupdate' }); });
-function backFromPlayer() { if (history.state && history.state.cxplayer) history.back(); else closePlayer(); }
+function backFromPlayer() { try { invalidatePages(true); } catch (e) { } if (history.state && history.state.cxplayer) history.back(); else closePlayer(); }
 
 async function loadNext(it) {
   PL.nextItem = null; if (PL.el) PL.el.classList.remove('has-next');
@@ -172,6 +177,13 @@ function setTitle(it) {
   $('.pl-btn-eps', PL.el).classList.toggle('hide', !ep);
 }
 function setStatus(msg) { if (!PL.el) return; PL.el.classList.remove('err'); PL.el.classList.add('loading'); $('.pl-status', PL.el).textContent = msg || ''; }
+/* a failing stream never ends on the error screen straight away: direct play, then a transcode, then the safest transcode (H.264 + stereo AAC) */
+function escalate(why) {
+  if (!PL.open) return; const pos = Math.floor((PL.lastPos || (PL.v && PL.v.currentTime) || 0) * 1e7);
+  if (!PL.forceTx) { console.warn('[cinema player] falling back to a server transcode:', why); startStream(pos, { forceTranscode: true, status: t('plFallback') }); }
+  else if (!PL.safe) { console.warn('[cinema player] falling back to the safest transcode:', why); startStream(pos, { forceTranscode: true, safe: true, status: t('plFallback') }); }
+  else showError(why);
+}
 function showError(msg) { if (!PL.el) return; PL.el.classList.remove('loading'); PL.el.classList.add('err'); $('.pl-errmsg', PL.el).textContent = msg; }
 const closeMenus = () => PL.el && $$('.pl-menu', PL.el).forEach(m => m.classList.remove('open'));
 function toggleMenu(cls) { const m = $(cls, PL.el); const was = m.classList.contains('open'); closeMenus(); if (!was) m.classList.add('open'); wake(); }
@@ -369,7 +381,7 @@ function buildPlayerUI(it) {
   v.addEventListener('error', () => {
     if (PL.hls || !PL.open || !v.getAttribute('src')) return;
     const code = v.error ? v.error.code : 0; const pos = Math.floor((PL.lastPos || v.currentTime || 0) * 1e7);
-    if ((code === 3 || code === 4) && PL.method === 'DirectPlay' && !PL.forceTx) { console.warn('[cinema player] direct play failed (' + code + '), transcoding'); startStream(pos, { forceTranscode: true, status: t('plFallback') }); return; }
+    if ((code === 3 || code === 4) && !PL.safe) { escalate(v.error && v.error.message || ('Media error ' + code)); return; }
     if (code === 2 && PL.netRetry < 2) { PL.netRetry++; startStream(pos, { status: t('plRetry') }); return; }
     showError(v.error ? (v.error.message || ('Media error ' + v.error.code)) : 'Playback error');
   });
