@@ -193,3 +193,17 @@ html.cx-tv .cx-page { animation: none; }
 @keyframes cxRowIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 html.cx-tv .nf-rows > .nf-row { animation: none; }
 .cx-page, .nf-hero-host { display: flow-root; }
+
+/* detail backdrop: a transformed page made the fixed backdrop switch size when the entrance animation ended; opacity only, and a fixed, calmer height that shows more of the picture */
+@keyframes cxPageIn { from { opacity: 0; } to { opacity: 1; } }
+.nf-dback { inset: 0 0 auto 0; height: 78vh; }
+@media (max-width: 800px) { .nf-dback { inset: 0 0 auto 0; height: 440px; } }
+.gm-ringw .gm-ring { width: 54px !important; height: 54px !important; }
+
+/* music pill: the volume slider opens above the pill, nothing in the pill moves */
+.np-vol { position: relative; }
+.np-vol input, .nf-npill:hover .np-vol input, .np-vol:focus-within input { width: 112px; opacity: 1; margin: 0; transition: none; }
+.np-pop { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translate(-50%, 6px); padding: 12px 14px; border-radius: 14px; background: rgba(30,30,34,.97); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 12px 32px rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; display: flex; }
+.np-pop::after { content: ""; position: absolute; left: -10px; right: -10px; top: 100%; height: 14px; }
+.np-vol:hover .np-pop, .np-vol:focus-within .np-pop { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+@media (max-width: 800px) { .np-pop { display: none; } .np-vol input { display: block; } }

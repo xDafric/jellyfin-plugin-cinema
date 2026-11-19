@@ -210,7 +210,7 @@ function gNameMatch(input, name) {
 function gModesFor(P, a, box) {
   const m = ['face2name', 'face2name', 'name2face'];
   if (box >= 1 && a.films.length) { if (P.films.size >= 6) m.push('face2film'); m.push('film2face'); if (a.films.some(id => gRoleOk(a.roles[id]))) m.push('role'); }
-  if (box >= 3) m.push('type', 'type');
+  if (box >= 1) m.push('type'); if (box >= 2) m.push('type'); if (box >= 3) m.push('type', 'type'); /* typing the name is what makes it stick: from the first correct answer on */
   return m;
 }
 function gQuestion(P, a, mode) {

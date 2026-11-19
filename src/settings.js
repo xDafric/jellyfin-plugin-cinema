@@ -31,12 +31,12 @@ const SEC = {
   collection: { label: p => p.title || t('collection'), custom: true, run: p => items({ ParentId: p.param, SortBy: 'PremiereDate', Limit: 40 }), kind: 'poster' },
   library: { label: p => p.title || 'Library', custom: true, run: p => items({ ParentId: p.param, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster' }
 };
-const DEFAULT_SECTIONS = ['continue', 'nextup', 'becauseSeen', 'spotlight', 'freshUnseen', 'top10Movies', 'becauseLiked', 'newMovies', 'forYou', 'rewatch', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'followPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
+const DEFAULT_SECTIONS = ['continue', 'nextup', 'spotlight', 'freshUnseen', 'top10Movies', 'becauseSeen', 'becauseLiked', 'newMovies', 'forYou', 'rewatch', 'recentEps', 'newShows', 'genreTiles', 'top10Shows', 'actorPicks', 'followPicks', 'watchlist', 'collections', 'top', 'unwatched', 'dirPicks', 'favs', 'random', 'genres'].map(id => ({ id, on: true }));
 /* rows added in a later version are put into a customised list once, unless the person already saw and removed them */
 const sectionsCfg = () => {
   const c = cfg('sections'); if (!(c && c.length)) return DEFAULT_SECTIONS;
   const known = new Set(CFGU.secKnown || []); const miss = (typeof NEW_SECS !== 'undefined' ? NEW_SECS : []).filter(id => !known.has(id) && !c.some(s => s.id === id)); if (!miss.length) return c;
-  const out = c.slice(); let at = out.findIndex(s => s.id === 'nextup'); at = at < 0 ? Math.min(2, out.length) : at + 1; out.splice(at, 0, ...miss.map(id => ({ id, on: true }))); return out;
+  const out = c.slice(); let at = out.findIndex(s => s.id === 'top10Movies'); if (at < 0) at = out.findIndex(s => s.id === 'nextup'); at = at < 0 ? Math.min(2, out.length) : at + 1; out.splice(at, 0, ...miss.map(id => ({ id, on: true }))); return out;
 };
 
 async function homeView2(page) {

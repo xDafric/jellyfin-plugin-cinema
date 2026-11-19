@@ -1,6 +1,7 @@
 /* ---------- Discover: Seerr recommendations rendered with the same cards as the library ---------- */
 let SEERR = 'JellyfinEnhanced/jellyseerr';
-const seerrGet = (path, params) => Promise.resolve(HID.on ? null : hxReady()).then(() => fetch(ApiClient.getUrl(SEERR + path, params), { headers: { Authorization: 'MediaBrowser Token="' + ApiClient.accessToken() + '"' } }).then(r => { if (!r.ok) throw new Error('seerr ' + r.status); return r.json(); }).then(d => hxSeerr(d)));
+const seerrGet = (path, params) => Promise.resolve(HID.on ? null : hxReady()).then(() => fetch(ApiClient.getUrl(SEERR + path, params), { headers: { Authorization: 'MediaBrowser Token="' + ApiClient.accessToken() + '"' } }).then(r => { if (!r.ok) throw new Error('seerr ' + r.status); return r.json(); }));
+/* Seerr answers (search, discover, people, cast) are not filtered: a hidden film simply shows up like a film you do not own. The request list, calendar and downloads stay filtered. */
 const TM = (p, w) => p ? 'https://image.tmdb.org/t/p/' + w + p : '';
 let libMapP = null, reqMapP = null;
 const libMap = () => libMapP || (libMapP = items({ IncludeItemTypes: 'Movie,Series', Fields: 'ProviderIds,OriginalTitle', Limit: 10000, EnableImageTypes: 'Primary' }).then(r => { const m = {}; r.Items.forEach(i => { const id = (i.ProviderIds || {}).Tmdb; if (id) m[(i.Type === 'Series' ? 'tv' : 'movie') + ':' + id] = i; }); return m; }).catch(() => ({})));
@@ -12,6 +13,7 @@ const waitSeerr = async () => { for (let i = 0; i < 40 && !hasSeerr(); i++) awai
 function dStatus(x, lm, rm) {
   const key = x.mediaType + ':' + x.id; const lib = lm[key];
   if (lib) return { k: 'own', item: lib };
+  if (!HID.on && HID.loaded && hxSeerrHidden(x)) return { k: 'none' }; /* hidden title: looks like one you do not have */
   const ms = (x.mediaInfo && x.mediaInfo.status) || rm[key];
   if (ms === 5) return { k: 'own' };
   if (ms >= 2 && ms <= 4) return { k: 'req' };
