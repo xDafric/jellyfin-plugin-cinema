@@ -14,7 +14,7 @@ async function toggleWatch(it) { try { invalidatePages(true); } catch (e) { }
   return on;
 }
 async function toggleFav(it) { try { invalidatePages(true); } catch (e) { } const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData = Object.assign(ud(it), { IsFavorite: on }); return on; }
-async function togglePlayed(it) { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData = Object.assign(ud(it), { Played: on }); toast(on ? t('markedWatched') : t('markedUnwatched')); return on; }
+async function togglePlayed(it) { try { invalidatePages(true); } catch (e) { } const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData = Object.assign(ud(it), { Played: on }); toast(on ? t('markedWatched') : t('markedUnwatched')); return on; }
 
 /* settings: server defaults (plugin) overridden per user (Jellyfin DisplayPreferences, synced across devices) */
 const CFG_DEF = { nativePlayer: false, hero: true, peek: true, seerrWatchlistSync: false, sections: null, accent: '#e50914', infinite: true, cardSize: 'm', heroItems: 8, heroInterval: 11, peekDelay: 320, quiz: true, wrapped: true, tonight: true, homeSeen: 'badge', recommendations: true, quizFamous: 'both', quizScenes: true, quizNew: 10, quizGoal: 100, quizBlitz: 60, quizAuto: true, quizMin: 1, quizLb: true, quizModes: null, wrappedBanner: 'auto', wrappedShows: true, wrappedAuto: true };
@@ -119,7 +119,7 @@ async function itemMenu(e, it) {
   if (it.Type !== 'Series' || true) ent.push({ icon: 'check', label: ud(it).Played ? t('markUnwatched') : t('markWatched'), fn: () => togglePlayed(it) });
   ent.push('-');
   ent.push({ icon: 'info', label: t('openDetails'), fn: () => go(itemHash(it) || '#/home') });
-  if ((ud(it).PlaybackPositionTicks || 0) > 0) ent.push({ icon: 'close', label: t('rmResume'), fn: async () => { try { await jf('POST', 'UserItems/' + it.Id + '/UserData', { userId: uid() }, { PlaybackPositionTicks: 0 }); it.UserData = Object.assign(ud(it), { PlaybackPositionTicks: 0 }); toast(t('rmResumeDone')); C.libCache = null; route(); } catch (e) { toast((e.message || e)); } } });
+  if ((ud(it).PlaybackPositionTicks || 0) > 0) ent.push({ icon: 'close', label: t('rmResume'), fn: async () => { try { invalidatePages(true); } catch (e) { } try { await jf('POST', 'UserItems/' + it.Id + '/UserData', { userId: uid() }, { PlaybackPositionTicks: 0 }); it.UserData = Object.assign(ud(it), { PlaybackPositionTicks: 0 }); toast(t('rmResumeDone')); C.libCache = null; route(); } catch (e) { toast((e.message || e)); } } });
   const isVid = ['Movie', 'Episode', 'Video', 'MusicVideo'].includes(it.Type);
   if (['Movie', 'Episode', 'Video', 'MusicVideo', 'Audio'].includes(it.Type) && (!user.Policy || user.Policy.EnableContentDownloading !== false)) ent.push({ icon: 'download', label: t('download'), fn: () => { const a = h('a', { href: ApiClient.getUrl('Items/' + it.Id + '/Download', { api_key: ApiClient.accessToken() }), download: '' }); document.body.append(a); a.click(); a.remove(); } });
   if (admin && isVid) ent.push({ icon: 'badge-cc', label: t('editSubs'), fn: () => nativeCommand(it.Id, ['editsubtitles']) });

@@ -182,3 +182,14 @@ html.cx-tv .cx-page { animation: none; }
 /* kept pages come back without replaying the entrance animation */
 .cx-page.still { animation: none; }
 .cx-page { min-height: 70vh; }
+
+/* ---------- no layout shift: reserved space for the billboard and for rows that are still loading ---------- */
+.nf-hero-host { min-height: calc(88px + clamp(420px, 62vh, 720px)); }
+@media (max-width: 800px) { .nf-hero-host { min-height: calc(68px + max(68vh, 420px)); } }
+.nf-rowph { height: 276px; margin: 0; transition: height .28s ease, opacity .2s ease; }
+.nf-rowph.k-thumb { height: 193px; } .nf-rowph.k-spotlight, .nf-rowph.k-spot { height: 213px; } .nf-rowph.k-tiles { height: 132px; }
+.nf-rowph.gone { height: 0; opacity: 0; overflow: hidden; }
+.nf-rows > .nf-row { animation: cxRowIn .34s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes cxRowIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+html.cx-tv .nf-rows > .nf-row { animation: none; }
+.cx-page, .nf-hero-host { display: flow-root; }

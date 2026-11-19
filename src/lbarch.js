@@ -164,7 +164,7 @@ async function archiveDialog(it) {
   const go_ = h('button', { class: 'btn white', onclick: async () => {
     go_.disabled = true; st.textContent = t('archBusy');
     try {
-      await archiveCore(full, useRadarr.checked);
+      await archiveCore(full, useRadarr.checked); try { invalidatePages(true); } catch (e) { }
       ARCH.at = 0; await archLoad(true); C.libCache = null; resetSeerrCache(); d.close(); toast(t('archDone')); go('#/c/archive');
     } catch (e) { st.textContent = t('archFail') + ': ' + (e.message || e); go_.disabled = false; }
   } }, ic('download'), t('archGo'));

@@ -40,8 +40,8 @@ const sectionsCfg = () => {
 };
 
 async function homeView2(page) {
-  const heroHost = h('div', { class: 'nf-hero-host', style: 'min-height:90px' }); page.append(heroHost);
-  if (cfg('hero') !== false) heroFor('Movie,Series').then(hero => { if (hero.length && heroHost.isConnected) heroHost.replaceChildren(heroEl(hero)); heroHost.style.minHeight = ''; }).catch(() => { });
+  const heroHost = h('div', { class: 'nf-hero-host', style: cfg('hero') === false ? 'min-height:90px' : '' }); page.append(heroHost);
+  if (cfg('hero') !== false) heroFor('Movie,Series').then(hero => { if (hero.length && heroHost.isConnected) heroHost.replaceChildren(heroEl(hero)); heroHost.style.minHeight = hero.length ? '' : '90px'; }).catch(() => { heroHost.style.minHeight = '90px'; });
   const rows = h('div', { class: 'nf-rows' }); page.append(rows);
   try { wrappedBanner(rows); } catch (e) { }
   const list = sectionsCfg().filter(s => s.on !== false && SEC[s.id]);

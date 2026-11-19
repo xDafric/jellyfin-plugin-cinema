@@ -197,8 +197,9 @@ function spotCard(it) {
 }
 /* async row: placeholder is inserted immediately to keep order, filled when data arrives */
 function lazyRow(container, title, fn, kind, opts) {
-  const ph = h('div', { class: 'nf-rowph' }); container.append(ph);
-  Promise.resolve().then(fn).then(list => { let arr = (list && list.Items) || list || []; if (opts && opts.unseen) arr = arr.filter(i => !ud(i).Played); if (arr.length >= ((opts && opts.min) || 1)) ph.replaceWith(row(title, arr, kind, opts)); else ph.remove(); }).catch(e => { console.warn('[cinema] row failed', title, e); ph.remove(); });
+  const ph = h('div', { class: 'nf-rowph k-' + (kind || 'poster') }); container.append(ph);
+  const drop = () => { ph.classList.add('gone'); setTimeout(() => ph.remove(), 300); }; /* an empty row closes softly instead of jumping */
+  Promise.resolve().then(fn).then(list => { let arr = (list && list.Items) || list || []; if (opts && opts.unseen) arr = arr.filter(i => !ud(i).Played); if (arr.length >= ((opts && opts.min) || 1)) ph.replaceWith(row(title, arr, kind, opts)); else drop(); }).catch(e => { console.warn('[cinema] row failed', title, e); drop(); });
 }
 
 function heroEl(list) {
@@ -317,8 +318,8 @@ function genreRows(rows, type, n) {
   api('Genres', { userId: uid(), IncludeItemTypes: type, SortBy: 'Random', Limit: n }).then(g => (g.Items || []).forEach(gn => lazyRow(rows, gn.Name, () => items({ IncludeItemTypes: type, Genres: gn.Name, SortBy: 'Random', Limit: 20 }), 'thumb', { unseen: cfg('homeSeen') === 'hide', min: 4, href: '#/c/browse/genre/' + encodeURIComponent(gn.Name) }))).catch(() => { });
 }
 async function browseView(page, type) {
-  const hero = await heroFor(type).catch(() => []);
-  if (hero.length) page.append(heroEl(hero)); else page.append(h('div', { style: 'height:90px' }));
+  const heroHost = h('div', { class: 'nf-hero-host' }); page.append(heroHost); /* room for the billboard from the start: nothing moves when it arrives */
+  heroFor(type).then(hero => { if (hero.length) heroHost.replaceChildren(heroEl(hero)); heroHost.style.minHeight = hero.length ? '' : '90px'; }).catch(() => { heroHost.style.minHeight = '90px'; });
   const rows = h('div', { class: 'nf-rows' }); page.append(rows);
   lazyRow(rows, type === 'Movie' ? t('newMovies') : t('newShows'), () => items({ IncludeItemTypes: type, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), 'poster');
   lazyRow(rows, t('top'), () => items({ IncludeItemTypes: type, SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 20 }), 'thumb');
