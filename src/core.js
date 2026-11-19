@@ -263,6 +263,7 @@ async function renderNF(r) {
   const token = C.token;
   /* back to a page: return to where you were. Rows arrive after the page is built, so keep trying while it grows (up to 3 s) and stop as soon as you scroll yourself. */
   const done = () => {
+    if (C.token !== token) return; /* the page was left before it finished loading: it must not move the page that is shown now */
     const el = C.nf.el, want = C.scrollPos[key] || 0, t0 = Date.now(); let stop = false;
     if (!want) { el.scrollTop = 0; el.style.scrollBehavior = ''; return; }
     const cancel = () => { stop = true; }; const evs = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
