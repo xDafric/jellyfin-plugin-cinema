@@ -150,7 +150,7 @@ class LoginActivity : Activity() {
     }
 
     private fun passwordStep() {
-        val user = input("User", value = store.userName).apply { inputType = InputType.TYPE_CLASS_TEXT }; val pw = input("Password", true)
+        val user = input(getString(R.string.user_name), value = store.userName).apply { inputType = InputType.TYPE_CLASS_TEXT }; val pw = input(getString(R.string.password), true)
         val status = sub("").apply { gravity = Gravity.CENTER }
         val go = button(getString(R.string.sign_in)) {
             status.text = getString(R.string.connecting)

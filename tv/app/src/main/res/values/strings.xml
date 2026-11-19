@@ -36,4 +36,22 @@
     <string name="brightness">Brightness</string>
     <string name="volume">Volume</string>
     <string name="playback_channel">Playback</string>
+    <string name="audio_subs">Audio &amp; Subtitles</string>
+    <string name="retry">Try again</string>
+    <string name="close">Close</string>
+    <string name="reconnecting">Connection lost … attempt %1$d</string>
+    <string name="aspect">Picture format</string>
+    <string name="sleep_timer">Sleep timer</string>
+    <string name="sleep_end">End of episode</string>
+    <string name="sleep_set">Sleep timer: %1$d min</string>
+    <string name="sleep_fired">Sleep timer: playback paused</string>
+    <string name="quality">Streaming quality</string>
+    <string name="quality_auto">Auto (original)</string>
+    <string name="chapters">Chapters</string>
+    <string name="episodes">Episodes</string>
+    <string name="locked">Controls locked</string>
+    <string name="unlock">Unlock</string>
+    <string name="cast_unavailable">Casting is not available on this device</string>
+    <string name="user_name">User name</string>
+    <string name="password">Password</string>
 </resources>

@@ -2,6 +2,7 @@ package net.dafric.cinematv
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Dialog
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.content.Intent
@@ -79,6 +80,10 @@ class PlayerActivity : Activity() {
     private lateinit var skipBtn: IconBtn; private lateinit var spinner: ProgressBar; private lateinit var toast: TextView; private lateinit var centerIcon: ImageView
     private lateinit var preview: LinearLayout; private lateinit var previewImg: ImageView; private lateinit var previewTime: TextView; private lateinit var previewChap: TextView
     private var overlayOn = false
+    private lateinit var osd: LinearLayout; private lateinit var osdIcon: ImageView; private lateinit var osdBar: ProgressBar; private lateinit var osdText: TextView
+    private lateinit var fxL: LinearLayout; private lateinit var fxR: LinearLayout; private lateinit var fxLT: TextView; private lateinit var fxRT: TextView
+    private lateinit var lockBtn: IconBtn; private lateinit var unlockBtn: IconBtn; private lateinit var episodesBtn: IconBtn
+    private var locked = false; private var sleepAt = 0L; private var sleepAtEnd = false; private var maxBitrate = 120_000_000
     private lateinit var rootView: FrameLayout
     private val phone by lazy { !UiMode.isTv(this) }
     private var session: MediaSession? = null; private var notifier: PlayerNotificationManager? = null
@@ -93,23 +98,25 @@ class PlayerActivity : Activity() {
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    /** Icon (+ optional label) button that turns white when focused. */
-    inner class IconBtn(ctx: Context, icon: Int, label: String?, size: Int, round: Boolean) : LinearLayout(ctx) {
+    /** Icon (+ optional label) button that turns white when focused. [style] 0 = filled chip, 1 = plain glyph, 2 = outlined pill; [frac] = icon size relative to [size]. */
+    inner class IconBtn(ctx: Context, icon: Int, label: String?, size: Int, round: Boolean, style: Int = 0, frac: Float = 5f / 9f) : LinearLayout(ctx) {
         private val img = ImageView(ctx).apply { setImageResource(icon); setColorFilter(Color.WHITE) }
-        private val txt: TextView? = label?.let { TextView(ctx).apply { text = it; textSize = 15f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD } }
-        private val bgN = GradientDrawable().apply { cornerRadius = dp(size).toFloat(); setColor(Color.parseColor("#33FFFFFF")) }
+        private val txt: TextView? = label?.let { TextView(ctx).apply { text = it; textSize = if (style == 2) 14f else 15f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD } }
+        private val bgN = GradientDrawable().apply { cornerRadius = dp(size).toFloat(); when (style) { 1 -> setColor(Color.TRANSPARENT); 2 -> { setColor(Color.parseColor("#26FFFFFF")); setStroke(dp(1), Color.parseColor("#66FFFFFF")) }; else -> setColor(Color.parseColor("#33FFFFFF")) } }
         private val bgF = GradientDrawable().apply { cornerRadius = dp(size).toFloat(); setColor(Color.WHITE) }
         init {
             orientation = HORIZONTAL; gravity = Gravity.CENTER; isFocusable = true; isClickable = true
-            addView(img, LayoutParams(dp(size * 5 / 9), dp(size * 5 / 9)))
+            val isz = (size * frac).toInt()
+            addView(img, LayoutParams(dp(isz), dp(isz)))
             txt?.let { addView(it, LayoutParams(-2, -2).apply { leftMargin = dp(10) }) }
-            val pad = if (label != null) dp(size / 2 + 4) else (size - size * 5 / 9) * resources.displayMetrics.density.toInt() / 2
-            setPadding(if (label != null) pad else dp((size - size * 5 / 9) / 2), 0, if (label != null) pad else dp((size - size * 5 / 9) / 2), 0)
+            val pad = if (label != null) dp(size / 2 + 4) else dp((size - isz) / 2)
+            setPadding(pad, 0, pad, 0)
             background = bgN
             onFocusChangeListener = OnFocusChangeListener { _, f ->
                 background = if (f) bgF else bgN; img.setColorFilter(if (f) Color.BLACK else Color.WHITE); txt?.setTextColor(if (f) Color.BLACK else Color.WHITE)
                 animate().scaleX(if (f) 1.1f else 1f).scaleY(if (f) 1.1f else 1f).setDuration(120).start()
             }
+            if (style != 0) setOnTouchListener { v, e -> when (e.actionMasked) { MotionEvent.ACTION_DOWN -> v.animate().scaleX(.9f).scaleY(.9f).setDuration(80).start(); MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> v.animate().scaleX(1f).scaleY(1f).setDuration(120).start() }; false }
             minimumHeight = dp(size)
         }
         fun setIcon(res: Int) { img.setImageResource(res) }
@@ -121,6 +128,7 @@ class PlayerActivity : Activity() {
         store = Store(this); itemId = intent.getStringExtra("id") ?: ""; startTicks = intent.getLongExtra("ticks", 0)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (phone) maxBitrate = trackPrefs.getInt("maxBitrate", 120_000_000)
         buildUi(); UiMode.apply(this, rootView, immersive = true); buildPlayer()
         if (phone) setupTouch()
         scope.launch { start(itemId, startTicks) }
@@ -135,11 +143,13 @@ class PlayerActivity : Activity() {
         root.addView(spinner, FrameLayout.LayoutParams(dp(64), dp(64), Gravity.CENTER))
         centerIcon = ImageView(this).apply { setImageResource(R.drawable.t_play); setColorFilter(Color.WHITE); setPadding(dp(26), dp(26), dp(26), dp(26)); visibility = View.GONE
             background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#80000000")) } }
-        root.addView(centerIcon, FrameLayout.LayoutParams(dp(110), dp(110), Gravity.CENTER))
+        /* the phone overlay has its own big play button */
+        root.addView(centerIcon, FrameLayout.LayoutParams(if (phone) 0 else dp(110), if (phone) 0 else dp(110), Gravity.CENTER))
         toast = TextView(this).apply { textSize = 26f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; visibility = View.GONE
             background = GradientDrawable().apply { cornerRadius = dp(30).toFloat(); setColor(Color.parseColor("#99000000")) }; setPadding(dp(28), dp(12), dp(28), dp(12)) }
         root.addView(toast, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL or Gravity.TOP).apply { topMargin = dp(110) })
 
+        if (phone) buildPhoneOverlay() else {
         overlay = FrameLayout(this).apply { visibility = View.GONE }
         /* top: back, title, badges */
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP; setPadding(dp(44), dp(26), dp(44), dp(56)); background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#D9000000"), Color.TRANSPARENT)) }
@@ -192,6 +202,8 @@ class PlayerActivity : Activity() {
         } else bottom.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
         overlay.addView(bottom, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
 
+        }
+
         /* scrub preview card */
         previewImg = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(Color.parseColor("#22222A")); setStroke(dp(3), Color.WHITE) }; clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND }
         previewTime = TextView(this).apply { textSize = 22f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; setShadowLayer(8f, 0f, 2f, Color.BLACK) }
@@ -225,7 +237,219 @@ class PlayerActivity : Activity() {
             elevation = dp(8).toFloat()
             addView(nextThumb, LinearLayout.LayoutParams(dp(thumbW), dp(thumbW * 9 / 16))); addView(ncText, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(16) }) }
         root.addView(nextCard, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply { rightMargin = dp(if (phone) 16 else 44); bottomMargin = dp(if (phone) 150 else 170); leftMargin = dp(16) })
+        if (phone) buildPhoneExtras(root)
         setContentView(root)
+    }
+
+    /* ---------------- phone / tablet overlay ---------------- */
+    private fun immersiveFlags() = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+
+    private fun buildPhoneOverlay() {
+        overlay = FrameLayout(this).apply { visibility = View.GONE }
+        overlay.addView(View(this).apply { setBackgroundColor(Color.parseColor("#99000000")) }, FrameLayout.LayoutParams(-1, -1))
+        val content = FrameLayout(this); overlay.addView(content, FrameLayout.LayoutParams(-1, -1))
+        overlay.setOnApplyWindowInsetsListener { _, ins ->
+            val c = if (Build.VERSION.SDK_INT >= 28) ins.displayCutout else null
+            content.setPadding(c?.safeInsetLeft ?: 0, c?.safeInsetTop ?: 0, c?.safeInsetRight ?: 0, c?.safeInsetBottom ?: 0); ins
+        }
+        /* top: cast, title, close */
+        titleView = TextView(this).apply { textSize = 17f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }
+        subtitleView = TextView(this).apply { textSize = 12f; setTextColor(Color.parseColor("#C8C8D0")); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }
+        badges = LinearLayout(this)
+        val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; addView(titleView, LinearLayout.LayoutParams(-1, -2)); addView(subtitleView, LinearLayout.LayoutParams(-1, -2)) }
+        val top = FrameLayout(this).apply { setPadding(dp(8), dp(8), dp(8), dp(8)) }
+        top.addView(titles, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER).apply { leftMargin = dp(56); rightMargin = dp(56) })
+        top.addView(IconBtn(this, R.drawable.t_cast, null, 48, true, 1, .5f).apply { setOnClickListener { openCast() } }, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.START or Gravity.CENTER_VERTICAL))
+        top.addView(IconBtn(this, R.drawable.t_close, null, 48, true, 1, .5f).apply { setOnClickListener { finish() } }, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.END or Gravity.CENTER_VERTICAL))
+        content.addView(top, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
+
+        /* middle: back 10, play / pause, forward 10 */
+        val back10 = IconBtn(this, R.drawable.t_back10, null, 80, true, 1, .7f).apply { setOnClickListener { jump(-10_000) } }
+        ppBtn = IconBtn(this, R.drawable.t_play, null, 96, true, 1, .62f).apply { setOnClickListener { togglePlay() } }
+        val fwd10 = IconBtn(this, R.drawable.t_fwd10, null, 80, true, 1, .7f).apply { setOnClickListener { jump(10_000) } }
+        val mid = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        mid.addView(back10, LinearLayout.LayoutParams(dp(80), dp(80)))
+        mid.addView(ppBtn, LinearLayout.LayoutParams(dp(96), dp(96)).apply { leftMargin = dp(28); rightMargin = dp(28) })
+        mid.addView(fwd10, LinearLayout.LayoutParams(dp(80), dp(80)))
+        content.addView(mid, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+
+        /* bottom: red timeline, audio & subtitles, tools */
+        seek = SeekView(this).apply { red = true; isFocusable = true; onScrub = { dir, rep -> scrubStep(dir, rep) }; onTouchSeek = { f, up -> touchSeek(f, up) } }
+        curTime = TextView(this).apply { textSize = 12f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD }
+        remTime = TextView(this).apply { textSize = 12f; setTextColor(Color.WHITE) }
+        endsAt = TextView(this)
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        bar.addView(curTime, LinearLayout.LayoutParams(-2, -2)); bar.addView(seek, LinearLayout.LayoutParams(0, dp(34), 1f).apply { leftMargin = dp(10); rightMargin = dp(10) }); bar.addView(remTime, LinearLayout.LayoutParams(-2, -2))
+        audioBtn = IconBtn(this, R.drawable.t_subs, getString(R.string.audio_subs), 40, false, 2).apply { setOnClickListener { chooseAudioSubs() } }
+        subsBtn = IconBtn(this, R.drawable.t_subs, null, 40, false)
+        lockBtn = IconBtn(this, R.drawable.t_lock, null, 44, true, 1, .5f).apply { setOnClickListener { setLocked(true) } }
+        speedBtn = IconBtn(this, R.drawable.t_speed, null, 44, true, 1, .5f).apply { setOnClickListener { chooseSpeed() } }
+        aspectBtn = IconBtn(this, R.drawable.t_aspect, null, 44, true, 1, .5f).apply { setOnClickListener { cycleAspect() } }
+        episodesBtn = IconBtn(this, R.drawable.t_list, null, 44, true, 1, .5f).apply { visibility = View.GONE; setOnClickListener { showEpisodes() } }
+        nextBtn = IconBtn(this, R.drawable.t_next, null, 44, true, 1, .5f).apply { visibility = View.GONE; setOnClickListener { playNext() } }
+        val moreBtn = IconBtn(this, R.drawable.t_more, null, 44, true, 1, .5f).apply { setOnClickListener { showMore() } }
+        val tools = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val cell = { v: View -> tools.addView(v, LinearLayout.LayoutParams(0, dp(44), 1f)) }
+        cell(lockBtn); cell(speedBtn); cell(aspectBtn); cell(episodesBtn); cell(nextBtn)
+        if (Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) cell(IconBtn(this, R.drawable.t_pip, null, 44, true, 1, .5f).apply { setOnClickListener { enterPip() } })
+        cell(moreBtn)
+        val bottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), 0, dp(20), dp(8)) }
+        bottom.addView(bar, LinearLayout.LayoutParams(-1, -2))
+        bottom.addView(audioBtn, LinearLayout.LayoutParams(-2, dp(40)).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = dp(2) })
+        bottom.addView(tools, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(6) })
+        content.addView(bottom, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+    }
+
+    /** Brightness / volume indicator, double-tap seek hints and the unlock button of the phone player. */
+    private fun buildPhoneExtras(root: FrameLayout) {
+        osdIcon = ImageView(this).apply { setColorFilter(Color.WHITE) }
+        osdBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; progressTintList = android.content.res.ColorStateList.valueOf(Color.WHITE); progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#55FFFFFF")) }
+        osdText = TextView(this).apply { textSize = 14f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; minWidth = dp(44); gravity = Gravity.END }
+        osd = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; visibility = View.GONE; setPadding(dp(16), dp(10), dp(16), dp(10))
+            background = GradientDrawable().apply { cornerRadius = dp(30).toFloat(); setColor(Color.parseColor("#B3000000")) }
+            addView(osdIcon, LinearLayout.LayoutParams(dp(22), dp(22))); addView(osdBar, LinearLayout.LayoutParams(dp(130), dp(6)).apply { leftMargin = dp(12); rightMargin = dp(12) }); addView(osdText) }
+        root.addView(osd, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL or Gravity.TOP).apply { topMargin = dp(96) })
+        fun fx(left: Boolean, icon: Int): Pair<LinearLayout, TextView> {
+            val t = TextView(this).apply { textSize = 15f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER }
+            val l = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; visibility = View.GONE; alpha = 0f
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#33FFFFFF")) }
+                addView(ImageView(this@PlayerActivity).apply { setImageResource(icon); setColorFilter(Color.WHITE) }, LinearLayout.LayoutParams(dp(40), dp(40))); addView(t) }
+            root.addView(l, FrameLayout.LayoutParams(dp(130), dp(130), (if (left) Gravity.START else Gravity.END) or Gravity.CENTER_VERTICAL).apply { if (left) leftMargin = dp(40) else rightMargin = dp(40) })
+            return l to t
+        }
+        fx(true, R.drawable.t_back10).let { fxL = it.first; fxLT = it.second }; fx(false, R.drawable.t_fwd10).let { fxR = it.first; fxRT = it.second }
+        unlockBtn = IconBtn(this, R.drawable.t_unlock, getString(R.string.unlock), 48, false).apply { visibility = View.GONE; setOnClickListener { setLocked(false) } }
+        root.addView(unlockBtn, FrameLayout.LayoutParams(-2, dp(48), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = dp(40) })
+    }
+
+    private val hideOsd = Runnable { if (::osd.isInitialized) osd.visibility = View.GONE }
+    private fun showOsd(icon: Int, frac: Float, text: String) { osdIcon.setImageResource(icon); osdBar.progress = (frac * 100).toInt(); osdText.text = text; osd.visibility = View.VISIBLE; ui.removeCallbacks(hideOsd); ui.postDelayed(hideOsd, 900) }
+
+    private fun showFx(left: Boolean, secs: Int) {
+        val v = if (left) fxL else fxR; (if (left) fxLT else fxRT).text = (if (left) "−" else "+") + secs + " s"
+        v.animate().cancel(); v.visibility = View.VISIBLE; v.alpha = 1f; v.scaleX = .85f; v.scaleY = .85f
+        v.animate().scaleX(1f).scaleY(1f).setDuration(140).withEndAction { v.animate().alpha(0f).setStartDelay(450).setDuration(250).withEndAction { v.visibility = View.GONE }.start() }.start()
+    }
+
+    private val hideUnlock = Runnable { if (::unlockBtn.isInitialized) unlockBtn.visibility = View.GONE }
+    private fun showUnlock() { unlockBtn.visibility = View.VISIBLE; ui.removeCallbacks(hideUnlock); ui.postDelayed(hideUnlock, 3000) }
+    private fun setLocked(on: Boolean) {
+        locked = on
+        if (on) { showOverlay(false); flash(getString(R.string.locked)); showUnlock() }
+        else { ui.removeCallbacks(hideUnlock); unlockBtn.visibility = View.GONE; showOverlay(true) }
+    }
+
+    private fun openCast() {
+        val ok = runCatching { startActivity(Intent(android.provider.Settings.ACTION_CAST_SETTINGS)) }.isSuccess
+        if (!ok) runCatching { startActivity(Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS)) }.onFailure { flash(getString(R.string.cast_unavailable)) }
+    }
+
+    private fun showDlg(dlg: Dialog) {
+        dlg.window?.setBackgroundDrawable(GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(Color.parseColor("#1C1C21")) })
+        dlg.window?.setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+        dlg.setOnDismissListener { resetHide() }
+        dlg.show()
+        dlg.window?.decorView?.systemUiVisibility = immersiveFlags(); dlg.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+        (dlg as? AlertDialog)?.listView?.requestFocus()
+        ui.removeCallbacks(hideRunnable)
+    }
+
+    private fun pickDialog(title: String, names: List<String>, checked: Int, onPick: (Int) -> Unit) {
+        val dlg = AlertDialog.Builder(this, R.style.Dialog_Cinema).setTitle(title)
+            .setSingleChoiceItems(names.toTypedArray(), checked) { d, w -> d.dismiss(); onPick(w) }.create()
+        showDlg(dlg); if (checked > 0) dlg.listView?.setSelection(checked)
+    }
+
+    /** Audio and subtitle choice in one dialog: two lists side by side (landscape) or one above the other (portrait). */
+    private fun chooseAudioSubs() {
+        val a = trackOpts(C.TRACK_TYPE_AUDIO); val t = trackOpts(C.TRACK_TYPE_TEXT)
+        if (a.names.isEmpty() && t.names.size <= 1) { flash(getString(R.string.none_available)); return }
+        val dm = resources.displayMetrics; val land = dm.widthPixels > dm.heightPixels
+        val box = LinearLayout(this).apply { orientation = if (land) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL; setPadding(dp(8), dp(12), dp(8), dp(12)) }
+        fun col(title: String, o: Opts): View {
+            val c = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            c.addView(TextView(this).apply { text = title.uppercase(); textSize = 12f; setTextColor(Color.parseColor("#9A9AA2")); typeface = Typeface.DEFAULT_BOLD; setPadding(dp(16), dp(6), dp(16), dp(6)) })
+            val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            fun render() {
+                list.removeAllViews()
+                o.names.forEachIndexed { i, n ->
+                    list.addView(TextView(this@PlayerActivity).apply {
+                        text = (if (i == o.checked) "✓  " else "     ") + n; textSize = 15f; setPadding(dp(16), dp(12), dp(16), dp(12)); isClickable = true
+                        setTextColor(if (i == o.checked) Color.WHITE else Color.parseColor("#C8C8D0")); typeface = if (i == o.checked) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                        setOnClickListener { o.acts[i](); o.checked = i; render() }
+                    }, LinearLayout.LayoutParams(-1, -2))
+                }
+            }
+            render()
+            if (land) c.addView(ScrollView(this).apply { addView(list) }, LinearLayout.LayoutParams(-1, 0, 1f)) else c.addView(list, LinearLayout.LayoutParams(-1, -2))
+            return c
+        }
+        if (a.names.isNotEmpty()) box.addView(col(getString(R.string.audio), a), LinearLayout.LayoutParams(if (land) 0 else -1, if (land) -1 else -2, 1f).apply { if (!land) weight = 0f })
+        if (t.names.size > 1) box.addView(col(getString(R.string.subtitles), t), LinearLayout.LayoutParams(if (land) 0 else -1, if (land) -1 else -2, 1f).apply { if (!land) weight = 0f })
+        val dlg = Dialog(this, android.R.style.Theme_Material_Dialog_NoActionBar)
+        dlg.setContentView(if (land) box else ScrollView(this).apply { addView(box) })
+        showDlg(dlg)
+        dlg.window?.setLayout(minOf((dm.widthPixels * .92f).toInt(), dp(if (land) 720 else 480)), if (land) (dm.heightPixels * .8f).toInt() else -2)
+    }
+
+    private fun showMore() {
+        val items = ArrayList<Pair<String, () -> Unit>>()
+        items.add(getString(R.string.sleep_timer) + (if (sleepAtEnd) " · " + getString(R.string.sleep_end) else if (sleepAt > 0) " · " + ((sleepAt - System.currentTimeMillis()) / 60000 + 1) + " min" else "") to { chooseSleep() })
+        items.add(getString(R.string.quality) + " · " + qualityName() to { chooseQuality() })
+        if (chapters.isNotEmpty()) items.add(getString(R.string.chapters) to { chooseChapter() })
+        if (item.optString("Type") == "Episode") items.add(getString(R.string.episodes) to { showEpisodes() })
+        items.add(getString(R.string.speed) to { chooseSpeed() })
+        items.add(getString(R.string.aspect) to { cycleAspect() })
+        val dlg = AlertDialog.Builder(this, R.style.Dialog_Cinema).setItems(items.map { it.first }.toTypedArray()) { d, w -> d.dismiss(); items[w].second() }.create()
+        showDlg(dlg)
+    }
+
+    private fun chooseSleep() {
+        val mins = intArrayOf(0, 15, 30, 45, 60, 90, -1)
+        val names = listOf(getString(R.string.off), "15 min", "30 min", "45 min", "60 min", "90 min", getString(R.string.sleep_end))
+        pickDialog(getString(R.string.sleep_timer), names, if (sleepAtEnd) 6 else 0) { w -> setSleep(mins[w]) }
+    }
+    private val sleepRunnable = Runnable { sleepAt = 0; player.pause(); flash(getString(R.string.sleep_fired)) }
+    private fun setSleep(min: Int) {
+        ui.removeCallbacks(sleepRunnable); sleepAtEnd = false; sleepAt = 0
+        when {
+            min > 0 -> { sleepAt = System.currentTimeMillis() + min * 60_000L; ui.postDelayed(sleepRunnable, min * 60_000L); flash(getString(R.string.sleep_set, min)) }
+            min < 0 -> { sleepAtEnd = true; hideNextCard(); flash(getString(R.string.sleep_end)) }
+            else -> flash(getString(R.string.off))
+        }
+    }
+
+    private val qualityMbit = intArrayOf(0, 20, 8, 4, 2, 1)
+    private fun qualityIndex() = qualityMbit.indexOf(if (maxBitrate >= 120_000_000) 0 else maxBitrate / 1_000_000).let { if (it < 0) 0 else it }
+    private fun qualityName() = if (qualityIndex() == 0) getString(R.string.quality_auto) else qualityMbit[qualityIndex()].toString() + " Mbit/s"
+    private fun chooseQuality() {
+        if (offlineLocal) { flash(getString(R.string.none_available)); return }
+        val names = qualityMbit.mapIndexed { i, v -> if (i == 0) getString(R.string.quality_auto) else "$v Mbit/s" }
+        pickDialog(getString(R.string.quality), names, qualityIndex()) { w ->
+            maxBitrate = if (qualityMbit[w] == 0) 120_000_000 else qualityMbit[w] * 1_000_000
+            trackPrefs.edit().putInt("maxBitrate", maxBitrate).apply()
+            val pos = player.currentPosition; flash(qualityName()); scope.launch { startStream(forceTranscode = maxBitrate < 120_000_000, resumeMs = pos) }
+        }
+    }
+
+    private fun chooseChapter() {
+        val cur = chapters.indexOfLast { it.first <= player.currentPosition }.coerceAtLeast(0)
+        pickDialog(getString(R.string.chapters), chapters.map { fmt(it.first) + "   " + it.second }, cur) { w -> player.seekTo(chapters[w].first); updateUi() }
+    }
+
+    private fun showEpisodes() {
+        val sid = item.optString("SeriesId"); if (sid.isEmpty()) return
+        val season = item.optString("SeasonId")
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { Http.request("GET", "${store.url}/Shows/$sid/Episodes?userId=${store.userId}" + (if (season.isNotEmpty()) "&seasonId=$season" else ""), store.authHeader()) }.getOrNull() }
+            val arr = r?.takeIf { it.ok }?.json()?.optJSONArray("Items")
+            if (arr == null || arr.length() == 0) { flash(getString(R.string.none_available)); return@launch }
+            val eps = (0 until arr.length()).map { arr.getJSONObject(it) }
+            val cur = eps.indexOfFirst { it.optString("Id") == itemId }
+            pickDialog(item.optString("SeasonName").ifEmpty { getString(R.string.episodes) }, eps.map { (if (it.optInt("IndexNumber") > 0) it.optInt("IndexNumber").toString() + ". " else "") + it.optString("Name") }, cur) { w ->
+                if (eps[w].optString("Id") != itemId) playEpisode(eps[w].getString("Id"))
+            }
+        }
     }
 
     private var softDecoders = false; private var uiLoop = false; private var netRetries = 0
@@ -234,8 +458,8 @@ class PlayerActivity : Activity() {
         if (isFinishing || isDestroyed) return
         runCatching {
             android.app.AlertDialog.Builder(this).setTitle(getString(R.string.play_failed)).setMessage(code).setCancelable(false)
-                .setPositiveButton("Erneut versuchen") { _, _ -> netRetries = 0; scope.launch { startStream(forceTranscode = true, resumeMs = resume) } }
-                .setNegativeButton("Schlie\u00dfen") { _, _ -> finish() }.show()
+                .setPositiveButton(R.string.retry) { _, _ -> netRetries = 0; scope.launch { startStream(forceTranscode = true, resumeMs = resume) } }
+                .setNegativeButton(R.string.close) { _, _ -> finish() }.show()
         }.onFailure { finish() }
     }
     private fun buildPlayer() {
@@ -249,7 +473,7 @@ class PlayerActivity : Activity() {
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 spinner.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
-                if (state == Player.STATE_ENDED) { if (nextItem != null && !ncDismiss) playNext() else finish() }
+                if (state == Player.STATE_ENDED) { if (nextItem != null && !ncDismiss && !sleepAtEnd) playNext() else finish() }
                 if (state == Player.STATE_READY) { netRetries = 0; updateUi() }
             }
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -269,7 +493,7 @@ class PlayerActivity : Activity() {
                 }
                 /* network trouble: try the same stream again a few times before changing anything */
                 val net = e.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED || e.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT || e.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
-                if (net && netRetries < 3) { netRetries++; val pos = player.currentPosition; flash("Verbindung \u2026 Versuch " + netRetries); ui.postDelayed({ scope.launch { startStream(forceTranscode = method == "Transcode", resumeMs = pos) } }, 2000L * netRetries); return }
+                if (net && netRetries < 3) { netRetries++; val pos = player.currentPosition; flash(getString(R.string.reconnecting, netRetries)); ui.postDelayed({ scope.launch { startStream(forceTranscode = method == "Transcode", resumeMs = pos) } }, 2000L * netRetries); return }
                 if (method != "Transcode") scope.launch { startStream(forceTranscode = true, resumeMs = player.currentPosition) }
                 else if (!softDecoders && e.errorCodeName.contains("DECOD")) {
                     /* the hardware decoder is not available: last resort is a software decoder (slower, but it plays) */
@@ -288,7 +512,7 @@ class PlayerActivity : Activity() {
         val subs = JSONArray()
         listOf("srt", "subrip", "ass", "ssa", "pgssub", "dvdsub", "dvbsub", "vtt", "webvtt").forEach { subs.put(JSONObject().put("Format", it).put("Method", "Embed")) }
         listOf("srt", "ass", "ssa", "vtt").forEach { subs.put(JSONObject().put("Format", it).put("Method", "External")) }
-        return JSONObject().put("Name", "Cinema TV").put("MaxStreamingBitrate", 120_000_000).put("MaxStaticBitrate", 200_000_000).put("DirectPlayProfiles", direct).put("TranscodingProfiles", trans).put("SubtitleProfiles", subs).put("CodecProfiles", JSONArray())
+        return JSONObject().put("Name", "Cinema TV").put("MaxStreamingBitrate", maxBitrate).put("MaxStaticBitrate", 200_000_000).put("DirectPlayProfiles", direct).put("TranscodingProfiles", trans).put("SubtitleProfiles", subs).put("CodecProfiles", JSONArray())
     }
 
     private suspend fun start(id: String, ticks: Long) {
@@ -301,6 +525,7 @@ class PlayerActivity : Activity() {
             if (local == null) { fail(if (r == null) "NETWORK" else "HTTP " + r.code, ticks / 10_000); return }
             item = JSONObject().put("Type", local.optString("type")).put("RunTimeTicks", local.optLong("runtime")).put("Name", local.optString("title"))
             titleView.text = local.optString("title"); subtitleView.text = local.optString("subtitle"); chapters = emptyList(); notifier?.invalidate()
+            if (phone) { episodesBtn.visibility = View.GONE; nextBtn.visibility = View.GONE }
             startStream(false, startTicks / 10_000); return
         }
         item = r.json()
@@ -309,6 +534,7 @@ class PlayerActivity : Activity() {
         subtitleView.text = if (isEp) "S${item.optInt("ParentIndexNumber")}:E${item.optInt("IndexNumber")} · ${item.optString("Name")}" else listOf(item.optInt("ProductionYear").takeIf { it > 0 }?.toString(), item.optString("OfficialRating").ifEmpty { null }).filterNotNull().joinToString(" · ")
         chapters = item.optJSONArray("Chapters")?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.map { (it.optLong("StartPositionTicks") / 10_000) to it.optString("Name") } } ?: emptyList()
         notifier?.invalidate()
+        if (phone) episodesBtn.visibility = if (isEp) View.VISIBLE else View.GONE
         startStream(false, startTicks / 10_000)
         scope.launch { loadSegments(id); loadNext() }
     }
@@ -354,10 +580,12 @@ class PlayerActivity : Activity() {
         stopped = false; report("Start")
     }
 
-    private suspend fun startStream(forceTranscode: Boolean, resumeMs: Long) {
+    /** [maxBitrate] below the server limit (chosen streaming quality) always means a transcode. */
+    private suspend fun startStream(forceTranscode: Boolean, resumeMs: Long) = startStreamImpl(forceTranscode || maxBitrate < 120_000_000, resumeMs)
+    private suspend fun startStreamImpl(forceTranscode: Boolean, resumeMs: Long) {
         if (offlineLocal) { startLocal(resumeMs); return }
         val body = JSONObject().put("DeviceProfile", deviceProfile()).toString()
-        var q = "UserId=${store.userId}&StartTimeTicks=${resumeMs * 10_000}&MaxStreamingBitrate=120000000&AutoOpenLiveStream=true" + if (forceTranscode) "&EnableDirectPlay=false&EnableDirectStream=false" else ""
+        var q = "UserId=${store.userId}&StartTimeTicks=${resumeMs * 10_000}&MaxStreamingBitrate=$maxBitrate&AutoOpenLiveStream=true" + if (forceTranscode) "&EnableDirectPlay=false&EnableDirectStream=false" else ""
         /* a transcode carries one audio track: ask for the language chosen for this series */
         if (forceTranscode) prefAudioIndex()?.let { q += "&AudioStreamIndex=$it" }
         val r = withContext(Dispatchers.IO) { runCatching { Http.request("POST", "${store.url}/Items/$itemId/PlaybackInfo?$q", store.authHeader(), body, 20000) }.getOrNull() }
@@ -386,7 +614,8 @@ class PlayerActivity : Activity() {
             builder.setUri(if (tu.startsWith("http")) tu else base + tu).setMimeType(MimeTypes.APPLICATION_M3U8)
         }
         setupTrickplay(); fillBadges()
-        player.setMediaItem(builder.build(), if (method == "DirectPlay") resumeMs else 0L)
+        /* the HLS playlist covers the whole film: resume there as well (a transcode used to restart at 0) */
+        player.setMediaItem(builder.build(), resumeMs)
         player.prepare(); player.playWhenReady = true
         stopped = false; report("Start")
     }
@@ -452,23 +681,29 @@ class PlayerActivity : Activity() {
     }
 
     private fun chooseSpeed() {
-        val speeds = floatArrayOf(.75f, 1f, 1.25f, 1.5f, 2f); val names = arrayOf("0.75×", "1×", "1.25×", "1.5×", "2×")
-        val checked = speeds.indexOfFirst { it == player.playbackParameters.speed }.let { if (it < 0) 1 else it }
+        val speeds = floatArrayOf(.5f, .75f, 1f, 1.25f, 1.5f, 1.75f, 2f); val names = arrayOf("0.5×", "0.75×", "1×", "1.25×", "1.5×", "1.75×", "2×")
+        val checked = speeds.indexOfFirst { it == player.playbackParameters.speed }.let { if (it < 0) 2 else it }
         val dlg = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle(R.string.speed)
-            .setSingleChoiceItems(names, checked) { d, w -> player.setPlaybackSpeed(speeds[w]); speedBtn.setLabel(names[w]); d.dismiss(); resetHide() }.create()
+            .setSingleChoiceItems(names, checked) { d, w -> player.setPlaybackSpeed(speeds[w]); speedBtn.setLabel(names[w]); if (phone) flash(names[w]); d.dismiss(); resetHide() }.create()
         dlg.window?.setBackgroundDrawable(GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(Color.parseColor("#1C1C21")) })
         dlg.show(); dlg.listView?.requestFocus()
     }
 
-    private fun chooseTrack(type: Int) {
+    private class Opts(val names: ArrayList<String>, val acts: ArrayList<() -> Unit>, var checked: Int)
+    private fun trackOpts(type: Int): Opts {
         val groups = player.currentTracks.groups.filter { it.type == type }
         val names = ArrayList<String>(); val actions = ArrayList<() -> Unit>(); var checked = 0
         if (type == C.TRACK_TYPE_TEXT) { names.add(getString(R.string.off)); actions.add { player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build(); rememberTrack(type, null) } }
         groups.forEach { g -> for (i in 0 until g.length) { if (g.isTrackSelected(i)) checked = names.size; names.add(trackLabel(g.getTrackFormat(i), type, names.size)); actions.add { selectGroup(g, i); rememberTrack(type, g.getTrackFormat(i)) } } }
         if (type == C.TRACK_TYPE_TEXT && player.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)) checked = 0
-        if (names.isEmpty() || (type == C.TRACK_TYPE_TEXT && names.size == 1)) { flash(getString(R.string.none_available)); return }
+        return Opts(names, actions, checked)
+    }
+
+    private fun chooseTrack(type: Int) {
+        val o = trackOpts(type)
+        if (o.names.isEmpty() || (type == C.TRACK_TYPE_TEXT && o.names.size == 1)) { flash(getString(R.string.none_available)); return }
         val dlg = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).setTitle(if (type == C.TRACK_TYPE_AUDIO) R.string.audio else R.string.subtitles)
-            .setSingleChoiceItems(names.toTypedArray(), checked) { d, w -> actions[w](); d.dismiss(); resetHide() }.create()
+            .setSingleChoiceItems(o.names.toTypedArray(), o.checked) { d, w -> o.acts[w](); d.dismiss(); resetHide() }.create()
         dlg.window?.setBackgroundDrawable(GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(Color.parseColor("#1C1C21")) })
         dlg.show(); dlg.listView?.requestFocus()
     }
@@ -503,7 +738,8 @@ class PlayerActivity : Activity() {
         nextBtn.visibility = if (nextItem != null) View.VISIBLE else View.GONE
     }
 
-    private fun playNext() { val n = nextItem ?: return; hideNextCard(); report("Stopped"); scope.launch { player.stop(); start(n.getString("Id"), 0) } }
+    private fun playNext() { val n = nextItem ?: return; playEpisode(n.getString("Id")) }
+    private fun playEpisode(id: String) { hideNextCard(); report("Stopped"); scope.launch { player.stop(); start(id, 0) } }
 
     /** Skip button for intro, recap and (when no up-next card takes over) the credits. */
     private fun activeSegment(): Seg? {
@@ -522,7 +758,7 @@ class PlayerActivity : Activity() {
     /** Shows the card when the credits start (Outro segment) or 20 s before the end; after the credits countdown the next episode starts. */
     private fun checkNextCard() {
         val n = nextItem; val d = player.duration
-        if (n == null || ncDismiss || d <= 0 || offlineLocal) { hideNextCard(); return }
+        if (n == null || ncDismiss || d <= 0 || offlineLocal || sleepAtEnd) { hideNextCard(); return }
         val pos = player.currentPosition; val left = d - pos
         val out = segments.firstOrNull { it.type == "Outro" && it.start > d / 2 && it.start < d - 2000 }
         val from = out?.start ?: (d - 20_000)
@@ -578,9 +814,10 @@ class PlayerActivity : Activity() {
 
     private fun updateScrub() {
         val d = duration(); val frac = if (d > 0) scrubMs.toFloat() / d else 0f
-        seek.set(frac, player.bufferedPosition.toFloat() / (if (d > 0) d else 1)); curTime.text = fmt(scrubMs); remTime.text = "-" + fmt(d - scrubMs)
+        seek.set(frac, player.bufferedPosition.toFloat() / (if (d > 0) d else 1)); setTimes(scrubMs, d)
         previewTime.text = fmt(scrubMs); previewChap.text = chapters.lastOrNull { it.first <= scrubMs }?.second ?: ""
-        val W = resources.displayMetrics.widthPixels; val barL = dp(44); val barW = W - dp(88); val cw = dp(220)
+        val W = resources.displayMetrics.widthPixels; val cw = dp(220)
+        val loc = IntArray(2); seek.getLocationInWindow(loc); val barL = if (seek.width > 0) loc[0] else dp(44); val barW = if (seek.width > 0) seek.width else W - dp(88)
         val lp = preview.layoutParams as FrameLayout.LayoutParams
         lp.leftMargin = (barL + frac * barW - cw / 2f).toInt().coerceIn(dp(24), W - dp(24) - cw); preview.layoutParams = lp
         preview.visibility = View.VISIBLE; loadThumb(scrubMs)
@@ -610,24 +847,34 @@ class PlayerActivity : Activity() {
     private fun flash(t: String) { toast.text = t; toast.visibility = View.VISIBLE; ui.removeCallbacks(hideToast); ui.postDelayed(hideToast, 900) }
     private val hideToast = Runnable { toast.visibility = View.GONE }
     private fun fmt(ms: Long): String { val s = (ms / 1000).coerceAtLeast(0); val h = s / 3600; val m = (s % 3600) / 60; val sec = s % 60; return if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%d:%02d".format(m, sec) }
+    private fun setTimes(p: Long, d: Long) {
+        curTime.text = fmt(p)
+        remTime.text = if (phone) "-" + fmt(d - p) + " / " + fmt(d) else "-" + fmt(d - p)
+    }
     private fun updateUi() {
         if (scrubbing) return
         val d = duration(); val p = player.currentPosition
         seek.chapters = if (d > 0) chapters.map { it.first.toFloat() / d }.filter { it > 0.01f && it < 0.99f }.toFloatArray() else FloatArray(0)
         seek.set(if (d > 0) p.toFloat() / d else 0f, if (d > 0) player.bufferedPosition.toFloat() / d else 0f)
-        curTime.text = fmt(p); remTime.text = "-" + fmt(d - p)
+        setTimes(p, d)
         if (d > 0) endsAt.text = getString(R.string.ends_at) + " " + DateFormat.getTimeFormat(this).format(Date(System.currentTimeMillis() + (d - p)))
     }
     private fun showOverlay(on: Boolean, focusSeek: Boolean = false) {
         overlayOn = on; overlay.visibility = if (on) View.VISIBLE else View.GONE
         view.subtitleView?.setBottomPaddingFraction(if (on) 0.3f else 0.08f)
+        if (phone) {
+            (skipBtn.layoutParams as FrameLayout.LayoutParams).bottomMargin = dp(if (on) 170 else 40); skipBtn.requestLayout()
+            (nextCard.layoutParams as FrameLayout.LayoutParams).bottomMargin = dp(if (on) 170 else 24); nextCard.requestLayout()
+            (preview.layoutParams as FrameLayout.LayoutParams).bottomMargin = dp(140)
+        }
         if (on) { updateUi(); (if (focusSeek) seek else ppBtn).requestFocus(); resetHide() } else { ui.removeCallbacks(hideRunnable); preview.visibility = View.GONE }
     }
-    private fun resetHide() { ui.removeCallbacks(hideRunnable); if (overlayOn) ui.postDelayed(hideRunnable, 5000) }
+    private fun resetHide() { ui.removeCallbacks(hideRunnable); if (overlayOn) ui.postDelayed(hideRunnable, if (phone) 4000 else 5000) }
 
     /* ---------------- touch (phone / tablet) ---------------- */
     private var gestureMode = 0   // 0 none, 1 brightness, 2 volume, 3 seek, 4 ignored
     private var gesBright = 0f; private var gesVol = 0f; private var gesSeekStart = 0L; private var pinch = 1f
+    private var multiUntil = 0L; private var multiSecs = 0; private var multiLeft = false; private var swallowUntil = 0L
 
     private fun brightnessNow(): Float {
         val b = window.attributes.screenBrightness
@@ -635,18 +882,39 @@ class PlayerActivity : Activity() {
         return runCatching { android.provider.Settings.System.getInt(contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS) / 255f }.getOrDefault(.5f)
     }
 
-    /** Left edge: swipe up/down = brightness. Right edge: volume. Anywhere else, swipe sideways = seek. Double tap sides = 10 s, middle = pause. Pinch = fit / fill. */
+    /** Double tap (or quick further taps) on the left / right third: 10 s back / forward, adding up while the taps continue. */
+    private fun sideJump(left: Boolean) {
+        val now = System.currentTimeMillis()
+        multiSecs = if (now < multiUntil && multiLeft == left) multiSecs + 10 else 10
+        multiLeft = left; multiUntil = now + 700; swallowUntil = now + 450
+        val d = duration().takeIf { it > 0 } ?: Long.MAX_VALUE
+        player.seekTo((player.currentPosition + (if (left) -10_000L else 10_000L)).coerceIn(0, d - 500))
+        showFx(left, multiSecs); updateUi(); resetHide()
+    }
+    private fun zoneOf(e: MotionEvent): Int { val x = e.x / view.width.coerceAtLeast(1); return when { x < .35f -> -1; x > .65f -> 1; else -> 0 } }
+
+    /** Tap = show / hide the controls. Double tap sides = 10 s, middle = pause. Left edge swipe up/down = brightness, right edge = volume, anywhere else swipe sideways = seek. Pinch = fit / fill. */
     private fun setupTouch() {
         val gd = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent) = true
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean { showOverlay(!overlayOn); return true }
+            override fun onSingleTapUp(e: MotionEvent): Boolean {
+                if (locked) return false
+                val z = zoneOf(e)
+                if (z != 0 && System.currentTimeMillis() < multiUntil) { sideJump(z < 0); return true }
+                return false
+            }
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (System.currentTimeMillis() < swallowUntil) return true
+                if (locked) showUnlock() else showOverlay(!overlayOn)
+                return true
+            }
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                val x = e.x / view.width
-                when { x < .35f -> jump(-10_000); x > .65f -> jump(10_000); else -> togglePlay() }
+                if (locked) return true
+                when (zoneOf(e)) { -1 -> sideJump(true); 1 -> sideJump(false); else -> { swallowUntil = System.currentTimeMillis() + 450; togglePlay() } }
                 return true
             }
             override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
-                if (e1 == null) return false
+                if (e1 == null || locked) return false
                 if (gestureMode == 0) {
                     val w = view.width.toFloat(); val vertical = Math.abs(e2.y - e1.y) > Math.abs(e2.x - e1.x)
                     gestureMode = when {
@@ -660,20 +928,20 @@ class PlayerActivity : Activity() {
                 }
                 val h = view.height.toFloat().coerceAtLeast(1f)
                 when (gestureMode) {
-                    1 -> { gesBright = (gesBright + dy / h * 1.2f).coerceIn(0.02f, 1f); window.attributes = window.attributes.apply { screenBrightness = gesBright }; flash(getString(R.string.brightness) + " " + Math.round(gesBright * 100) + "%") }
-                    2 -> { val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC); gesVol = (gesVol + dy / h * max * 1.2f).coerceIn(0f, max.toFloat()); audio.setStreamVolume(AudioManager.STREAM_MUSIC, gesVol.toInt(), 0); flash(getString(R.string.volume) + " " + Math.round(gesVol * 100 / max) + "%") }
+                    1 -> { gesBright = (gesBright + dy / h * 1.2f).coerceIn(0.02f, 1f); window.attributes = window.attributes.apply { screenBrightness = gesBright }; showOsd(R.drawable.t_bright, gesBright, Math.round(gesBright * 100).toString() + "%") }
+                    2 -> { val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC); gesVol = (gesVol + dy / h * max * 1.2f).coerceIn(0f, max.toFloat()); audio.setStreamVolume(AudioManager.STREAM_MUSIC, gesVol.toInt(), 0); showOsd(R.drawable.t_vol, gesVol / max, Math.round(gesVol * 100 / max).toString() + "%") }
                     3 -> { val d = duration(); scrubMs = (gesSeekStart + ((e2.x - e1.x) / view.width * 120_000f).toLong()).coerceIn(0, (d - 1000).coerceAtLeast(0)); updateScrub() }
                 }
                 return true
             }
         })
         val sg = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScaleBegin(d: ScaleGestureDetector): Boolean { pinch = 1f; return true }
+            override fun onScaleBegin(d: ScaleGestureDetector): Boolean { pinch = 1f; return !locked }
             override fun onScale(d: ScaleGestureDetector): Boolean { pinch *= d.scaleFactor; return true }
             override fun onScaleEnd(d: ScaleGestureDetector) { if (pinch > 1.12f) { setAspect(1) } else if (pinch < 0.88f) { setAspect(0) } }
         })
         view.setOnTouchListener { _, ev ->
-            sg.onTouchEvent(ev)
+            if (!locked) sg.onTouchEvent(ev)
             if (!sg.isInProgress && ev.pointerCount == 1) gd.onTouchEvent(ev)
             if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) {
                 if (gestureMode == 3) commitScrub()
@@ -707,7 +975,7 @@ class PlayerActivity : Activity() {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPip = isInPictureInPictureMode
-        if (inPip) { pipSeen = true; showOverlay(false); centerIcon.visibility = View.GONE; toast.visibility = View.GONE; skipBtn.visibility = View.GONE; hideNextCard() }
+        if (inPip) { pipSeen = true; showOverlay(false); if (phone) { osd.visibility = View.GONE; unlockBtn.visibility = View.GONE }; centerIcon.visibility = View.GONE; toast.visibility = View.GONE; skipBtn.visibility = View.GONE; hideNextCard() }
     }
 
     /* ---------------- media session + notification (phone / tablet) ---------------- */
@@ -746,6 +1014,11 @@ class PlayerActivity : Activity() {
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { scrubStep(1, 8); return true }
             KeyEvent.KEYCODE_MEDIA_REWIND -> { scrubStep(-1, 8); return true }
             KeyEvent.KEYCODE_MEDIA_NEXT -> { if (nextItem != null) playNext(); return true }
+        }
+        if (phone && (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_ESCAPE)) {
+            if (locked) { showUnlock(); return true }
+            if (scrubbing) { cancelScrub(); return true }
+            finish(); return true
         }
         if (scrubbing) {
             when (k) {
@@ -803,16 +1076,19 @@ class PlayerActivity : Activity() {
 /** Seek bar: chapter ticks, grows and shows a knob when focused; left/right is handled by the player as scrubbing. */
 class SeekView(ctx: Context) : View(ctx) {
     var onScrub: ((Int, Int) -> Unit)? = null
+    private var touching = false
     var onTouchSeek: ((Float, Boolean) -> Unit)? = null
     override fun onTouchEvent(e: MotionEvent): Boolean {
         val f = (e.x / width.coerceAtLeast(1)).coerceIn(0f, 1f)
         when (e.actionMasked) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> { parent?.requestDisallowInterceptTouchEvent(true); onTouchSeek?.invoke(f, false) }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> onTouchSeek?.invoke(f, true)
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> { touching = true; parent?.requestDisallowInterceptTouchEvent(true); onTouchSeek?.invoke(f, false) }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { touching = false; invalidate(); onTouchSeek?.invoke(f, true) }
         }
         return true
     }
     var chapters = FloatArray(0)
+    /** Phone look: red progress bar, the red knob is always there. */
+    var red = false
     private var p = 0f; private var b = 0f
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     fun set(progress: Float, buffered: Float) { p = progress.coerceIn(0f, 1f); b = buffered.coerceIn(0f, 1f); invalidate() }
@@ -826,9 +1102,10 @@ class SeekView(ctx: Context) : View(ctx) {
         val h = if (isFocused) 10f * d else 6f * d; val cy = height / 2f; val r = h / 2
         paint.color = Color.parseColor("#44FFFFFF"); c.drawRoundRect(0f, cy - r, width.toFloat(), cy + r, r, r, paint)
         paint.color = Color.parseColor("#66FFFFFF"); c.drawRoundRect(0f, cy - r, width * b, cy + r, r, r, paint)
-        paint.color = Color.WHITE; c.drawRoundRect(0f, cy - r, width * p, cy + r, r, r, paint)
+        paint.color = if (red) Color.parseColor("#E5252A") else Color.WHITE; c.drawRoundRect(0f, cy - r, width * p, cy + r, r, r, paint)
         paint.color = Color.parseColor("#B0000000"); chapters.forEach { c.drawRect(width * it - d, cy - r, width * it + d, cy + r, paint) }
-        if (isFocused) { paint.color = Color.WHITE; c.drawCircle(width * p, cy, h * 1.05f, paint) }
+        if (red) { paint.color = Color.parseColor("#E5252A"); c.drawCircle((width * p).coerceIn(h, width - h), cy, h * (if (touching) 2.4f else 1.9f), paint) }
+        else if (isFocused) { paint.color = Color.WHITE; c.drawCircle(width * p, cy, h * 1.05f, paint) }
     }
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) { super.onFocusChanged(gainFocus, direction, previouslyFocusedRect); invalidate() }
 }

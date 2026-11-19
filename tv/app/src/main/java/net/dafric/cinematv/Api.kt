@@ -9,6 +9,7 @@ import java.util.UUID
 
 /** Persistent login data (server, token) and the small Jellyfin HTTP helper used by the native screens. */
 class Store(ctx: Context) {
+    private val version = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "2"
     private val p = ctx.applicationContext.getSharedPreferences("cinema", Context.MODE_PRIVATE)
     var url: String get() = p.getString("url", "") ?: ""; set(v) = p.edit().putString("url", v).apply()
     var token: String get() = p.getString("token", "") ?: ""; set(v) = p.edit().putString("token", v).apply()
@@ -22,7 +23,7 @@ class Store(ctx: Context) {
     fun clearLogin() { p.edit().remove("token").remove("userId").remove("userName").apply() }
     fun authHeader(withToken: Boolean = true): String {
         val dev = (Build.MODEL ?: "Android TV").replace("\"", "")
-        return "MediaBrowser Client=\"Cinema\", Device=\"$dev\", DeviceId=\"$deviceId\", Version=\"2.1.0\"" + if (withToken && token.isNotEmpty()) ", Token=\"$token\"" else ""
+        return "MediaBrowser Client=\"Cinema\", Device=\"$dev\", DeviceId=\"$deviceId\", Version=\"$version\"" + if (withToken && token.isNotEmpty()) ", Token=\"$token\"" else ""
     }
 }
 
