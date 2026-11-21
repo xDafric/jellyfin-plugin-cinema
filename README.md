@@ -37,6 +37,12 @@ dotnet build plugin\Jellyfin.Plugin.Cinema -c Release
 ```
 The interface source is in `src/`, the plugin in `plugin/`.
 
+## Repository layout
+- `src/` web interface (built by `build.js` into `dist/cinema.js`), `plugin/` the Jellyfin plugin that serves it.
+- `tv/` Android app for phone, tablet and TV, `desktop/` Windows app (Tauri), `branding/` icon sources.
+- `releases/` plugin zips (listed in `manifest.json`). Apps and installers are not kept in git: they live on the GitHub release page, uploaded by `scripts/release.py`.
+- `PLATFORM.md` the contract between the interface and the native apps.
+
 ## Release a new version
 1. Bump the version in `plugin/Jellyfin.Plugin.Cinema/Jellyfin.Plugin.Cinema.csproj` and in `meta.json`.
 2. Zip the DLL and `meta.json` (no folder inside the zip) as `releases/Cinema_<version>.zip`.
