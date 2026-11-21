@@ -37,6 +37,7 @@ ${r('homerows.js')}
 ${r('musicx.js')}
 ${r('music2.js')}
 ${r('music.js')}
+${r('connect.js')}
 ${r('appnative.js')}
 ${r('tv.js')}
 ${r('boot.js')}

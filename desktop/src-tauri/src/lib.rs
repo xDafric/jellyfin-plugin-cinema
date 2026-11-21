@@ -278,7 +278,7 @@ fn build_window(app: &AppHandle, cfg: &Config) -> tauri::Result<WebviewWindow> {
     #[cfg(windows)]
     {
         b = b.additional_browser_args(
-            if cfg!(debug_assertions) { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --remote-debugging-port=9333" } else { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection" },
+            if cfg!(debug_assertions) { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required --remote-debugging-port=9333" } else { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required" },
         );
     }
     let w = b.build()?;

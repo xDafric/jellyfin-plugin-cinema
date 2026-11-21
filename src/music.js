@@ -138,7 +138,7 @@ function buildPlayer() {
   const bMute = h('button', { class: 'pl-btn', onclick: () => { P.audio.muted = !P.audio.muted; vol.set(P.audio.muted ? 0 : P.audio.volume); } }, ic('vol'));
   const upMute = () => bMute.replaceChildren(ic(P.audio.muted || P.audio.volume === 0 ? 'volx' : 'vol')); P.audio.addEventListener('volumechange', upMute);
   const bL = h('button', { class: 'pl-btn', onclick: toggleLyrics, 'aria-label': t('lyrics') }, ic('mic'));
-  const right = h('div', { class: 'pl-r' }, cfg('musicLyrics') ? bL : null, bQ, bMute, vol);
+  const right = h('div', { class: 'pl-r' }, cfg('musicLyrics') ? bL : null, bQ, connectButton(), bMute, vol);
   const bar = h('div', { class: 'sp-player' }, left, center, right);
 
   /* mobile mini + full */
@@ -158,7 +158,7 @@ function buildPlayer() {
   const fcur = h('span', {}, '0:00'), fdur = h('span', {}, '0:00');
   const fseek = seekBar(null, (f, commit) => { if (P.audio.duration) { if (commit) P.audio.currentTime = f * P.audio.duration; fcur.textContent = fmtTime(f * P.audio.duration); } });
   const fb = { sh: h('button', { class: 'pl-btn', onclick: toggleShuffle }, ic('shuffle')), pv: h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), pp: h('button', { class: 'pl-btn big', onclick: toggle }, ic('play')), nx: h('button', { class: 'pl-btn', onclick: () => next() }, ic('next')), rp: h('button', { class: 'pl-btn', onclick: cycleRepeat }, ic('repeat')) };
-  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { class: 'tops' }, h('button', { class: 'pl-btn', onclick: () => toggleLyrics() }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => toggleQueue() }, ic('queue')), h('button', { class: 'pl-btn', 'aria-label': t('more'), onclick: e => { const it = cur(); if (it) trackMenu(e, it); } }, ic('more')))), fcv,
+  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { class: 'tops' }, h('button', { class: 'pl-btn', onclick: () => toggleLyrics() }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => toggleQueue() }, ic('queue')), connectButton(), h('button', { class: 'pl-btn', 'aria-label': t('more'), onclick: e => { const it = cur(); if (it) trackMenu(e, it); } }, ic('more')))), fcv,
     h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), h('div', { class: 'meta-act' }, h('button', { class: 'pl-btn', 'aria-label': t('addToPl'), title: t('addToPl'), onclick: e => { const it = cur(); if (it) playlistPicker(e, it); } }, ic('plus')), fLike)), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
   /* the phone's back button / swipe closes the player (or the lyrics / queue layer on top of it) instead of leaving the music page */
   BACK.closeFull = () => { full.classList.remove('open'); full.style.transform = ''; };
