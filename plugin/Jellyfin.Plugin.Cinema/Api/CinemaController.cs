@@ -881,6 +881,89 @@ public class CinemaController : ControllerBase
         }
     }
 
+    /// <summary>All LRCLIB versions of a song, so one can pick a different one (like choosing another picture).</summary>
+    [HttpGet("music/lyrics/versions")]
+    [Authorize]
+    public async Task<IActionResult> MusicLyricsVersions([FromQuery] string track, [FromQuery] string artist, CancellationToken ct)
+    {
+        track = (track ?? string.Empty).Trim();
+        artist = (artist ?? string.Empty).Trim();
+        if (!Cfg.ExternalSongSearch || track.Length == 0 || track.Length > 160 || artist.Length > 160)
+        {
+            return Content("[]", "application/json");
+        }
+
+        var ck = "lrcv|" + track.ToLowerInvariant() + "|" + artist.ToLowerInvariant();
+        if (SongCache.TryGetValue(ck, out var hit) && DateTime.UtcNow - hit.At < TimeSpan.FromHours(6))
+        {
+            return Content(hit.Json, "application/json");
+        }
+
+        try
+        {
+            var seen = new HashSet<long>();
+            var res = new JsonArray();
+            foreach (var url in new[]
+            {
+                "https://lrclib.net/api/search?track_name=" + Uri.EscapeDataString(track) + "&artist_name=" + Uri.EscapeDataString(artist),
+                "https://lrclib.net/api/search?q=" + Uri.EscapeDataString((artist + " " + track).Trim()),
+            })
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                req.Headers.TryAddWithoutValidation("User-Agent", "JellyfinCinema/1.0");
+                using var resp = await Client().SendAsync(req, ct).ConfigureAwait(false);
+                if (!resp.IsSuccessStatusCode || JsonNode.Parse(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false)) is not JsonArray arr)
+                {
+                    continue;
+                }
+
+                foreach (var n in arr)
+                {
+                    if (n is null || res.Count >= 25 || n["instrumental"]?.GetValue<bool>() == true)
+                    {
+                        continue;
+                    }
+
+                    var synced = n["syncedLyrics"]?.GetValue<string>();
+                    var plain = n["plainLyrics"]?.GetValue<string>();
+                    if (string.IsNullOrWhiteSpace(synced) && string.IsNullOrWhiteSpace(plain))
+                    {
+                        continue;
+                    }
+
+                    var id = n["id"]?.GetValue<long>() ?? 0;
+                    if (id != 0 && !seen.Add(id))
+                    {
+                        continue;
+                    }
+
+                    res.Add(new JsonObject
+                    {
+                        ["title"] = n["trackName"]?.GetValue<string>(),
+                        ["artist"] = n["artistName"]?.GetValue<string>(),
+                        ["album"] = n["albumName"]?.GetValue<string>(),
+                        ["duration"] = n["duration"]?.GetValue<double>() ?? 0,
+                        ["synced"] = synced,
+                        ["plain"] = plain,
+                    });
+                }
+
+                if (res.Count >= 6)
+                {
+                    break;
+                }
+            }
+
+            var json = res.ToJsonString();
+            SongCache[ck] = (DateTime.UtcNow, json);
+            return Content(json, "application/json");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, new { error = ex.Message });
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private HttpClient Client()

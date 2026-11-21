@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.61.0",
+                             "changelog":  "Lyrics: synced LRCLIB lyrics replace unsynced local ones, pick another LRCLIB version, and save the chosen one as official Jellyfin lyrics (admins).",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.61.0.zip",
+                             "checksum":  "6dbeeb8b2f89b8f908d28a504bc30d6d",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.60.0",
                              "changelog":  "Lyrics: songs without lyrics from Jellyfin are now looked up on LRCLIB (synced when available). Desktop lyrics panel no longer shows a second set of player controls.",
                              "targetAbi":  "12.4.0.0",

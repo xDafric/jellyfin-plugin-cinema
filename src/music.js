@@ -511,23 +511,28 @@ C.updateNPill = function () {
 };
 
 /* ---------- lyrics (plain + time-synced, straight from Jellyfin's lyric providers / .lrc files) ---------- */
-Object.assign(TX.en, { lyrics: 'Lyrics', noLyrics: 'No lyrics found for this song.', lyrSynced: 'Synced', lyrPlain: 'Not synced' });
-Object.assign(TX.de, { lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
+Object.assign(TX.en, { lyrOther: 'Other version', lyrNone: 'No other versions found', lyrBack: 'Back', lyrSyncTag: 'synced', lyrPlainTag: 'text only', lyrSave: 'Save as official lyrics', lyrSaved: 'Saved to Jellyfin', lyrSaveErr: 'Could not save (needs write access to the music folder)', lyrics: 'Lyrics', noLyrics: 'No lyrics found for this song.', lyrSynced: 'Synced', lyrPlain: 'Not synced' });
+Object.assign(TX.de, { lyrOther: 'Andere Version', lyrNone: 'Keine weiteren Versionen gefunden', lyrBack: 'Zurück', lyrSyncTag: 'synchron', lyrPlainTag: 'nur Text', lyrSave: 'Als offiziellen Songtext speichern', lyrSaved: 'In Jellyfin gespeichert', lyrSaveErr: 'Speichern nicht möglich (Schreibzugriff auf den Musikordner nötig)', lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
 /* Jellyfin's own lyric providers first; when they find nothing, look the song up on LRCLIB (through the plugin, so only title/artist/length leave the server) */
-const lyrMem = new Map();
+const lyrMem = new Map(), lyrWeb = new Map(); let lyrAdmin = null;
 async function fetchLyrics(it) {
+  if (lyrAdmin == null) { try { lyrAdmin = !!((await me()).Policy || {}).IsAdministrator; } catch (e) { } }
   if (lyrMem.has(it.Id)) return lyrMem.get(it.Id);
   let lines = [];
   try { const r = await api('Audio/' + it.Id + '/Lyrics'); lines = (r.Lyrics || []).map(l => ({ t: l.Start != null ? l.Start / 1e7 : null, s: l.Text })); } catch (e) { }
-  if (!lines.some(l => l.s)) {
+  /* nothing local, or only unsynced text: ask LRCLIB; a synced match replaces unsynced local text, otherwise the local text stays */
+  const timed = ls => ls.length > 0 && ls.filter(l => l.t != null).length > ls.length / 2;
+  if (!lines.some(l => l.s) || !timed(lines)) {
     try {
       const r = await cget('/music/lyrics', { track: it.Name, artist: (it.Artists && it.Artists[0]) || it.AlbumArtist || '', duration: Math.round((it.RunTimeTicks || 0) / 1e7) });
-      if (r && r.synced) lines = r.synced.split(/\r?\n/).map(x => { const m = x.match(/^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/); return m ? { t: +m[1] * 60 + +m[2], s: m[3] } : null; }).filter(Boolean);
-      else if (r && r.plain) lines = r.plain.split(/\r?\n/).map(s => ({ t: null, s: s.trim() }));
+      const syn = r && r.synced ? r.synced.split(/\r?\n/).map(x => { const m = x.match(/^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/); return m ? { t: +m[1] * 60 + +m[2], s: m[3] } : null; }).filter(Boolean) : [];
+      if (syn.length) { lines = syn; lyrWeb.set(it.Id, { text: r.synced, ext: 'lrc' }); }
+      else if (!lines.some(l => l.s) && r && r.plain) { lines = r.plain.split(/\r?\n/).map(s => ({ t: null, s: s.trim() })); lyrWeb.set(it.Id, { text: r.plain, ext: 'txt' }); }
     } catch (e) { }
   }
   if (lyrMem.size > 40) lyrMem.delete(lyrMem.keys().next().value); lyrMem.set(it.Id, lines); return lines;
 }
+let lyrPick = null;
 let lyrEl = null, lyrLines = null, lyrId = null, lyrAt = -1, lyrSynced = false;
 function toggleLyrics() {
   if (lyrEl) { lyrEl.remove(); lyrEl = null; panelClosed(); return; }
@@ -535,21 +540,41 @@ function toggleLyrics() {
   lyrEl = h('div', { class: 'sp-queue sp-lyrics' }); panelHost().append(lyrEl); const it = cur(); if (it) loadLyrics(it); else drawLyrics(); panelOpened();
 }
 async function loadLyrics(it) {
-  lyrId = it.Id; lyrLines = null; lyrAt = -1; drawLyrics(true);
+  lyrId = it.Id; lyrLines = null; lyrAt = -1; lyrPick = null; drawLyrics(true);
   try { const r = await fetchLyrics(it); if (lyrId !== it.Id) return; lyrLines = r; lyrSynced = lyrLines.length > 0 && lyrLines.filter(l => l.t != null).length > lyrLines.length / 2; }
   catch (e) { if (lyrId !== it.Id) return; lyrLines = []; lyrSynced = false; }
   drawLyrics();
+}
+const lrcParse = txt => String(txt || '').split(/\r?\n/).map(x => { const m = x.match(/^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/); return m ? { t: +m[1] * 60 + +m[2], s: m[3] } : null; }).filter(Boolean);
+async function pickLyrics() {
+  const it = cur(); if (!it) return;
+  if (lyrPick) { lyrPick = null; drawLyrics(); return; }
+  lyrPick = 'loading'; drawLyrics();
+  let list = [];
+  try { list = await cget('/music/lyrics/versions', { track: it.Name, artist: (it.Artists && it.Artists[0]) || it.AlbumArtist || '' }); } catch (e) { }
+  if (lyrId !== it.Id || !lyrPick) return;
+  lyrPick = Array.isArray(list) ? list : []; drawLyrics();
+}
+function applyLyrics(it, v) {
+  const lines = v.synced ? lrcParse(v.synced) : String(v.plain || '').split(/\r?\n/).map(x => ({ t: null, s: x.trim() }));
+  lyrWeb.set(it.Id, { text: v.synced || v.plain, ext: v.synced ? 'lrc' : 'txt' });
+  lyrMem.set(it.Id, lines); lyrLines = lines; lyrAt = -1; lyrSynced = lines.length > 0 && lines.filter(l => l.t != null).length > lines.length / 2; lyrPick = null; drawLyrics();
 }
 function drawLyrics(loading) {
   if (!lyrEl) return; const it = cur();
   const head = h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, t('lyrics')), h('button', { class: 'pl-btn', onclick: toggleLyrics }, ic('close')));
   const sub_ = it ? h('div', { class: 'lyr-song' }, h('b', { class: 'ell' }, it.Name), h('span', { class: 'ell' }, artistText(it) + (lyrLines && lyrLines.length ? ' · ' + (lyrSynced ? t('lyrSynced') : t('lyrPlain')) : ''))) : null;
   let body;
-  if (loading || lyrLines == null) body = h('div', { class: 'spinner', style: 'margin:60px auto' });
+  if (lyrPick) body = lyrPick === 'loading' ? h('div', { class: 'spinner', style: 'margin:60px auto' }) : (lyrPick.length ? h('div', { class: 'lyr-vers' }, lyrPick.map(v => h('button', { class: 'lyr-ver', onclick: () => applyLyrics(it, v) }, h('b', { class: 'ell' }, v.title || it.Name), h('span', { class: 'ell' }, [v.artist, v.album].filter(Boolean).join(' · ')), h('span', { class: 'lyr-meta' }, fmtTime(v.duration) + ' · ' + (v.synced ? t('lyrSyncTag') : t('lyrPlainTag')))))) : h('div', { class: 'nf-empty', style: 'padding:40px 10px' }, t('lyrNone')));
+  else if (loading || lyrLines == null) body = h('div', { class: 'spinner', style: 'margin:60px auto' });
   else if (!lyrLines.length) body = h('div', { class: 'nf-empty', style: 'padding:40px 10px' }, t('noLyrics'));
   else body = h('div', { class: 'lyr-body' + (lyrSynced ? ' sync' : '') }, lyrLines.map((l, i) => h('p', { class: 'lyr-l' + (l.s ? '' : ' gap'), 'data-i': i, onclick: lyrSynced && l.t != null ? () => { P.audio.currentTime = l.t; } : null }, l.s || '♪')));
   const foot = h('div', { class: 'lyr-foot' }, lyrSeek = seekBar(null, (f, commit) => { if (commit && P.audio.duration) P.audio.currentTime = f * P.audio.duration; }), h('div', { class: 'lyr-ctr' }, h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), lyrPP = h('button', { class: 'pl-btn big', onclick: toggle }, ic(P.audio.paused ? 'play' : 'pause')), h('button', { class: 'pl-btn', onclick: () => next() }, ic('next'))));
-  lyrEl.replaceChildren(head, sub_ || '', body, foot); if (P.audio.duration) lyrSeek.set(P.audio.currentTime / P.audio.duration);
+  const web = it && lyrWeb.get(it.Id);
+  const save = web && lyrAdmin && lyrLines && lyrLines.length ? h('button', { class: 'lyr-save', onclick: async e => { const b = e.currentTarget; b.disabled = true; try { await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Audio/' + it.Id + '/Lyrics', { fileName: 'lyrics.' + web.ext }), data: web.text, contentType: 'text/plain' }); lyrWeb.delete(it.Id); toast(t('lyrSaved')); drawLyrics(); } catch (er) { b.disabled = false; toast(t('lyrSaveErr')); } } }, t('lyrSave')) : null;
+  const other = it && lyrAdmin !== null && lyrLines != null ? h('button', { class: 'lyr-save', onclick: pickLyrics }, lyrPick ? t('lyrBack') : t('lyrOther')) : null;
+  const bar = (other || save) ? h('div', { class: 'lyr-bar' }, other || '', lyrPick ? '' : (save || '')) : '';
+  lyrEl.replaceChildren(head, sub_ || '', bar, body, foot); if (P.audio.duration) lyrSeek.set(P.audio.currentTime / P.audio.duration);
 }
 let lyrSeek = null, lyrPP = null;
 const lyrUpPP = () => { if (lyrPP && lyrPP.isConnected) lyrPP.replaceChildren(ic(P.audio.paused ? 'play' : 'pause')); };
