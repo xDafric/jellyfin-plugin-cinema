@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.63.0",
+                             "changelog":  "Cinema Connect (devices see and control each other), network speakers (UPnP / DLNA, Sonos), Jam (guests add songs with a link and QR code), lyrics fallback, mobile polish.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.63.0.zip",
+                             "checksum":  "74a65338b267a4254963ddfae75b7abf",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.62.0",
                              "changelog":  "Phone app: page runs edge to edge under the status bar and camera cut-out, system media controls show play state and position.",
                              "targetAbi":  "12.4.0.0",
