@@ -35,7 +35,7 @@
 
 /* ---------- music on phones: closer to the real Spotify app ---------- */
 @media (max-width: 800px) {
-  #cx:not(.mode-nf) .cx-tabs { left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; border-radius: 0 !important; border: 0 !important; margin: 0 !important; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)) !important; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.92) 38%, #000 100%) !important; backdrop-filter: none !important; box-shadow: none !important; justify-content: space-around; }
+  #cx:not(.mode-nf) .cx-tabs { left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; border-radius: 0 !important; border: 0 !important; margin: 0 !important; padding: 8px 4px calc(8px + var(--sab)) !important; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.92) 38%, #000 100%) !important; backdrop-filter: none !important; box-shadow: none !important; justify-content: space-around; }
   #cx:not(.mode-nf) .cx-tabs a { font-size: 10.5px; gap: 4px; color: #a7a7ad; font-weight: 500; }
   #cx:not(.mode-nf) .cx-tabs a.on { color: #fff; }
   #cx:not(.mode-nf) .cx-tabs a svg { width: 24px; height: 24px; }
@@ -84,10 +84,10 @@
 }
 /* lyrics + queue as a full-screen layer above the player on phones */
 @media (max-width: 800px) {
-  #cx > .sp-queue { position: fixed; inset: 0; z-index: 9800; width: 100%; height: 100dvh; border-radius: 0; padding: max(14px, env(safe-area-inset-top)) 22px 0; box-sizing: border-box; background: linear-gradient(180deg, var(--tint, #4a3a2a), #121212 92%); display: flex; flex-direction: column; overflow: hidden; }
+  #cx > .sp-queue { position: fixed; inset: 0; z-index: 9800; width: 100%; height: 100dvh; border-radius: 0; padding: max(14px, var(--sat)) 22px 0; box-sizing: border-box; background: linear-gradient(180deg, var(--tint, #4a3a2a), #121212 92%); display: flex; flex-direction: column; overflow: hidden; }
   #cx > .sp-queue:not(.sp-lyrics) { overflow-y: auto; display: block; }
 }
-.lyr-foot { padding: 10px 0 calc(18px + env(safe-area-inset-bottom, 0)); display: flex; flex-direction: column; gap: 10px; background: linear-gradient(0deg, rgba(18,18,18,.96) 60%, transparent); }
+.lyr-foot { padding: 10px 0 calc(18px + var(--sab)); display: flex; flex-direction: column; gap: 10px; background: linear-gradient(0deg, rgba(18,18,18,.96) 60%, transparent); }
 .lyr-ctr { display: flex; justify-content: center; align-items: center; gap: 26px; }
 .lyr-ctr .pl-btn { width: 44px; height: 44px; display: grid; place-items: center; }
 .lyr-ctr .pl-btn.big { width: 60px; height: 60px; border-radius: 50%; background: #fff; color: #000; }
@@ -101,7 +101,7 @@
   #cx-sp .sp-header > div[style*="flex:1"] { display: none; }
   #cx-sp .sp-header .sp-chips { -webkit-mask-image: linear-gradient(90deg, #000 94%, transparent); mask-image: linear-gradient(90deg, #000 94%, transparent); }
   /* mini player sits directly on the tab bar */
-  #cx .sp-mini { bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important; margin: 0 8px !important; height: 58px; gap: 6px; padding-right: 4px; }
+  #cx .sp-mini { bottom: calc(56px + var(--sab)) !important; margin: 0 8px !important; height: 58px; gap: 6px; padding-right: 4px; }
   #cx .sp-mini .mlike .pl-btn, #cx .sp-mini .mlike button { width: 38px; height: 38px; display: grid; place-items: center; color: #fff; }
   #cx .sp-mini .mlike svg { width: 22px; height: 22px; }
   #cx .sp-mini .mbar { position: absolute; left: 10px; right: 10px; bottom: 0; height: 22px; background: none; touch-action: none; display: flex; align-items: flex-end; padding-bottom: 3px; box-sizing: border-box; }

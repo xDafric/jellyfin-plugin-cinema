@@ -44,16 +44,16 @@
   .cxd, .cxd.wide { width: 100%; max-height: 94dvh; border-radius: 24px 24px 0 0; }
   .cxd-form { grid-template-columns: 1fr; } .cxd-body { padding: 16px 16px 20px; } .cxd-head { padding: 14px 14px 14px 20px; }
   .cxd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .cxd-foot { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
+  .cxd-foot { padding: 12px 14px calc(12px + var(--sab)); }
 }
 
 /* ---- phone safe areas and edge padding ---- */
 @media (max-width: 800px) {
-  .sp-header { padding-top: max(10px, env(safe-area-inset-top)) !important; }
-  .sp-full { overflow-y: auto; padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+  .sp-header { padding-top: max(10px, var(--sat)) !important; }
+  .sp-full { overflow-y: auto; padding-top: max(12px, var(--sat)); padding-bottom: max(28px, var(--sab)); }
   .sp-shelf::after { content: ""; flex: none; width: 8px; }
-  .sp-content { padding-bottom: calc(190px + env(safe-area-inset-bottom)) !important; }
-  .cx-tabs { padding-bottom: env(safe-area-inset-bottom); }
+  .sp-content { padding-bottom: calc(190px + var(--sab)) !important; }
+  .cx-tabs { padding-bottom: var(--sab); }
   .sp-row .ti b, .sp-row .ti span { max-width: 100%; }
 }
 

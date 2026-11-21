@@ -13,7 +13,7 @@ import kotlin.concurrent.thread
 /** Update hint: looks into the GitHub release list for an APK newer than the installed one and offers the download page. Nothing is installed silently. */
 object Updater {
     private const val REPO = "xDafric/jellyfin-plugin-cinema"
-    private val APK = Regex("""CinemaTV-(\d+(?:\.\d+){1,3})\.apk""", RegexOption.IGNORE_CASE)
+    private val APK = Regex("""Cinema(?:TV)?-(\d+(?:\.\d+){1,3})\.apk""", RegexOption.IGNORE_CASE)
 
     class Info(val version: String, val url: String, val page: String, val notes: String)
 

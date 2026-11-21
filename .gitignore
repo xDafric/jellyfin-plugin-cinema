@@ -14,3 +14,7 @@ tv/build/
 tv/app/build/
 tv/local.properties
 tv/cinema-tv.keystore
+
+# Finished downloads are uploaded to the GitHub release (scripts/release.py), not committed
+releases/*.apk
+releases/*.exe

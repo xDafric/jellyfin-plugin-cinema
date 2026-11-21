@@ -7,6 +7,7 @@ use tauri::{
     AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
 };
 use tauri_plugin_deep_link::DeepLinkExt;
+#[allow(unused_imports)]
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Shortcut, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_window_state::{StateFlags, WindowExt};
@@ -272,11 +273,12 @@ fn build_window(app: &AppHandle, cfg: &Config) -> tauri::Result<WebviewWindow> {
         b = b.initialization_script(script);
     }
     // Release builds never open a remote-debugging port (WebView2 only does so with explicit args/env).
-    // HardwareMediaKeyHandling off so our global media-key shortcuts do not fire twice.
+    // Windows: WebView2 itself publishes the page's Media Session (title, artist, cover, position, buttons) to the system
+    // media overlay / lock screen and handles the hardware media keys, so there are no global shortcuts on Windows.
     #[cfg(windows)]
     {
         b = b.additional_browser_args(
-            if cfg!(debug_assertions) { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,HardwareMediaKeyHandling --remote-debugging-port=9333" } else { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,HardwareMediaKeyHandling" },
+            if cfg!(debug_assertions) { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --remote-debugging-port=9333" } else { "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection" },
         );
     }
     let w = b.build()?;
@@ -374,6 +376,7 @@ fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
 
 // ---------- media keys ----------
 
+#[cfg(not(windows))]
 fn setup_media_keys(app: &AppHandle) {
     let gs = app.global_shortcut();
     for code in [Code::MediaPlayPause, Code::MediaStop, Code::MediaTrackNext, Code::MediaTrackPrevious] {
@@ -381,6 +384,7 @@ fn setup_media_keys(app: &AppHandle) {
     }
 }
 
+#[cfg(not(windows))]
 fn media_key_action(code: Code) -> Option<&'static str> {
     match code {
         Code::MediaPlayPause => Some("playpause"),
@@ -401,10 +405,11 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, shortcut, ev| {
+                .with_handler(|#[allow(unused_variables)] app, #[allow(unused_variables)] shortcut, ev| {
                     if ev.state() != ShortcutState::Pressed {
                         return;
                     }
+                    #[cfg(not(windows))]
                     if let Some(action) = media_key_action(shortcut.key) {
                         if let Some(w) = main_window(app) {
                             if caller_is_server(app, &w).is_some() {
@@ -433,6 +438,7 @@ pub fn run() {
             let cfg = load_config(&handle);
             build_window(&handle, &cfg)?;
             setup_tray(&handle)?;
+            #[cfg(not(windows))]
             setup_media_keys(&handle);
 
             #[cfg(any(windows, target_os = "linux"))]

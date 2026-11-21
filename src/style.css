@@ -201,7 +201,7 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
   .nf-ep { grid-template-columns: 112px 1fr; gap: 12px; padding: 10px; }
   .nf-ep .n, .nf-ep .rt { display: none; }
   .nf-npill { right: 10px; left: 10px; bottom: 74px; max-width: none; }
-  .cx-tabs { display: flex; position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0)); z-index: 70; height: 62px; border-radius: 22px; background: rgba(28,28,32,.88); backdrop-filter: blur(20px); border: 1px solid var(--line); justify-content: space-around; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  .cx-tabs { display: flex; position: fixed; left: 10px; right: 10px; bottom: calc(10px + var(--sab)); z-index: 70; height: 62px; border-radius: 22px; background: rgba(28,28,32,.88); backdrop-filter: blur(20px); border: 1px solid var(--line); justify-content: space-around; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   .cx-tabs a, .cx-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; color: #8e8e95; }
   .cx-tabs a.on, .cx-tabs button.on { color: #fff; }
   .cx-tabs svg { width: 22px; height: 22px; }
@@ -379,7 +379,7 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
 .sp-qi > div { min-width: 0; }
 
 /* full-screen mobile player */
-.sp-full { position: fixed; inset: 0; z-index: 9500; display: none; flex-direction: column; padding: 14px 24px calc(24px + env(safe-area-inset-bottom, 0)); background: linear-gradient(180deg, var(--tint, #333), #121212 80%); overflow-y: auto; }
+.sp-full { position: fixed; inset: 0; z-index: 9500; display: none; flex-direction: column; padding: 14px 24px calc(24px + var(--sab)); background: linear-gradient(180deg, var(--tint, #333), #121212 80%); overflow-y: auto; }
 .sp-full.open { display: flex; animation: cxfade .25s both; }
 .sp-full .top { display: flex; justify-content: space-between; align-items: center; height: 48px; }
 .sp-full .top b { font-size: 13px; }
@@ -401,7 +401,7 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
   .sp-side { display: none; }
   .sp-main { grid-column: 1; border-radius: 0; background: #121212; }
   .sp-header { height: 54px; padding: 0 14px; }
-  .sp-content { padding: 0 14px calc(150px + env(safe-area-inset-bottom, 0)); }
+  .sp-content { padding: 0 14px calc(150px + var(--sab)); }
   .sp-content h2 { font-size: 20px; margin: 26px 0 12px; }
   .sp-greet { font-size: 24px; }
   .sp-quick { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -426,7 +426,7 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
   .sp-res { grid-template-columns: 1fr; }
   .sp-queue { top: 0; right: 0; left: 0; bottom: 0; width: auto; border-radius: 0; z-index: 9550; }
   .sp-player { display: none; }
-  .sp-mini { display: flex; position: fixed; left: 8px; right: 8px; bottom: calc(62px + env(safe-area-inset-bottom, 0)); z-index: 80; height: 56px; border-radius: 8px; align-items: center; gap: 10px; padding: 0 8px; background: var(--mini, #3a3350); box-shadow: 0 4px 16px rgba(0,0,0,.4); overflow: hidden; }
+  .sp-mini { display: flex; position: fixed; left: 8px; right: 8px; bottom: calc(62px + var(--sab)); z-index: 80; height: 56px; border-radius: 8px; align-items: center; gap: 10px; padding: 0 8px; background: var(--mini, #3a3350); box-shadow: 0 4px 16px rgba(0,0,0,.4); overflow: hidden; }
   .sp-mini .cv { width: 40px; height: 40px; border-radius: 4px; background: #333 center/cover; flex: none; }
   .sp-mini .tx { flex: 1; min-width: 0; font-size: 13px; } .sp-mini .tx b { display: block; } .sp-mini .tx span { color: #e0e0e0cc; font-size: 12px; }
   .sp-mini .pl-btn { color: #fff; width: 38px; height: 38px; } .sp-mini .pl-btn svg { width: 26px; height: 26px; }
@@ -450,6 +450,6 @@ html.cx-on, html.cx-on body { overflow: hidden !important; background: #000 !imp
 .sp-menu, .sp-modal { border-radius: 14px; }
 .sp-top1 { border-radius: 16px; } .sp-genre { border-radius: 14px; }
 .sp-queue { border-radius: 16px; }
-.sp-mini { border-radius: 16px !important; bottom: calc(84px + env(safe-area-inset-bottom, 0)) !important; }
+.sp-mini { border-radius: 16px !important; bottom: calc(84px + var(--sab)) !important; }
 .nf-card.poster .info .t { display: none; }
 .nf-card.poster .info { justify-content: flex-end; }

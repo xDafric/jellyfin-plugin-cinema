@@ -1,0 +1,13 @@
+/* Safe areas. The native apps put the real sizes on <html> (--sat top, --sab bottom, --sal left, --sar right, in px) so the page can
+   run under the status bar, the camera cut-out and the gesture bar. Everywhere else they come from the browser (env()) or are 0. */
+:root { --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px); }
+.nf-nav { top: var(--sat); }
+@media (max-width: 800px) {
+  /* pages: below the status bar and beside the cut-out; the music app uses the whole screen and pads its own header */
+  #cx { left: var(--sal); right: var(--sar); }
+  #cx.mode-nf { top: var(--sat); }
+  #cx-sp { padding-left: var(--sal); padding-right: var(--sar); box-sizing: border-box; }
+  .sp-header { height: calc(54px + var(--sat)) !important; padding-top: var(--sat) !important; box-sizing: border-box; }
+  #cx:not(.mode-nf) { left: 0; right: 0; }
+  #cx:not(.mode-nf) .cx-tabs { box-sizing: border-box; height: calc(62px + var(--sab)); }
+}

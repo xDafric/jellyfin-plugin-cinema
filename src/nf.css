@@ -177,7 +177,7 @@
   .nf-ep { grid-template-columns: 112px 1fr; gap: 12px; padding: 10px; }
   .nf-ep .n, .nf-ep .rt { display: none; }
   .nf-npill { right: 10px; left: 10px; bottom: 74px; max-width: none; }
-  .cx-tabs { display: flex; position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0)); z-index: 70; height: 62px; border-radius: 22px; background: rgba(28,28,32,.88); backdrop-filter: blur(20px); border: 1px solid var(--line); justify-content: space-around; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  .cx-tabs { display: flex; position: fixed; left: 10px; right: 10px; bottom: calc(10px + var(--sab)); z-index: 70; height: 62px; border-radius: 22px; background: rgba(28,28,32,.88); backdrop-filter: blur(20px); border: 1px solid var(--line); justify-content: space-around; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   .cx-tabs a, .cx-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; color: #8e8e95; }
   .cx-tabs a.on, .cx-tabs button.on { color: #fff; }
   .cx-tabs svg { width: 22px; height: 22px; }

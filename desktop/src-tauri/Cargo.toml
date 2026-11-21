@@ -1,6 +1,6 @@
 [package]
 name = "cinema-desktop"
-version = "0.1.1"
+version = "0.2.0"
 description = "Cinema desktop shell around the Jellyfin web UI"
 edition = "2021"
 rust-version = "1.77"

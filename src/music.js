@@ -77,6 +77,18 @@ function setMedia() {
     navigator.mediaSession.setActionHandler('seekto', e => { P.audio.currentTime = e.seekTime; });
   } catch (e) { }
 }
+/* the system media overlay (Windows, Android, lock screen) shows play state and a live position bar, and can seek */
+let msPos = 0;
+function msState() {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.playbackState = cur() ? (P.audio.paused ? 'paused' : 'playing') : 'none';
+    const d = P.audio.duration; if (cur() && isFinite(d) && d > 0 && navigator.mediaSession.setPositionState) navigator.mediaSession.setPositionState({ duration: d, playbackRate: P.audio.playbackRate || 1, position: Math.min(d, P.audio.currentTime) });
+  } catch (e) { }
+}
+['play', 'pause', 'ended', 'loadedmetadata', 'seeked'].forEach(ev => P.audio.addEventListener(ev, msState));
+P.audio.addEventListener('timeupdate', () => { const n = Date.now(); if (n - msPos > 4000) { msPos = n; msState(); } });
+try { if ('mediaSession' in navigator) { navigator.mediaSession.setActionHandler('stop', () => { P.audio.pause(); }); navigator.mediaSession.setActionHandler('seekbackward', e => { P.audio.currentTime = Math.max(0, P.audio.currentTime - ((e && e.seekOffset) || 10)); }); navigator.mediaSession.setActionHandler('seekforward', e => { P.audio.currentTime = Math.min(P.audio.duration || 1e9, P.audio.currentTime + ((e && e.seekOffset) || 10)); }); } } catch (e) { }
 const likeTrack = async it => { const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData = Object.assign(ud(it), { IsFavorite: on }); P.q.concat(P.orig).forEach(x => { if (x.Id === it.Id) x.UserData = it.UserData; }); emit(); refreshRows(); return on; };
 
 /* colour sampling for gradients */

@@ -14,6 +14,11 @@ A Netflix and Spotify style interface for Jellyfin 12, with a server plugin that
 
 Needs Jellyfin 12.4. No other plugin is required: Cinema loads its interface itself before the page renders.
 
+## Downloads
+Everything is in one place: the [latest release](https://github.com/xDafric/jellyfin-plugin-cinema/releases/latest) holds the plugin zip, the Android app (phone, tablet, TV) and the Windows installer, with checksums. The plugin is also installable through the repository below and is what the apps load their interface from, so install or update it first.
+
+To publish all three together: build each part, then `python scripts/release.py v<suite version>`.
+
 ## Install through the plugin repository
 1. Jellyfin Dashboard, Plugins, Repositories, add:
    `https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/manifest.json`

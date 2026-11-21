@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.62.0",
+                             "changelog":  "Phone app: page runs edge to edge under the status bar and camera cut-out, system media controls show play state and position.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.62.0.zip",
+                             "checksum":  "fd4eba014ff3523eb1d77384ec07885d",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.61.0",
                              "changelog":  "Lyrics: synced LRCLIB lyrics replace unsynced local ones, pick another LRCLIB version, and save the chosen one as official Jellyfin lyrics (admins).",
                              "targetAbi":  "12.4.0.0",

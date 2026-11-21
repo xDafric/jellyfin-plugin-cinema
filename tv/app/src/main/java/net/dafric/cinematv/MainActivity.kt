@@ -31,6 +31,7 @@ class MainActivity : Activity() {
     private var returning = false; private var blanked = false; private var savedHash = "#/home"
     private val main = Handler(Looper.getMainLooper())
     private var lastHash = "#/home"            /* where the page is, reported by the page itself: restored after the renderer died */
+    private var insetsPx = intArrayOf(0, 0, 0, 0)   /* top, right, bottom, left of the system bars / camera cut-out, in screen pixels */
     private val crashes = ArrayList<Long>()    /* renderer crash times, to avoid a restart loop */
     private val retry = Runnable { if (::web.isInitialized) web.loadUrl(startUrl()) }
     private fun startUrl() = store.url + "/web/index.html" + (if (lastHash.startsWith("#/") && lastHash != "#/login") lastHash else "#/home")
@@ -47,6 +48,8 @@ class MainActivity : Activity() {
         @JavascriptInterface fun exit() { runOnUiThread { finish() } }
         @JavascriptInterface fun logout() { runOnUiThread { store.clearLogin(); web.clearCache(true); CookieManager.getInstance().removeAllCookies(null); WebStorage.getInstance().deleteAllData(); startActivity(Intent(this@MainActivity, LoginActivity::class.java)); finish() } }
         @JavascriptInterface fun version(): String = Updater.installed(this@MainActivity)
+        /* system bar and cut-out sizes in CSS pixels (top,right,bottom,left): the page pads itself with them (--sat, --sar, --sab, --sal) */
+        @JavascriptInterface fun insets(): String { val d = resources.displayMetrics.density; return insetsPx.joinToString(",") { (it / d).toInt().toString() } }
         @JavascriptInterface fun hash(h: String) { if (h.startsWith("#/") && h.length < 400) lastHash = h }
 
         /* ---- shared native contract (PLATFORM.md) ---- */
@@ -82,7 +85,7 @@ class MainActivity : Activity() {
         store = Store(this)
         if (!store.loggedIn) { startActivity(Intent(this, LoginActivity::class.java)); finish(); return }
         frame = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#111113")) }
-        UiMode.apply(this, frame)
+        UiMode.apply(this, frame, onInsets = if (tv) null else ::onInsets)
         WebView.setWebContentsDebuggingEnabled((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0)
         setContentView(frame)
         lastHash = "#/home"; attachWeb(); web.loadUrl(store.url + "/web/index.html#/home")
@@ -107,6 +110,7 @@ class MainActivity : Activity() {
             override fun onConsoleMessage(m: ConsoleMessage): Boolean { Log.d("CinemaWeb", "${m.messageLevel()} ${m.message()} (${m.sourceId()}:${m.lineNumber()})"); return true }
         }
         webViewClient = object : WebViewClient() {
+            override fun onPageFinished(v: WebView, url: String?) { pushInsets() }
             override fun onReceivedError(v: WebView, req: WebResourceRequest, err: WebResourceError) { if (req.isForMainFrame) { Log.w("CinemaWeb", "main frame error ${err.description}"); showOffline() } }
             override fun onReceivedHttpError(v: WebView, req: WebResourceRequest, r: WebResourceResponse) { if (req.isForMainFrame && r.statusCode >= 500) showOffline() }
             override fun shouldOverrideUrlLoading(v: WebView, req: WebResourceRequest): Boolean {
@@ -119,6 +123,13 @@ class MainActivity : Activity() {
             override fun onRenderProcessGone(v: WebView, d: RenderProcessGoneDetail): Boolean { Log.w("CinemaWeb", "renderer gone, crash=${d.didCrash()}"); recoverWeb(); return true }
         }
     }
+
+    private fun onInsets(t: Int, r: Int, b: Int, l: Int) {
+        if (insetsPx[0] == t && insetsPx[1] == r && insetsPx[2] == b && insetsPx[3] == l) return
+        insetsPx = intArrayOf(t, r, b, l); pushInsets()
+    }
+
+    private fun pushInsets() { if (::web.isInitialized && !tv) web.evaluateJavascript(INSETS_JS, null) }
 
     private fun attachWeb() { web = buildWeb(); frame.addView(web, FrameLayout.LayoutParams(-1, -1)); injectLogin(); web.requestFocus() }
 
@@ -141,7 +152,7 @@ class MainActivity : Activity() {
         fun esc(t: String) = t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;")
         val done = runCatching { Downloads.list(this).filter { it.optString("state") == "done" } }.getOrDefault(emptyList())
         val rows = done.joinToString("") { d -> "<a href='cinema://play/${esc(d.optString("id"))}' style='display:block;padding:14px 16px;margin:8px 0;background:#202026;border-radius:12px;color:#fff;text-decoration:none'><b>${esc(d.optString("title"))}</b><br><span style='color:#9a9aa2;font-size:14px'>${esc(d.optString("subtitle"))}</span></a>" }
-        return "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='margin:0;padding:28px 20px;background:#111113;color:#fff;font-family:sans-serif'>" +
+        return "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='margin:0;padding:calc(28px + var(--sat,0px)) 20px calc(28px + var(--sab,0px));background:#111113;color:#fff;font-family:sans-serif'>" +
             "<div style='font-size:26px;font-weight:800;margin-bottom:8px'>Server nicht erreichbar</div><div style='color:#9a9aa2;margin-bottom:18px'>Neuer Versuch in wenigen Sekunden … <a href='cinema://retry' style='color:#fff'>Jetzt versuchen</a></div>" +
             (if (rows.isNotEmpty()) "<div style='font-weight:700;margin:22px 0 4px'>Heruntergeladen</div>$rows" else "") + "</body></html>"
     }
@@ -152,6 +163,8 @@ class MainActivity : Activity() {
     }
 
     /** Runs before the web client boots: puts the saved login into its storage so no sign-in screen shows up. */
+    private val INSETS_JS = "(function(){try{var n=(window.CinemaNative.insets()||'0,0,0,0').split(','),r=document.documentElement;if(!r)return false;var s=r.style;s.setProperty('--sat',n[0]+'px');s.setProperty('--sar',n[1]+'px');s.setProperty('--sab',n[2]+'px');s.setProperty('--sal',n[3]+'px');return true}catch(e){return false}})()"
+
     private fun injectLogin() {
         val q = { s: String -> JSONObject.quote(s) }
         val tvFlag = if (tv) "localStorage.setItem('cx-tv','1');" else "localStorage.removeItem('cx-tv');"
@@ -164,7 +177,8 @@ class MainActivity : Activity() {
  }
  $tvFlag localStorage.setItem('_deviceId2',${q(store.deviceId)});
 }catch(e){}})();
-(function(){var rep=function(){try{(window.CinemaTV||window.CinemaNative).hash(location.hash)}catch(e){}};window.addEventListener('hashchange',rep);document.addEventListener('DOMContentLoaded',rep);})();$width"""
+(function(){var rep=function(){try{(window.CinemaTV||window.CinemaNative).hash(location.hash)}catch(e){}};window.addEventListener('hashchange',rep);document.addEventListener('DOMContentLoaded',rep);})();$width
+${if (tv) "" else "(function(){var go=" + INSETS_JS.removeSuffix("()") + ";if(!go()){var mo=new MutationObserver(function(){if(go())mo.disconnect()});mo.observe(document,{childList:true});}})();"}"""
         val origin = Regex("^(https?://[^/]+)").find(store.url)?.value ?: store.url
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) WebViewCompat.addDocumentStartJavaScript(web, script, setOf(origin))
         else Log.w("CinemaWeb", "document start script not supported")
@@ -174,7 +188,7 @@ class MainActivity : Activity() {
         super.onResume()
         if (::web.isInitialized) { web.onResume(); web.resumeTimers(); if (blanked) { blanked = false; web.loadUrl(store.url + "/web/index.html" + savedHash) } }
         if (returning) { returning = false; if (::web.isInitialized) web.evaluateJavascript(if (tv) "window.cxTvResume&&window.cxTvResume()" else "window.cxAppResume&&window.cxAppResume()", null) }
-        if (tv) window.decorView.systemUiVisibility = UiMode.TV_IMMERSIVE else UiMode.apply(this, frame)
+        if (tv) window.decorView.systemUiVisibility = UiMode.TV_IMMERSIVE else UiMode.apply(this, frame, onInsets = ::onInsets)
     }
 
     @Deprecated("back handling")
