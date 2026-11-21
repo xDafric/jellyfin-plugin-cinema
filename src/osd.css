@@ -1,4 +1,5 @@
-/* ---------- Jellyfin's own player in the Cinema look: floating glass panel, round controls, Tabler icons, clean alignment (design only; the player itself stays the stock one) ---------- */
+/* ---------- Jellyfin's own player in the Cinema look (design only; the player itself stays the stock one) ----------
+   desktop: classic bar (prototype A)   phone: big centre controls (prototype B) */
 #videoOsdPage { font-family: Inter, system-ui, -apple-system, sans-serif; }
 /* every stock glyph is drawn as a mask of the Tabler icon chosen in osdskin.js */
 #videoOsdPage .videoOsdBottom .material-icons, body .osdHeader .material-icons { font-size: 0 !important; width: 24px; height: 24px; display: inline-block; background-color: currentColor; -webkit-mask: var(--cxm) center / contain no-repeat; mask: var(--cxm) center / contain no-repeat; vertical-align: middle; line-height: 0; }
@@ -6,19 +7,29 @@
 /* top: round glass back button, title, cast */
 body .osdHeader { background: linear-gradient(to bottom, rgba(0,0,0,.7), rgba(0,0,0,0)) !important; padding: 20px 28px 64px !important; box-shadow: none; }
 body .osdHeader .headerButton:not(.headerBackButton):not(.headerCastButton):not(.headerSyncButton) { display: none !important; }
-body .osdHeader .headerButton { width: 46px; height: 46px; padding: 0; margin: 0 0 0 8px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(255,255,255,.12); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: background .2s, transform .15s; }
-body .osdHeader .headerButton:hover { background: rgba(255,255,255,.24); transform: scale(1.06); }
+body .osdHeader .headerButton { width: 46px; height: 46px; padding: 0; margin: 0 0 0 8px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(255,255,255,.14); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: background .2s, transform .15s; }
+body .osdHeader .headerButton:hover { background: rgba(255,255,255,.26); transform: scale(1.06); }
 body .osdHeader .headerBackButton { margin-left: 0; }
 body .osdHeader .pageTitle { font-size: 20px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 0 16px; }
-/* bottom: one floating glass panel */
-#videoOsdPage .videoOsdBottom { background: none !important; left: 24px !important; right: 24px !important; bottom: 26px !important; margin: 0 auto; max-width: 1180px; padding: 0 !important; }
-#videoOsdPage .videoOsdBottom .osdControls { padding: 16px 24px 12px; border-radius: 28px; background: rgba(22,22,26,.8); -webkit-backdrop-filter: blur(28px) saturate(1.5); backdrop-filter: blur(28px) saturate(1.5); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+/* bottom bar: a gradient, a grid (seek bar on top, one row of controls below) */
+#videoOsdPage .videoOsdBottom { background: linear-gradient(to top, rgba(0,0,0,.88), rgba(0,0,0,0)) !important; left: 0 !important; right: 0 !important; bottom: 0 !important; margin: 0; max-width: none; padding: 64px 28px 20px !important; }
+#videoOsdPage .videoOsdBottom .osdControls { display: grid; grid-template-columns: auto auto auto auto 1fr repeat(6, auto); grid-template-rows: auto auto; align-items: center; column-gap: 4px; padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#videoOsdPage .osdControls > .flex.flex-direction-row, #videoOsdPage .osdControls .buttons { display: contents; }
 #videoOsdPage .osdMainTextContainer, #videoOsdPage .osdSecondaryMediaInfo { display: none; }
-#videoOsdPage .osdTextContainer.startTimeText, #videoOsdPage .osdTextContainer.endTimeText { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: #dadade; min-width: 52px; }
-#videoOsdPage .osdTextContainer.startTimeText { text-align: left; }
-#videoOsdPage .osdTextContainer.endTimeText { text-align: right; }
+#videoOsdPage .osdControls .sliderContainer { grid-row: 1; grid-column: 1 / -1; height: 22px; margin: 0 0 6px; }
+#videoOsdPage .osdTextContainer.startTimeText, #videoOsdPage .osdTextContainer.endTimeText { grid-row: 2; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: #dadade; min-width: 0; }
+#videoOsdPage .osdTextContainer.startTimeText { grid-column: 2; margin-left: 14px; }
+#videoOsdPage .osdTextContainer.endTimeText { grid-column: 3; margin-left: 10px; color: #a9a9b1; }
+#videoOsdPage .osdControls .buttons > div:first-child { grid-row: 2; grid-column: 1; display: flex; align-items: center; gap: 4px; }
+#videoOsdPage .osdTimeText { grid-row: 2; grid-column: 4; margin: 0 0 0 14px; font-size: 13px; color: #a9a9b1; font-weight: 500; font-variant-numeric: tabular-nums; }
+#videoOsdPage .btnSubtitles { grid-row: 2; grid-column: 6; }
+#videoOsdPage .btnAudio { grid-row: 2; grid-column: 7; }
+#videoOsdPage .volumeButtons { grid-row: 2; grid-column: 8; display: flex; align-items: center; gap: 2px; }
+#videoOsdPage .btnVideoOsdSettings { grid-row: 2; grid-column: 9; }
+#videoOsdPage .btnPip { grid-row: 2; grid-column: 10; }
+#videoOsdPage .btnFullscreen { grid-row: 2; grid-column: 11; }
+#videoOsdPage .btnRecord, #videoOsdPage .btnPreviousChapter, #videoOsdPage .btnNextChapter, #videoOsdPage .btnUserRating, #videoOsdPage .btnAirPlay, #videoOsdPage .btnPreviousTrack.hide, #videoOsdPage .btnNextTrack.hide { display: none !important; }
 /* seek bar: 6 px, red progress, soft track, white knob, bubble */
-#videoOsdPage .sliderContainer { height: 22px; margin: 0 10px; }
 #videoOsdPage .mdl-slider-background-flex-container, #videoOsdPage .mdl-slider-background-flex, #videoOsdPage .mdl-slider-background-flex-inner, #videoOsdPage .mdl-slider-background-upper, #videoOsdPage .mdl-slider-background-lower { height: 6px !important; border-radius: 6px; transition: height .15s; }
 #videoOsdPage .sliderContainer:hover .mdl-slider-background-flex-container, #videoOsdPage .sliderContainer:hover .mdl-slider-background-flex, #videoOsdPage .sliderContainer:hover .mdl-slider-background-flex-inner, #videoOsdPage .sliderContainer:hover .mdl-slider-background-upper, #videoOsdPage .sliderContainer:hover .mdl-slider-background-lower { height: 8px !important; }
 #videoOsdPage .mdl-slider-background-flex, #videoOsdPage .mdl-slider-background-flex-container { background-color: transparent !important; }
@@ -29,31 +40,41 @@ body .osdHeader .pageTitle { font-size: 20px; font-weight: 800; letter-spacing: 
 #videoOsdPage .mdl-slider::-moz-range-thumb { background: #fff !important; width: 16px; height: 16px; border: 0; }
 #videoOsdPage .sliderMarker { display: none; }
 #videoOsdPage .sliderBubble { background: rgba(20,20,22,.92) !important; border: 0; border-radius: 8px !important; padding: 4px 9px !important; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #fff; box-shadow: none; }
-/* button row: time left, transport centred, tools right, one baseline */
-#videoOsdPage .osdControls .buttons { position: relative; display: flex; align-items: center; gap: 4px; min-height: 56px; margin-top: 2px; }
-#videoOsdPage .osdControls .buttons > div:first-child { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px; }
-#videoOsdPage .osdTimeText { margin: 0 0 0 4px; font-size: 13px; color: #b9b9c0; font-weight: 500; font-variant-numeric: tabular-nums; }
-#videoOsdPage .btnSubtitles { margin-left: auto !important; }
-#videoOsdPage .btnRecord, #videoOsdPage .btnPreviousChapter, #videoOsdPage .btnNextChapter, #videoOsdPage .btnUserRating, #videoOsdPage .btnAirPlay { display: none !important; }
+/* buttons: round, soft hover; the play button is a white disc with a black symbol, in both states */
 #videoOsdPage .videoOsdBottom .paper-icon-button-light { width: 44px; height: 44px; padding: 0 !important; margin: 0; border-radius: 50%; color: #fff; display: inline-grid; place-items: center; background: none; transition: background .15s, transform .15s; }
 #videoOsdPage .videoOsdBottom .paper-icon-button-light:hover, #videoOsdPage .videoOsdBottom .paper-icon-button-light:focus-visible { background: rgba(255,255,255,.14); }
 #videoOsdPage .videoOsdBottom .paper-icon-button-light:active { transform: scale(.92); }
-#videoOsdPage .btnPause { width: 56px !important; height: 56px !important; background: #fff !important; color: #000 !important; }
-#videoOsdPage .btnPause:hover { background: #e8e8ea !important; }
-#videoOsdPage .btnPause .material-icons { width: 28px; height: 28px; background-color: #000; }
+#videoOsdPage .videoOsdBottom .btnPause { width: 48px; height: 48px; background: #fff; color: #000; }
+#videoOsdPage .videoOsdBottom .btnPause:hover, #videoOsdPage .videoOsdBottom .btnPause:focus-visible { background: #e8e8ea; }
+#videoOsdPage .videoOsdBottom .btnPause .material-icons { width: 26px; height: 26px; background-color: #000; }
 #videoOsdPage .btnRewind .material-icons, #videoOsdPage .btnFastForward .material-icons { width: 26px; height: 26px; }
 /* volume */
-#videoOsdPage .volumeButtons { display: flex; align-items: center; gap: 2px; }
 #videoOsdPage .osdVolumeSliderContainer { width: 96px; margin: 0 8px 0 2px; }
 #videoOsdPage .osdVolumeSlider { accent-color: #e50914; }
 /* menus (settings, audio, subtitles) */
 .actionSheet .actionSheetContent, .actionSheetContent { border-radius: 22px !important; background: rgba(22,22,26,.94) !important; -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 60px rgba(0,0,0,.6); }
 .actionSheetMenuItem { border-radius: 12px; }
+
+/* ---------- phone: big controls in the middle, seek bar with both times, tools in one row on the right ---------- */
 @media (max-width: 800px) {
-  #videoOsdPage .videoOsdBottom { left: 10px !important; right: 10px !important; bottom: 12px !important; }
-  #videoOsdPage .videoOsdBottom .osdControls { padding: 12px 14px 8px; border-radius: 22px; }
-  #videoOsdPage .osdControls .buttons { flex-wrap: wrap; justify-content: space-between; min-height: 0; }
-  #videoOsdPage .osdControls .buttons > div:first-child { position: static; transform: none; order: -1; width: 100%; justify-content: center; margin-bottom: 4px; }
-  #videoOsdPage .btnSubtitles { margin-left: 0 !important; }
-  #videoOsdPage .osdVolumeSliderContainer { display: none; }
+  body .osdHeader { padding: 14px 16px 48px !important; }
+  #videoOsdPage .videoOsdBottom { padding: 56px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important; }
+  #videoOsdPage .videoOsdBottom .osdControls { grid-template-columns: auto 1fr auto auto auto auto auto; }
+  #videoOsdPage .osdControls .sliderContainer { grid-row: 1; grid-column: 2 / 7; margin: 0; }
+  #videoOsdPage .osdTextContainer.startTimeText { grid-row: 1; grid-column: 1; margin: 0 12px 0 0; }
+  #videoOsdPage .osdTextContainer.endTimeText { grid-row: 1; grid-column: 7; margin: 0 0 0 12px; color: #dadade; }
+  #videoOsdPage .osdTimeText { grid-row: 2; grid-column: 1 / 3; margin: 0; }
+  #videoOsdPage .btnSubtitles { grid-row: 2; grid-column: 3; width: auto !important; border-radius: 999px !important; padding: 0 16px 0 12px !important; gap: 6px; background: rgba(255,255,255,.14) !important; font-size: 13px; font-weight: 600; grid-auto-flow: column; }
+  #videoOsdPage .btnSubtitles::after { content: attr(title); font-size: 13px; font-weight: 600; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+  #videoOsdPage .btnAudio { grid-row: 2; grid-column: 4; }
+  #videoOsdPage .btnVideoOsdSettings { grid-row: 2; grid-column: 5; }
+  #videoOsdPage .btnPip { grid-row: 2; grid-column: 6; }
+  #videoOsdPage .btnFullscreen { grid-row: 2; grid-column: 7; }
+  #videoOsdPage .volumeButtons { display: none; }
+  /* the three big buttons sit in the middle of the picture */
+  #videoOsdPage .osdControls .buttons > div:first-child { position: fixed; grid-row: auto; grid-column: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; gap: clamp(30px, 12vw, 70px); }
+  #videoOsdPage .btnRewind, #videoOsdPage .btnFastForward { display: inline-grid !important; width: 56px !important; height: 56px !important; background: rgba(0,0,0,.38) !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  #videoOsdPage .btnRewind .material-icons, #videoOsdPage .btnFastForward .material-icons { width: 28px; height: 28px; }
+  #videoOsdPage .videoOsdBottom .btnPause { width: 76px; height: 76px; }
+  #videoOsdPage .videoOsdBottom .btnPause .material-icons { width: 36px; height: 36px; }
 }

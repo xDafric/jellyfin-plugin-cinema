@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.57.0",
+                             "changelog":  "Player: classic full-width bar on desktop (seek bar on top, controls and times in one row, tools on the right), big centre controls on phones with Subtitles next to the tool icons, no floating panel.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.57.0.zip",
+                             "checksum":  "e025eb9eecad60af527ccf7cc019edbd",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.56.0",
                              "changelog":  "Jellyfin player redesigned: floating glass control panel, Tabler icons, centred transport, tidy alignment, round glass header buttons, unused buttons removed.",
                              "targetAbi":  "12.4.0.0",
