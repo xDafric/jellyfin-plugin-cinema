@@ -143,6 +143,18 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Song search for music requests uses a public catalogue (only the typed words are sent, by the server). Turn off to stay fully local.</summary>
     public bool ExternalSongSearch { get; set; } = true;
 
+    /// <summary>Cinema Connect: a user's devices see and control each other.</summary>
+    public bool FeatConnect { get; set; } = true;
+
+    /// <summary>Network speakers (UPnP / DLNA renderers) can be chosen in Cinema Connect.</summary>
+    public bool FeatSpeakers { get; set; }
+
+    /// <summary>Address speakers use to reach this server on the home network, e.g. http://192.168.1.10:8096. Empty = the address the request came in on.</summary>
+    public string SpeakerBaseUrl { get; set; } = string.Empty;
+
+    /// <summary>Speakers that cannot be found automatically: one device description address per line, e.g. http://192.168.1.50:49152/description.xml.</summary>
+    public string SpeakerManual { get; set; } = string.Empty;
+
     /// <summary>Show films watched on Letterboxd as watched here (read only, never written back).</summary>
     public bool FeatLetterboxd { get; set; }
 

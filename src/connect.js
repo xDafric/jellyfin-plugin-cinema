@@ -11,8 +11,8 @@ Object.assign(LU, {
   'cx-browser': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/>'
 });
 Object.assign(LUMAP, { devices: 'cx-devices', dphone: 'cx-phone', ddesktop: 'cx-desktop', dtv: 'cx-tv', dspeaker: 'cx-speaker', dweb: 'cx-browser' });
-Object.assign(TX.en, { cnDevices: 'Devices', cnThis: 'This device', cnListening: 'Listening on', cnPlayHere: 'Play here', cnAvail: 'Available', cnNone: 'Open Cinema on another device to see it here.', cnPlaying: 'Playing', cnPaused: 'Paused', cnNothing: 'Nothing playing', cnMoved: 'Playing on', cnHide: 'Hide', cnTap: 'Tap to start playback on this device', cnRename: 'Name of this device' });
-Object.assign(TX.de, { cnDevices: 'Geräte', cnThis: 'Dieses Gerät', cnListening: 'Du hörst auf', cnPlayHere: 'Hier abspielen', cnAvail: 'Verfügbar', cnNone: 'Öffne Cinema auf einem anderen Gerät, dann erscheint es hier.', cnPlaying: 'Spielt', cnPaused: 'Pausiert', cnNothing: 'Nichts aktiv', cnMoved: 'Spielt jetzt auf', cnHide: 'Ausblenden', cnTap: 'Tippen, um hier abzuspielen', cnRename: 'Name dieses Geräts' });
+Object.assign(TX.en, { cnDevices: 'Devices', cnThis: 'This device', cnListening: 'Listening on', cnPlayHere: 'Play here', cnAvail: 'Available', cnNone: 'Open Cinema on another device to see it here.', cnPlaying: 'Playing', cnPaused: 'Paused', cnNothing: 'Nothing playing', cnMoved: 'Playing on', cnHide: 'Hide', cnTap: 'Tap to start playback on this device', cnRename: 'Name of this device', cnScan: 'Search for speakers', cnScanning: 'Searching …', cnFound: 'speakers found', cnOut: 'Sound output of this device', cnOutPick: 'Choose speaker or headphones', cnBt: 'Bluetooth and outputs', cnOutDef: 'System default' });
+Object.assign(TX.de, { cnDevices: 'Geräte', cnThis: 'Dieses Gerät', cnListening: 'Du hörst auf', cnPlayHere: 'Hier abspielen', cnAvail: 'Verfügbar', cnNone: 'Öffne Cinema auf einem anderen Gerät, dann erscheint es hier.', cnPlaying: 'Spielt', cnPaused: 'Pausiert', cnNothing: 'Nichts aktiv', cnMoved: 'Spielt jetzt auf', cnHide: 'Ausblenden', cnTap: 'Tippen, um hier abzuspielen', cnRename: 'Name dieses Geräts', cnScan: 'Lautsprecher suchen', cnScanning: 'Suche …', cnFound: 'Lautsprecher gefunden', cnOut: 'Tonausgabe dieses Geräts', cnOutPick: 'Lautsprecher oder Kopfhörer wählen', cnBt: 'Bluetooth und Ausgänge', cnOutDef: 'Systemstandard' });
 
 const CN = { on: false, id: null, name: '', kind: 'web', devices: [], v: 0, got: 0, hidden: null, started: false, lastSend: 0, run: false };
 const cnSleep = ms => new Promise(r => setTimeout(r, ms));
@@ -87,8 +87,8 @@ async function cnLoop() {
 }
 function cnApply(r) { if (!r) return; CN.v = r.v; CN.got = Date.now(); CN.devices = r.devices || []; cnDraw(); }
 function cnStart() {
-  if (CN.started || cnOff() || typeof ApiClient === 'undefined' || !ApiClient.accessToken || !ApiClient.accessToken()) return;
-  CN.started = true; CN.on = true; cnIdentity(); cnLoop();
+  if (CN.started || cnOff() || !feat('connect') || typeof ApiClient === 'undefined' || !ApiClient.accessToken || !ApiClient.accessToken()) return;
+  CN.started = true; CN.on = true; cnIdentity(); cnLoop(); cnApplySink();
   P.subs.push(() => cnReport(true));
   P.audio.addEventListener('timeupdate', () => cnReport(false));
   P.audio.addEventListener('volumechange', () => cnReport(false));
@@ -139,7 +139,28 @@ function cnPaintPanel() {
   const others = cnOthers();
   others.forEach(d => { const s = d.state, it = s && s.item && s.item.name ? s.item : null, pl = !!(s && s.playing && it); rows.push(row(dIcon(d), d.name, pl ? it.name + ' · ' + it.artist : it ? t('cnPaused') + ' · ' + it.name : t('cnAvail'), pl, () => { if (pl) cnPullFrom(d); else cnTransferTo(d); })); });
   cnPanel.replaceChildren(h('div', { class: 'cn-head' }, h('b', {}, t('cnDevices')), h('button', { class: 'pl-btn', 'aria-label': t('close'), onclick: cnShut }, ic('close'))), h('div', { class: 'cn-list' }, rows), others.length ? '' : h('div', { class: 'cn-empty' }, t('cnNone')),
+    cnActions(),
     h('label', { class: 'cn-name' }, h('span', {}, t('cnRename')), h('input', { type: 'text', value: CN.name, maxlength: 48, onchange: e => { const v = e.target.value.trim().slice(0, 48) || CN.def; CN.name = v; try { localStorage.setItem('cx-dev-name', v === CN.def ? '' : v); } catch (er) { } cnPost('hello', { id: CN.id, name: CN.name, kind: CN.kind }).catch(() => { }); } })));
+}
+
+/* this device's own sound output (desktop and browsers) and the system output panel (Android app) */
+const cnCanSink = () => typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
+async function cnApplySink() { try { const id = localStorage.getItem('cx-dev-sink'); if (id && cnCanSink()) await P.audio.setSinkId(id); } catch (e) { try { localStorage.removeItem('cx-dev-sink'); } catch (er) { } } }
+async function cnPickSink() {
+  try {
+    let id = '', label = '';
+    if (navigator.mediaDevices && navigator.mediaDevices.selectAudioOutput) { const d = await navigator.mediaDevices.selectAudioOutput(); id = d.deviceId; label = d.label; }
+    else { const all = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audiooutput'); const cur = localStorage.getItem('cx-dev-sink') || ''; const i = Math.max(0, all.findIndex(d => d.deviceId === cur)); const d = all[(i + 1) % Math.max(1, all.length)]; if (d) { id = d.deviceId === 'default' ? '' : d.deviceId; label = d.label || ('#' + (((i + 1) % all.length) + 1)); } }
+    await P.audio.setSinkId(id || ''); try { localStorage.setItem('cx-dev-sink', id || ''); localStorage.setItem('cx-dev-sinkname', label || ''); } catch (e) { }
+    toast(label || t('cnOutDef')); cnPaintPanel();
+  } catch (e) { if (e && e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(String(e.message || e)); }
+}
+function cnActions() {
+  const out = []; const nat = window.CinemaNative;
+  if (cnCanSink() && !(nat && nat.audioOutput)) { let nm = ''; try { nm = localStorage.getItem('cx-dev-sinkname') || ''; } catch (e) { } out.push(h('button', { class: 'cn-act', onclick: cnPickSink }, ic('dspeaker', 'ic-s'), h('span', {}, h('b', {}, t('cnOutPick')), h('i', {}, t('cnOut') + ' · ' + (nm || t('cnOutDef')))))); }
+  if (nat && nat.audioOutput) out.push(h('button', { class: 'cn-act', onclick: () => { try { nat.audioOutput(); } catch (e) { } } }, ic('dspeaker', 'ic-s'), h('span', {}, h('b', {}, t('cnBt')), h('i', {}, t('cnOut')))));
+  if (C.status && C.status.features && C.status.features.speakers === true) out.push(h('button', { class: 'cn-act', onclick: async e => { const b = e.currentTarget; const sp = b.querySelector('b'); const old = sp.textContent; sp.textContent = t('cnScanning'); b.disabled = true; try { const r = await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema/connect/speakers/scan'), dataType: 'json' }); toast((r && r.count != null ? r.count : 0) + ' ' + t('cnFound')); } catch (er) { } sp.textContent = old; b.disabled = false; } }, ic('cast', 'ic-s'), h('span', {}, h('b', {}, t('cnScan')), h('i', {}, 'UPnP · DLNA · Sonos'))));
+  return out.length ? h('div', { class: 'cn-acts' }, out) : '';
 }
 
 /* the button in the player bars */

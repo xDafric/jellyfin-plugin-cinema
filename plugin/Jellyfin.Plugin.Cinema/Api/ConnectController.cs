@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -58,6 +59,17 @@ public class ConnectController : ControllerBase
                 Changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 old.TrySetResult(true);
             }
+        }
+    }
+
+    public ConnectController(ILibraryManager lib) => SpeakerService.Init(lib);
+
+    /// <summary>Wakes the polling clients of one user (a speaker changed).</summary>
+    internal static void BumpUser(string uid)
+    {
+        if (Hubs.TryGetValue(uid, out var h))
+        {
+            h.Bump();
         }
     }
 
@@ -136,7 +148,7 @@ public class ConnectController : ControllerBase
         return sb.Length > max ? sb.ToString(0, max) : sb.ToString();
     }
 
-    private static JsonArray Snapshot(Hub h, string self)
+    private static JsonArray Snapshot(Hub h, string self, string? uid)
     {
         var arr = new JsonArray();
         foreach (var d in h.Devs.Values.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
@@ -153,12 +165,28 @@ public class ConnectController : ControllerBase
             });
         }
 
+        if (SpeakerService.Enabled)
+        {
+            foreach (var sp in SpeakerService.List())
+            {
+                arr.Add(new JsonObject
+                {
+                    ["id"] = sp.Id,
+                    ["name"] = sp.Name,
+                    ["kind"] = "speaker",
+                    ["self"] = false,
+                    ["at"] = new DateTimeOffset(sp.StateAt, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+                    ["state"] = sp.Owner is not null && sp.Owner == uid ? SpeakerService.StateOf(sp) : null,
+                });
+            }
+        }
+
         return arr;
     }
 
     private IActionResult Out(Hub h, string self, JsonArray? cmds)
     {
-        var o = new JsonObject { ["v"] = h.Ver, ["devices"] = Snapshot(h, self), ["commands"] = cmds ?? new JsonArray() };
+        var o = new JsonObject { ["v"] = h.Ver, ["devices"] = Snapshot(h, self, Uid), ["commands"] = cmds ?? new JsonArray() };
         return Content(o.ToJsonString(), "application/json");
     }
 
@@ -280,6 +308,13 @@ public class ConnectController : ControllerBase
         var h = MyHub(false);
         var to = b?["to"]?.GetValue<string>();
         var cmd = b?["cmd"]?.GetValue<string>();
+        if (b is not null && h is not null && to is not null && cmd is not null && to.StartsWith("spk_", StringComparison.Ordinal) && Commands.Contains(cmd) && SpeakerService.Enabled && SpeakerService.Get(to) is { } sp)
+        {
+            var done = await SpeakerService.Command(sp, Uid!, b, Request.Scheme + "://" + Request.Host).ConfigureAwait(false);
+            h.Bump();
+            return done ? NoContent() : StatusCode(409);
+        }
+
         if (b is null || h is null || to is null || cmd is null || !Commands.Contains(cmd) || !h.Devs.TryGetValue(to, out var d))
         {
             return BadRequest();
@@ -342,6 +377,11 @@ public class ConnectController : ControllerBase
             return StatusCode(404);   // the client says hello again
         }
 
+        if (SpeakerService.Enabled)
+        {
+            _ = SpeakerService.Scan(false);
+        }
+
         var until = DateTime.UtcNow.AddSeconds(25);
         while (!ct.IsCancellationRequested)
         {
@@ -374,6 +414,28 @@ public class ConnectController : ControllerBase
 
         Sweep(h);
         return Out(h, id, cmds);
+    }
+
+    private static DateTime _lastManualScan = DateTime.MinValue;
+
+    /// <summary>Looks for network speakers now (at most every 20 seconds).</summary>
+    [HttpPost("speakers/scan")]
+    public async Task<IActionResult> ScanSpeakers()
+    {
+        if (!SpeakerService.Enabled)
+        {
+            return NotFound();
+        }
+
+        if ((DateTime.UtcNow - _lastManualScan).TotalSeconds < 20)
+        {
+            return StatusCode(429);
+        }
+
+        _lastManualScan = DateTime.UtcNow;
+        await SpeakerService.Scan(true).ConfigureAwait(false);
+        MyHub(true)?.Bump();
+        return Content(new JsonObject { ["count"] = SpeakerService.List().Count() }.ToJsonString(), "application/json");
     }
 
     /// <summary>Client is closing: remove it right away.</summary>

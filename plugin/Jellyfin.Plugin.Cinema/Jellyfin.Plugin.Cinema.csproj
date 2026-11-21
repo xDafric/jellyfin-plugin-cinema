@@ -20,4 +20,7 @@
     <EmbeddedResource Include="Configuration\config.html" />
     <EmbeddedResource Include="Web\cinema.js" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="hubtest" />
+  </ItemGroup>
 </Project>

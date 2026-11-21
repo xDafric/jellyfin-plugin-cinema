@@ -54,8 +54,10 @@ class MainActivity : Activity() {
 
         /* ---- shared native contract (PLATFORM.md) ---- */
         @JavascriptInterface fun capabilities(): String = JSONObject().put("platform", "android").put("mode", if (tv) "tv" else "phone").put("apiLevel", 1).put("version", Updater.installed(this@MainActivity))
-            .put("downloads", !tv).put("pip", !tv).put("media", !tv).toString()
+            .put("downloads", !tv).put("pip", !tv).put("media", !tv).put("audioOutput", !tv).toString()
         @JavascriptInterface fun openExternal(url: String) { if (url.startsWith("https://") || url.startsWith("http://")) runOnUiThread { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } } }
+        /* choose the speaker or Bluetooth device for the sound: the system's own output panel */
+        @JavascriptInterface fun audioOutput() { if (tv) return; runOnUiThread { runCatching { startActivity(Intent("android.settings.panel.action.VOLUME")) }.onFailure { runCatching { startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)) } } } }
         @JavascriptInterface fun checkUpdate() { runOnUiThread { Updater.checkAndAsk(this@MainActivity, force = true) } }
 
         /* ---- downloads (phone/tablet) ---- */
