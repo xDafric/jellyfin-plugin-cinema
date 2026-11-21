@@ -130,6 +130,7 @@ class PlayerActivity : Activity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (phone) maxBitrate = trackPrefs.getInt("maxBitrate", 120_000_000)
+        if (phone) requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE   /* the player always opens wide */
         buildUi(); UiMode.apply(this, rootView, immersive = true); buildPlayer()
         if (phone) setupTouch()
         scope.launch { start(itemId, startTicks) }
@@ -251,11 +252,10 @@ class PlayerActivity : Activity() {
         val content = FrameLayout(this); overlay.addView(content, FrameLayout.LayoutParams(-1, -1))
         overlay.setOnApplyWindowInsetsListener { _, ins ->
             if (Build.VERSION.SDK_INT >= 30) {
-                val b = ins.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+                val b = ins.getInsets(WindowInsets.Type.systemBars())
                 content.setPadding(b.left, b.top, b.right, b.bottom)
-            } else {
-                val c = if (Build.VERSION.SDK_INT >= 28) ins.displayCutout else null
-                content.setPadding(c?.safeInsetLeft ?: 0, c?.safeInsetTop ?: 0, c?.safeInsetRight ?: 0, c?.safeInsetBottom ?: 0)
+            } else @Suppress("DEPRECATION") {
+                content.setPadding(ins.stableInsetLeft, ins.stableInsetTop, ins.stableInsetRight, ins.stableInsetBottom)
             }
             ins
         }
@@ -264,7 +264,7 @@ class PlayerActivity : Activity() {
         subtitleView = TextView(this).apply { textSize = 12f; setTextColor(Color.parseColor("#C8C8D0")); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }
         badges = LinearLayout(this)
         val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; addView(titleView, LinearLayout.LayoutParams(-1, -2)); addView(subtitleView, LinearLayout.LayoutParams(-1, -2)) }
-        val top = FrameLayout(this).apply { setPadding(dp(4), dp(8), dp(4), dp(8)) }
+        val top = FrameLayout(this).apply { setPadding(dp(12), dp(14), dp(12), dp(8)) }
         top.addView(titles, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER).apply { leftMargin = dp(56); rightMargin = dp(56) })
         top.addView(IconBtn(this, R.drawable.t_cast, null, 48, true, 1, .5f).apply { setOnClickListener { openCast() } }, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.START or Gravity.CENTER_VERTICAL))
         top.addView(IconBtn(this, R.drawable.t_close, null, 48, true, 1, .5f).apply { setOnClickListener { finish() } }, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.END or Gravity.CENTER_VERTICAL))
@@ -283,7 +283,8 @@ class PlayerActivity : Activity() {
         /* bottom: red timeline, audio & subtitles, tools */
         seek = SeekView(this).apply { red = true; isFocusable = true; onScrub = { dir, rep -> scrubStep(dir, rep) }; onTouchSeek = { f, up -> touchSeek(f, up) } }
         curTime = TextView(this).apply { textSize = 12f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD }
-        remTime = TextView(this).apply { textSize = 12f; setTextColor(Color.WHITE) }
+        timeTotal = trackPrefs.getBoolean("timeTotal", false)
+        remTime = TextView(this).apply { textSize = 12f; setTextColor(Color.WHITE); setOnClickListener { timeTotal = !timeTotal; trackPrefs.edit().putBoolean("timeTotal", timeTotal).apply(); updateUi() } }   /* tap: remaining time or total length */
         endsAt = TextView(this)
         val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         bar.addView(curTime, LinearLayout.LayoutParams(-2, -2)); bar.addView(seek, LinearLayout.LayoutParams(0, dp(34), 1f).apply { leftMargin = dp(10); rightMargin = dp(10) }); bar.addView(remTime, LinearLayout.LayoutParams(-2, -2))
@@ -297,7 +298,7 @@ class PlayerActivity : Activity() {
         pipBtn = if (Build.VERSION.SDK_INT >= 26 && packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)) IconBtn(this, R.drawable.t_pip, null, 40, true, 1, .55f).apply { setOnClickListener { enterPip() } } else null
         moreBtn = IconBtn(this, R.drawable.t_more, null, 40, true, 1, .55f).apply { setOnClickListener { showMore() } }
         for (b in listOf(lockBtn, speedBtn, aspectBtn, episodesBtn, nextBtn)) { b.minimumHeight = dp(40) }
-        phoneBottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), 0, dp(16), dp(4)) }
+        phoneBottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), 0, dp(20), dp(14)) }
         phoneBottom.addView(bar, LinearLayout.LayoutParams(-1, -2))
         phoneRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         phoneBottom.addView(phoneRow, LinearLayout.LayoutParams(-1, -2))
@@ -306,6 +307,7 @@ class PlayerActivity : Activity() {
         arrangePhoneBottom()
     }
 
+    private var timeTotal = false
     private lateinit var phoneBottom: LinearLayout; private lateinit var phoneRow: LinearLayout; private lateinit var phoneTop: View
     private var pipBtn: IconBtn? = null; private lateinit var moreBtn: IconBtn
     private var arrangedLand: Boolean? = null
@@ -321,7 +323,7 @@ class PlayerActivity : Activity() {
         fun gap() = phoneRow.addView(Space(this), LinearLayout.LayoutParams(0, 1, 1f))
         if (land) {
             phoneRow.orientation = LinearLayout.HORIZONTAL
-            cell(lockBtn, dp(40)); gap(); cell(audioBtn); gap()
+            cell(lockBtn, dp(40)); gap(); cell(audioBtn); phoneRow.addView(Space(this), LinearLayout.LayoutParams(dp(10), 1))
             listOf<View?>(speedBtn, aspectBtn, episodesBtn, nextBtn, pipBtn, moreBtn).filterNotNull().forEach { cell(it, dp(40)) }
         } else {
             phoneBottom.addView(audioBtn, 1, LinearLayout.LayoutParams(-2, dp(40)).apply { gravity = Gravity.CENTER_HORIZONTAL })
@@ -348,9 +350,11 @@ class PlayerActivity : Activity() {
         fun fx(left: Boolean, icon: Int): Pair<LinearLayout, TextView> {
             val t = TextView(this).apply { textSize = 15f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER }
             val l = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; visibility = View.GONE; alpha = 0f
-                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#33FFFFFF")) }
+                /* the tapped half of the screen lights up, rounded on the side towards the middle (like YouTube) */
+                val rr = dp(220).toFloat()
+                background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; setColor(Color.parseColor("#2EFFFFFF")); cornerRadii = if (left) floatArrayOf(0f, 0f, rr, rr, rr, rr, 0f, 0f) else floatArrayOf(rr, rr, 0f, 0f, 0f, 0f, rr, rr) }
                 addView(ImageView(this@PlayerActivity).apply { setImageResource(icon); setColorFilter(Color.WHITE) }, LinearLayout.LayoutParams(dp(40), dp(40))); addView(t) }
-            root.addView(l, FrameLayout.LayoutParams(dp(130), dp(130), (if (left) Gravity.START else Gravity.END) or Gravity.CENTER_VERTICAL).apply { if (left) leftMargin = dp(40) else rightMargin = dp(40) })
+            root.addView(l, FrameLayout.LayoutParams(resources.displayMetrics.widthPixels / 2, -1, if (left) Gravity.START else Gravity.END))
             return l to t
         }
         fx(true, R.drawable.t_back10).let { fxL = it.first; fxLT = it.second }; fx(false, R.drawable.t_fwd10).let { fxR = it.first; fxRT = it.second }
@@ -885,7 +889,7 @@ class PlayerActivity : Activity() {
     private fun fmt(ms: Long): String { val s = (ms / 1000).coerceAtLeast(0); val h = s / 3600; val m = (s % 3600) / 60; val sec = s % 60; return if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%d:%02d".format(m, sec) }
     private fun setTimes(p: Long, d: Long) {
         curTime.text = fmt(p)
-        remTime.text = if (phone) "-" + fmt(d - p) + " / " + fmt(d) else "-" + fmt(d - p)
+        remTime.text = if (phone && timeTotal) fmt(d) else "-" + fmt(d - p)
     }
     private fun updateUi() {
         if (scrubbing) return
@@ -1115,7 +1119,8 @@ class SeekView(ctx: Context) : View(ctx) {
     private var touching = false
     var onTouchSeek: ((Float, Boolean) -> Unit)? = null
     override fun onTouchEvent(e: MotionEvent): Boolean {
-        val f = (e.x / width.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val pad = if (red) 16f * resources.displayMetrics.density else 0f
+        val f = ((e.x - pad) / (width - 2 * pad).coerceAtLeast(1f)).coerceIn(0f, 1f)
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> { touching = true; parent?.requestDisallowInterceptTouchEvent(true); onTouchSeek?.invoke(f, false) }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { touching = false; invalidate(); onTouchSeek?.invoke(f, true) }
@@ -1136,11 +1141,13 @@ class SeekView(ctx: Context) : View(ctx) {
     override fun onDraw(c: Canvas) {
         val d = resources.displayMetrics.density
         val h = if (isFocused) 10f * d else 6f * d; val cy = height / 2f; val r = h / 2
-        paint.color = Color.parseColor("#44FFFFFF"); c.drawRoundRect(0f, cy - r, width.toFloat(), cy + r, r, r, paint)
-        paint.color = Color.parseColor("#66FFFFFF"); c.drawRoundRect(0f, cy - r, width * b, cy + r, r, r, paint)
-        paint.color = if (red) Color.parseColor("#E5252A") else Color.WHITE; c.drawRoundRect(0f, cy - r, width * p, cy + r, r, r, paint)
-        paint.color = Color.parseColor("#B0000000"); chapters.forEach { c.drawRect(width * it - d, cy - r, width * it + d, cy + r, paint) }
-        if (red) { paint.color = Color.parseColor("#E5252A"); c.drawCircle((width * p).coerceIn(h, width - h), cy, h * (if (touching) 2.4f else 1.9f), paint) }
+        /* red phone bar: room at both ends for the knob, so it is never cut off */
+        val pad = if (red) 16f * d else 0f; val x0 = pad; val w = width - 2 * pad
+        paint.color = Color.parseColor("#44FFFFFF"); c.drawRoundRect(x0, cy - r, x0 + w, cy + r, r, r, paint)
+        paint.color = Color.parseColor("#66FFFFFF"); c.drawRoundRect(x0, cy - r, x0 + w * b, cy + r, r, r, paint)
+        paint.color = if (red) Color.parseColor("#E5252A") else Color.WHITE; c.drawRoundRect(x0, cy - r, x0 + w * p, cy + r, r, r, paint)
+        paint.color = Color.parseColor("#B0000000"); chapters.forEach { c.drawRect(x0 + w * it - d, cy - r, x0 + w * it + d, cy + r, paint) }
+        if (red) { paint.color = Color.parseColor("#E5252A"); c.drawCircle(x0 + w * p, cy, h * (if (touching) 2.4f else 1.9f), paint) }
         else if (isFocused) { paint.color = Color.WHITE; c.drawCircle(width * p, cy, h * 1.05f, paint) }
     }
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) { super.onFocusChanged(gainFocus, direction, previouslyFocusedRect); invalidate() }

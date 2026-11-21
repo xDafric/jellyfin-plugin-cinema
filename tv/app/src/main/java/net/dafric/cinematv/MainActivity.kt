@@ -110,7 +110,7 @@ class MainActivity : Activity() {
             override fun onConsoleMessage(m: ConsoleMessage): Boolean { Log.d("CinemaWeb", "${m.messageLevel()} ${m.message()} (${m.sourceId()}:${m.lineNumber()})"); return true }
         }
         webViewClient = object : WebViewClient() {
-            override fun onPageFinished(v: WebView, url: String?) { pushInsets() }
+            override fun onPageFinished(v: WebView, url: String?) { pushInsets(); main.postDelayed({ checkLegacy() }, 2500) }
             override fun onReceivedError(v: WebView, req: WebResourceRequest, err: WebResourceError) { if (req.isForMainFrame) { Log.w("CinemaWeb", "main frame error ${err.description}"); showOffline() } }
             override fun onReceivedHttpError(v: WebView, req: WebResourceRequest, r: WebResourceResponse) { if (req.isForMainFrame && r.statusCode >= 500) showOffline() }
             override fun shouldOverrideUrlLoading(v: WebView, req: WebResourceRequest): Boolean {
@@ -126,10 +126,26 @@ class MainActivity : Activity() {
 
     private fun onInsets(t: Int, r: Int, b: Int, l: Int) {
         if (insetsPx[0] == t && insetsPx[1] == r && insetsPx[2] == b && insetsPx[3] == l) return
-        insetsPx = intArrayOf(t, r, b, l); pushInsets()
+        insetsPx = intArrayOf(t, r, b, l); pushInsets(); if (legacyInsets) applyLegacy()
     }
 
     private fun pushInsets() { if (::web.isInitialized && !tv) web.evaluateJavascript(INSETS_JS, null) }
+
+    /** A plugin older than 1.1.62 does not know the insets: then the app keeps the room for the system bars itself, as before. */
+    private var legacyInsets = false
+    private fun checkLegacy() {
+        if (tv || !::web.isInitialized) return
+        web.evaluateJavascript("(function(){return location.protocol==='data:'||location.href==='about:blank'||window.__cxInsets===1?'ok':'old'})()") { r ->
+            val old = r?.contains("old") == true
+            if (old != legacyInsets) { legacyInsets = old; applyLegacy() }
+        }
+    }
+    private fun applyLegacy() {
+        if (!::web.isInitialized) return
+        val lp = web.layoutParams as? FrameLayout.LayoutParams ?: return
+        if (legacyInsets) lp.setMargins(insetsPx[3], insetsPx[0], insetsPx[1], insetsPx[2]) else lp.setMargins(0, 0, 0, 0)
+        web.layoutParams = lp
+    }
 
     private fun attachWeb() { web = buildWeb(); frame.addView(web, FrameLayout.LayoutParams(-1, -1)); injectLogin(); web.requestFocus() }
 

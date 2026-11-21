@@ -13,7 +13,7 @@
                              "changelog":  "Phone app: page runs edge to edge under the status bar and camera cut-out, system media controls show play state and position.",
                              "targetAbi":  "12.4.0.0",
                              "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.62.0.zip",
-                             "checksum":  "fd4eba014ff3523eb1d77384ec07885d",
+                             "checksum":  "a2c60cf3c38d56d1cf8f9a7c1be4336a",
                              "timestamp":  "2026-11-29T12:00:00Z"
                          },
                          {

@@ -1,3 +1,4 @@
+window.__cxInsets = 1; /* tells the Android app that this interface pads itself with --sat/--sab, see inset.css */
 /* ---------- early: stylesheet + login skin (must not depend on anything else in this file) ---------- */
 (function () {
   try { if (!document.getElementById('cx-style')) { const st = document.createElement('style'); st.id = 'cx-style'; st.textContent = CSS_TEXT; (document.head || document.documentElement).append(st); } } catch (e) { }
