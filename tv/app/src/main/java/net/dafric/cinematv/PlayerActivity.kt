@@ -352,7 +352,9 @@ class PlayerActivity : Activity() {
             val l = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; visibility = View.GONE; alpha = 0f
                 /* the tapped half of the screen lights up, rounded on the side towards the middle (like YouTube) */
                 val rr = dp(220).toFloat()
-                background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; setColor(Color.parseColor("#2EFFFFFF")); cornerRadii = if (left) floatArrayOf(0f, 0f, rr, rr, rr, rr, 0f, 0f) else floatArrayOf(rr, rr, 0f, 0f, 0f, 0f, rr, rr) }
+                /* the system's own touch ripple, clipped to this half */
+                val mask = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; setColor(Color.WHITE); cornerRadii = if (left) floatArrayOf(0f, 0f, rr, rr, rr, rr, 0f, 0f) else floatArrayOf(rr, rr, 0f, 0f, 0f, 0f, rr, rr) }
+                background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Color.parseColor("#66FFFFFF")), null, mask).apply { radius = dp(420) }
                 addView(ImageView(this@PlayerActivity).apply { setImageResource(icon); setColorFilter(Color.WHITE) }, LinearLayout.LayoutParams(dp(40), dp(40))); addView(t) }
             root.addView(l, FrameLayout.LayoutParams(resources.displayMetrics.widthPixels / 2, -1, if (left) Gravity.START else Gravity.END))
             return l to t
@@ -367,8 +369,13 @@ class PlayerActivity : Activity() {
 
     private fun showFx(left: Boolean, secs: Int) {
         val v = if (left) fxL else fxR; (if (left) fxLT else fxRT).text = (if (left) "−" else "+") + secs + " s"
-        v.animate().cancel(); v.visibility = View.VISIBLE; v.alpha = 1f; v.scaleX = .85f; v.scaleY = .85f
-        v.animate().scaleX(1f).scaleY(1f).setDuration(140).withEndAction { v.animate().alpha(0f).setStartDelay(450).setDuration(250).withEndAction { v.visibility = View.GONE }.start() }.start()
+        (if (left) fxR else fxL).let { it.animate().cancel(); it.visibility = View.GONE }
+        v.animate().cancel(); v.visibility = View.VISIBLE; v.alpha = 1f
+        /* every tap starts a new ripple where the finger is; the label just stays and counts up */
+        val hx = if (left) tapX else tapX - view.width / 2f
+        v.background?.setHotspot(hx.coerceAtLeast(0f), tapY)
+        v.isPressed = true; ui.postDelayed({ v.isPressed = false }, 120)
+        v.animate().alpha(0f).setStartDelay(650).setDuration(220).withEndAction { v.visibility = View.GONE }.start()
     }
 
     private val hideUnlock = Runnable { if (::unlockBtn.isInitialized) unlockBtn.visibility = View.GONE }
@@ -914,6 +921,7 @@ class PlayerActivity : Activity() {
     /* ---------------- touch (phone / tablet) ---------------- */
     private var gestureMode = 0   // 0 none, 1 brightness, 2 volume, 3 seek, 4 ignored
     private var gesBright = 0f; private var gesVol = 0f; private var gesSeekStart = 0L; private var pinch = 1f
+    private var tapX = 0f; private var tapY = 0f
     private var multiUntil = 0L; private var multiSecs = 0; private var multiLeft = false; private var swallowUntil = 0L
 
     private fun brightnessNow(): Float {
@@ -936,7 +944,7 @@ class PlayerActivity : Activity() {
     /** Tap = show / hide the controls. Double tap sides = 10 s, middle = pause. Left edge swipe up/down = brightness, right edge = volume, anywhere else swipe sideways = seek. Pinch = fit / fill. */
     private fun setupTouch() {
         val gd = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDown(e: MotionEvent) = true
+            override fun onDown(e: MotionEvent): Boolean { tapX = e.x; tapY = e.y; return true }
             override fun onSingleTapUp(e: MotionEvent): Boolean {
                 if (locked) return false
                 val z = zoneOf(e)

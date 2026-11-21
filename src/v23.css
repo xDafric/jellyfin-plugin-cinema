@@ -1,0 +1,53 @@
+/* ---------- scrollbars: thin, rounded, quiet; none at all on touch screens ---------- */
+html, html * { scrollbar-color: rgba(255,255,255,.26) transparent; }
+html * { scrollbar-width: thin; }
+@media (pointer: coarse) {
+  html, html * { scrollbar-width: none !important; }
+  html ::-webkit-scrollbar { display: none; width: 0; height: 0; }
+}
+
+/* ---------- touch: rows keep their momentum, no snapping stop, calm tap feedback ---------- */
+@media (pointer: coarse), (max-width: 800px) {
+  .nf-scroller, .nf-row-scroll, .sp-shelf, .nf-cast, .sr-cast2, .hs { scroll-snap-type: none !important; scroll-behavior: auto !important; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  html, #cx, #cx * { -webkit-tap-highlight-color: transparent; }
+  #cx button, #cx a, #cx .sp-row, #cx .sp-tile, #cx .nf-card { touch-action: manipulation; }
+  #cx .pl-btn, #cx .sp-chip, #cx .nf-btn, #cx .cx-tabs a, #cx .cx-tabs button { transition: transform .16s cubic-bezier(.2,.8,.2,1), background-color .2s, opacity .2s; }
+  #cx .pl-btn:active, #cx .sp-chip:active, #cx .cx-tabs a:active, #cx .cx-tabs button:active { transform: scale(.9); }
+  #cx .sp-tile, #cx .sp-row, #cx .nf-card { transition: transform .2s cubic-bezier(.2,.8,.2,1), background-color .2s; }
+  #cx .sp-tile:active { transform: scale(.97); }
+  #cx .sp-row:active { background: rgba(255,255,255,.07); }
+  #cx .nf-card:active { transform: scale(.975); }
+}
+
+/* ---------- playlist and album tiles on phones: padding inside the frame ---------- */
+@media (max-width: 800px) {
+  #cx .sp-tile { padding: 10px; background: #17171a; border-radius: 16px; box-sizing: border-box; }
+  #cx .sp-tile .cv { margin: 0 0 10px; }
+  #cx .sp-tile .nm, #cx .sp-tile .sb { padding: 0 2px; }
+}
+
+/* ---------- Top 10: the big number needs room at the left edge ---------- */
+.nf-row.top10 .nf-card.t10c:first-child { margin-left: 78px !important; }
+@media (max-width: 700px) { .nf-row.top10 .nf-card.t10c:first-child { margin-left: 60px !important; } }
+
+/* ---------- mini player: the thin line only shows progress, it takes no touches ---------- */
+#cx .sp-mini .mbar { pointer-events: none !important; }
+#cx .sp-mini .mknob { display: none !important; }
+#cx .sp-mini .mbar .mtrack { height: 2px; }
+
+/* ---------- seek bars: the filled part stays white (a stuck :hover after a touch made it vanish) ---------- */
+.bar i { background: #fff !important; }
+.bar:hover i { background: #fff !important; }
+@media (hover: hover) { .bar:hover i { background: var(--accent, #fff) !important; } }
+
+/* ---------- full player: lyrics card glides, more room in the top bar ---------- */
+.sp-full .f-lyr .ln-vp { height: 132px; overflow: hidden; margin-top: 12px; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
+.sp-full .f-lyr .ln { margin-top: 0; position: relative; will-change: transform; transition: transform .6s cubic-bezier(.22,.9,.2,1); }
+.sp-full .f-lyr p { transition: color .45s ease, opacity .45s ease; }
+.sp-full .f-lyr p.past { color: rgba(255,255,255,.28); }
+.sp-full .f-lyr p.on { color: #fff; }
+.sp-full .meta-act { display: flex; align-items: center; gap: 0; flex: none; }
+.sp-full .meta-act .pl-btn { width: 42px; height: 42px; display: grid; place-items: center; }
+.sp-full .meta-act .pl-btn svg { width: 24px; height: 24px; }
+.sp-full .top { gap: 4px; }
+.sp-full .top > b { flex: 1; text-align: center; }

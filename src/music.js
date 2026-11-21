@@ -158,8 +158,8 @@ function buildPlayer() {
   const fcur = h('span', {}, '0:00'), fdur = h('span', {}, '0:00');
   const fseek = seekBar(null, (f, commit) => { if (P.audio.duration) { if (commit) P.audio.currentTime = f * P.audio.duration; fcur.textContent = fmtTime(f * P.audio.duration); } });
   const fb = { sh: h('button', { class: 'pl-btn', onclick: toggleShuffle }, ic('shuffle')), pv: h('button', { class: 'pl-btn', onclick: prev }, ic('prev')), pp: h('button', { class: 'pl-btn big', onclick: toggle }, ic('play')), nx: h('button', { class: 'pl-btn', onclick: () => next() }, ic('next')), rp: h('button', { class: 'pl-btn', onclick: cycleRepeat }, ic('repeat')) };
-  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { class: 'tops' }, h('button', { class: 'pl-btn', onclick: () => toggleLyrics() }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => toggleQueue() }, ic('queue')))), fcv,
-    h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), fLike), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
+  const full = h('div', { class: 'sp-full' }, h('div', { class: 'top' }, h('button', { class: 'pl-btn', onclick: () => openFull(false) }, ic('down')), h('b', {}, t('nowPlaying')), h('div', { class: 'tops' }, h('button', { class: 'pl-btn', onclick: () => toggleLyrics() }, ic('mic')), h('button', { class: 'pl-btn', onclick: () => toggleQueue() }, ic('queue')), h('button', { class: 'pl-btn', 'aria-label': t('more'), onclick: e => { const it = cur(); if (it) trackMenu(e, it); } }, ic('more')))), fcv,
+    h('div', { class: 'meta' }, h('div', { style: 'min-width:0' }, ftn, fta), h('div', { class: 'meta-act' }, h('button', { class: 'pl-btn', 'aria-label': t('addToPl'), title: t('addToPl'), onclick: e => { const it = cur(); if (it) playlistPicker(e, it); } }, ic('plus')), fLike)), h('div', { class: 'seekwrap' }, fseek, h('div', { class: 'mp-seek' }, fcur, h('span', { style: 'flex:1' }), fdur)), h('div', { class: 'ctr' }, fb.sh, fb.pv, fb.pp, fb.nx, fb.rp));
   /* the phone's back button / swipe closes the player (or the lyrics / queue layer on top of it) instead of leaving the music page */
   BACK.closeFull = () => { full.classList.remove('open'); full.style.transform = ''; };
   function openFull(on) {
@@ -169,12 +169,16 @@ function buildPlayer() {
     if (!on && BACK.full) { BACK.full = false; BACK.skip++; try { history.back(); } catch (e) { BACK.skip--; } }
   }
   /* Spotify style lyrics card inside the full-screen player */
-  const fLn = h('div', { class: 'ln' }); const fLyr = h('div', { class: 'f-lyr hide', onclick: () => toggleLyrics() }, h('b', {}, t('lyrics')), fLn); full.append(fLyr);
+  const fLn = h('div', { class: 'ln' }); const fLyr = h('div', { class: 'f-lyr hide', onclick: () => toggleLyrics() }, h('b', {}, t('lyrics')), h('div', { class: 'ln-vp' }, fLn)); full.append(fLyr);
   let fLyrId = null, fLyrData = null;
   function paintFLyr() {
     if (!fLyrData || !fLyrData.length) { fLyr.classList.add('hide'); return; } fLyr.classList.remove('hide');
+    /* every line stays in place and the window glides to the current one, so lines no longer jump */
     const now = P.audio.currentTime + .25; let idx = 0; const synced = fLyrData[0].t != null; if (synced) { for (let i = 0; i < fLyrData.length; i++) { if (fLyrData[i].t != null && fLyrData[i].t <= now) idx = i; else if (fLyrData[i].t != null) break; } }
-    fLn.replaceChildren(...fLyrData.slice(idx, idx + 4).map((l, k) => h('p', { class: k === 0 && synced ? 'on' : '' }, l.s)));
+    if (fLn._for !== fLyrData) { fLn._for = fLyrData; fLn._idx = -2; fLn.style.transition = 'none'; fLn.style.transform = ''; fLn.replaceChildren(...fLyrData.map(l => h('p', {}, l.s))); }
+    if (fLn._idx === idx) return; const first = fLn._idx === -2; fLn._idx = idx;
+    const ps = fLn.children; for (let i = 0; i < ps.length; i++) { ps[i].classList.toggle('on', synced && i === idx); ps[i].classList.toggle('past', synced && i < idx); }
+    const y = ps[idx] ? ps[idx].offsetTop : 0; fLn.style.transition = first ? 'none' : ''; fLn.style.transform = 'translateY(' + (-y) + 'px)';
   }
   async function updFLyr() {
     const it = cur(); if (!it) return;
@@ -263,6 +267,12 @@ async function createPlaylist(name, ids) {
   C.libCache = null; await loadLibrary(true); return r;
 }
 async function addToPlaylist(plId, ids) { await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Playlists/' + plId + '/Items', { ids: ids.join(','), userId: uid() }) }); toast(t('added')); C.libCache = null; }
+/* the "+" next to the heart: straight to a playlist, like Spotify */
+async function playlistPicker(e, it) {
+  e.preventDefault(); e.stopPropagation();
+  const r = e.currentTarget.getBoundingClientRect(); const pls = (await loadLibrary()).playlists;
+  openMenu(r.left, r.bottom + 4, [{ icon: 'plus', label: t('newPl'), fn: () => promptName(t('newPl'), async n => { await createPlaylist(n, [it.Id]); toast(t('added')); }) }, '-'].concat(pls.slice(0, 14).map(p => ({ icon: 'list', label: p.Name, fn: () => addToPlaylist(p.Id, [it.Id]) }))));
+}
 async function trackMenu(e, it, ctx) {
   e.preventDefault(); e.stopPropagation();
   const x = e.clientX || (e.target.getBoundingClientRect().left), y = e.clientY || (e.target.getBoundingClientRect().bottom);
@@ -523,8 +533,8 @@ C.updateNPill = function () {
 };
 
 /* ---------- lyrics (plain + time-synced, straight from Jellyfin's lyric providers / .lrc files) ---------- */
-Object.assign(TX.en, { lyrOther: 'Other version', lyrNone: 'No other versions found', lyrBack: 'Back', lyrSyncTag: 'synced', lyrPlainTag: 'text only', lyrSave: 'Save as official lyrics', lyrSaved: 'Saved to Jellyfin', lyrSaveErr: 'Could not save (needs write access to the music folder)', lyrics: 'Lyrics', noLyrics: 'No lyrics found for this song.', lyrSynced: 'Synced', lyrPlain: 'Not synced' });
-Object.assign(TX.de, { lyrOther: 'Andere Version', lyrNone: 'Keine weiteren Versionen gefunden', lyrBack: 'Zurück', lyrSyncTag: 'synchron', lyrPlainTag: 'nur Text', lyrSave: 'Als offiziellen Songtext speichern', lyrSaved: 'In Jellyfin gespeichert', lyrSaveErr: 'Speichern nicht möglich (Schreibzugriff auf den Musikordner nötig)', lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
+Object.assign(TX.en, { addToPl: 'Add to playlist', lyrOther: 'Other version', lyrNone: 'No other versions found', lyrBack: 'Back', lyrSyncTag: 'synced', lyrPlainTag: 'text only', lyrSave: 'Save as official lyrics', lyrSaved: 'Saved to Jellyfin', lyrSaveErr: 'Could not save (needs write access to the music folder)', lyrics: 'Lyrics', noLyrics: 'No lyrics found for this song.', lyrSynced: 'Synced', lyrPlain: 'Not synced' });
+Object.assign(TX.de, { addToPl: 'Zu Playlist hinzufügen', lyrOther: 'Andere Version', lyrNone: 'Keine weiteren Versionen gefunden', lyrBack: 'Zurück', lyrSyncTag: 'synchron', lyrPlainTag: 'nur Text', lyrSave: 'Als offiziellen Songtext speichern', lyrSaved: 'In Jellyfin gespeichert', lyrSaveErr: 'Speichern nicht möglich (Schreibzugriff auf den Musikordner nötig)', lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
 /* Jellyfin's own lyric providers first; when they find nothing, look the song up on LRCLIB (through the plugin, so only title/artist/length leave the server) */
 const lyrMem = new Map(), lyrWeb = new Map(); let lyrAdmin = null;
 async function fetchLyrics(it) {

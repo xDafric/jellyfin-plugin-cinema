@@ -204,26 +204,11 @@ html.cx-tv #cx :where(.tvf-on):not(.nf-card):not(.nf-person):not(.btn):not(.sp-r
 .pl-stepper .pl-delayv { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
 .pl-seg button.on { background: #fff; color: #000; }
 
-/* ---------- scrollbars: slim, transparent track, thumb appears on hover ---------- */
-html, html * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent; }
-@supports selector(::-webkit-scrollbar) {
-  html, html * { scrollbar-width: auto; scrollbar-color: auto; }
-  html ::-webkit-scrollbar { width: 12px; height: 12px; background: transparent; }
-  html ::-webkit-scrollbar-track { background: transparent; }
-  html ::-webkit-scrollbar-corner { background: transparent; }
-  html ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-  html ::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,.12); border: 4px solid transparent; border-radius: 12px; background-clip: padding-box; min-height: 48px; min-width: 48px; transition: background-color .25s; }
-  html *:hover::-webkit-scrollbar-thumb, html ::-webkit-scrollbar-thumb:active { background-color: rgba(255,255,255,.22); }
-  html ::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,.4); }
-  html body::-webkit-scrollbar-thumb, html::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,.16); }
-}
+/* scrollbars: see v23.css */
 /* rows that already have arrows or are swiped: no bar at all */
 #cx .nf-scroller, #cx .sp-shelf, #cx .dc-bar, #cx .sp-chips, #cx .nf-seasons, #cx .nf-row-scroll { scrollbar-width: none; }
 #cx .nf-scroller::-webkit-scrollbar, #cx .sp-shelf::-webkit-scrollbar, #cx .dc-bar::-webkit-scrollbar, #cx .sp-chips::-webkit-scrollbar, #cx .nf-seasons::-webkit-scrollbar, #cx .nf-row-scroll::-webkit-scrollbar { display: none; height: 0; width: 0; }
 
-#cx-nf::-webkit-scrollbar-thumb, #cx-ui ::-webkit-scrollbar-thumb, .sp-scroll::-webkit-scrollbar-thumb, .cxd-body::-webkit-scrollbar-thumb, .sr-modal::-webkit-scrollbar-thumb, .set-main::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,.2); }
-#cx-nf:hover::-webkit-scrollbar-thumb, .sp-scroll:hover::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,.38); }
-#cx-nf::-webkit-scrollbar-thumb:hover, .sp-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,.5); }
 
 /* page asleep while the native TV player runs: no pictures kept in memory */
 html.cx-sleep #cx .bgi, html.cx-sleep #cx .nf-dback, html.cx-sleep #cx .nf-slide, html.cx-sleep #cx [style*="background-image"] { background-image: none !important; }
