@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.58.0",
+                             "changelog":  "Player polish: cleaner trickplay preview card, neutral aligned volume slider, even icon spacing, skip icons with 10 and 30, calmer time texts, tidy rounded menus with check marks.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.58.0.zip",
+                             "checksum":  "a88519aab097d954fd769102c71c8599",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.57.0",
                              "changelog":  "Player: classic full-width bar on desktop (seek bar on top, controls and times in one row, tools on the right), big centre controls on phones with Subtitles next to the tool icons, no floating panel.",
                              "targetAbi":  "12.4.0.0",
