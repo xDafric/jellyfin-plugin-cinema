@@ -13,7 +13,7 @@ async function seerrModal(x) {
   const mt = x.mediaType === 'tv' ? 'tv' : 'movie';
   const bgEl = h('div', { class: 'sp-modal-bg', onclick: e => { if (e.target === bgEl) closeModal(bgEl); } }); const box = h('div', { class: 'sr-modal' }, h('div', { class: 'spinner', style: 'margin:80px auto' })); bgEl.append(box); getUI().append(bgEl);
   let d; try { d = await seerrGet('/' + mt + '/' + x.id); } catch (e) { box.replaceChildren(h('div', { class: 'nf-empty' }, e.message)); return; }
-  const admin = !!((await me()).Policy || {}).IsAdministrator;
+  const admin = !!((await me()).Policy || {}).IsAdministrator; await swLoad();
   const lm = await libMap(), rm = await reqMap(); d.mediaType = mt; d.id = x.id; const st = dStatus(Object.assign({}, d, { mediaType: mt, id: x.id, mediaInfo: d.mediaInfo }), lm, rm);
   const title = d.title || d.name; const year = (d.releaseDate || d.firstAirDate || '').slice(0, 4);
   const crew = (d.credits && d.credits.crew) || []; const cast = ((d.credits && d.credits.cast) || []).slice(0, 18);
@@ -56,6 +56,7 @@ async function seerrModal(x) {
       sv.el.onchange = e => fill(+e.target.value); await fill(def.id); advBox.append(sv.row, pf.row, fo.row); advOk = true;
     }).catch(() => { });
   }
+  const swBtn = hasSeerr() && st.k !== 'own' ? (() => { const on0 = swHas(mt, x.id); const b = h('button', { class: 'btn grey' + (on0 ? ' on' : '') }, ic(on0 ? 'check' : 'plus'), on0 ? t('wlOn') : t('watchlist')); b.onclick = async () => { b.disabled = true; const on = await swToggle(mt, x.id, title); b.disabled = false; b.classList.toggle('on', on); b.replaceChildren(ic(on ? 'check' : 'plus'), on ? t('wlOn') : t('watchlist')); }; return b; })() : null;
   const poster = TM(d.posterPath, 'w500');
   box.replaceChildren(
     h('div', Object.assign({ class: 'sr-hero' }, bg(TM(d.backdropPath, 'w1280'))), h('button', { class: 'sr-close', onclick: () => closeModal(bgEl), 'aria-label': 'Close' }, ic('close'))),
@@ -64,10 +65,24 @@ async function seerrModal(x) {
         h('div', { class: 'sr-head' }, h('h2', {}, title, year ? h('span', {}, ' (' + year + ')') : null), d.tagline ? h('p', { class: 'nf-tagline' }, d.tagline) : null,
           h('div', { class: 'nf-meta' }, (d.genres || []).slice(0, 4).map(g => h('span', {}, g.name)), runtime ? h('span', {}, runtime + ' ' + t('min')) : null),
           ratings, status,
-          h('div', { class: 'nf-btns', style: 'margin-top:14px' }, btn, trailer ? h('a', { class: 'btn grey', href: 'https://www.youtube.com/watch?v=' + trailer.key, target: '_blank', rel: 'noopener' }, ic('film'), t('watchTrailer')) : null, h('button', { class: 'btn grey', onclick: () => closeModal(bgEl) }, t('close'))))),
+          h('div', { class: 'nf-btns', style: 'margin-top:14px' }, btn, swBtn, trailer ? h('a', { class: 'btn grey', href: 'https://www.youtube.com/watch?v=' + trailer.key, target: '_blank', rel: 'noopener' }, ic('film'), t('watchTrailer')) : null, h('button', { class: 'btn grey', onclick: () => closeModal(bgEl) }, t('close'))))),
       h('p', { class: 'sr-ov' }, d.overview || ''), seasonBox,
       facts.length ? h('dl', { class: 'nf-facts sr-facts' }, facts.map(f => [h('dt', {}, f[0]), h('dd', {}, f[1])])) : null,
-      cast.length ? h('div', { class: 'sr-castw' }, h('h3', {}, t('moreCast')), hscroll(h('div', { class: 'sr-cast2' }, cast.map(c => h('button', { class: 'sr-p', onclick: () => personDialog(c) }, h('div', Object.assign({ class: 'pi' }, bg(c.profilePath ? TM(c.profilePath, 'w185') : ''))), h('b', {}, c.name), h('small', {}, c.character || ''))))) ) : null));
+      cast.length ? h('div', { class: 'sr-castw' }, h('h3', {}, t('moreCast')), hscroll(h('div', { class: 'sr-cast2' }, cast.map(c => h('button', { class: 'sr-p', onclick: () => { closeModal(bgEl); go('#/c/person/t' + c.id); } }, h('div', Object.assign({ class: 'pi' }, bg(c.profilePath ? TM(c.profilePath, 'w185') : ''))), h('b', {}, c.name), h('small', {}, c.character || ''))))) ) : null));
+}
+Object.assign(TX.en, { wlOn: 'On your watchlist' }); Object.assign(TX.de, { wlOn: 'Auf der Watchlist' });
+/* the Seerr watchlist (for titles that are not in the library): state is loaded once and kept for two minutes */
+const SW = { set: null, at: 0, p: null };
+async function swLoad(force) {
+  if (!hasSeerr()) return new Set(); if (!force && SW.set && Date.now() - SW.at < 120000) return SW.set; if (SW.p && !force) return SW.p;
+  SW.p = (async () => { const s = new Set(); try { for (let pg = 1; pg <= 6; pg++) { const r = await seerrGet('/discover/watchlist', { page: pg }); (r.results || []).forEach(x => { if (x.tmdbId) s.add((x.mediaType === 'tv' ? 'tv' : 'movie') + ':' + x.tmdbId); }); if (pg >= (r.totalPages || 1)) break; } } catch (e) { } SW.set = s; SW.at = Date.now(); SW.p = null; return s; })(); return SW.p;
+}
+const swHas = (mt, id) => !!(SW.set && SW.set.has((mt === 'tv' ? 'tv' : 'movie') + ':' + id));
+async function swToggle(mt, id, title) {
+  mt = mt === 'tv' ? 'tv' : 'movie'; await swLoad(); const on = !swHas(mt, id);
+  try { if (on) await cpostSeerr('/watchlist', { tmdbId: +id, mediaType: mt, title: title || '' }); else await ApiClient.ajax({ type: 'DELETE', url: ApiClient.getUrl(SEERR + '/watchlist/' + id, { mediaType: mt }) });
+    SW.set = SW.set || new Set(); on ? SW.set.add(mt + ':' + id) : SW.set.delete(mt + ':' + id); toast(on ? t('wlAdded') : t('wlRemoved')); try { invalidatePages(true); } catch (e) { } return on;
+  } catch (e) { toast(((e.responseJSON && e.responseJSON.message) || e.statusText || 'Seerr')); return !on; }
 }
 function cpostSeerr(path, body) { return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl(SEERR + path), data: JSON.stringify(body), contentType: 'application/json', dataType: 'json' }); }
 

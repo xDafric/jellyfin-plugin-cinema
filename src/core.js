@@ -174,7 +174,8 @@ function hscroll(sc) {
   const R_ = h('button', { class: 'nf-arrow r', 'aria-label': 'Next', onclick: () => sc.scrollBy({ left: sc.clientWidth * .8 }) }, ic('right'));
   const w = h('div', { class: 'hs-wrap' }, L_, sc, R_);
   const upd = () => { L_.classList.toggle('off', sc.scrollLeft < 8); R_.classList.toggle('off', sc.scrollLeft + sc.clientWidth > sc.scrollWidth - 8); };
-  sc.addEventListener('scroll', upd, { passive: true }); setTimeout(upd, 60); setTimeout(upd, 500);
+  sc.addEventListener('scroll', upd, { passive: true }); setTimeout(upd, 60); setTimeout(upd, 500); setTimeout(upd, 2000);
+  try { if (window.ResizeObserver) { const ro = new ResizeObserver(upd); ro.observe(sc); if (sc.firstElementChild) ro.observe(sc.firstElementChild); } } catch (e) { }
   return w;
 }
 function row(title, list, kind, opts) {
@@ -339,7 +340,7 @@ async function searchView(page, q) {
   if (C.nf.sInput.value !== q) { C.nf.sInput.value = q; C.nf.sInput.parentElement.classList.add('open'); }
   wrap.append(h('div', { class: 'spinner', style: 'margin:60px auto' }));
   const get = types => items({ searchTerm: q, IncludeItemTypes: types, Limit: 40 }).then(r => r.Items).catch(() => []);
-  const [mv, sh, ep, box, music, ppl] = await Promise.all([get('Movie'), get('Series'), get('Episode'), get('BoxSet'), get('MusicAlbum,MusicArtist,Audio'),
+  const [mv, sh, ep, box, music, ppl] = await Promise.all([get('Movie'), get('Series'), get('Episode'), get('BoxSet').then(hxBoxes), get('MusicAlbum,MusicArtist,Audio'),
     api('Persons', { searchTerm: q, userId: uid(), Limit: 16, Fields: 'PrimaryImageAspectRatio' }).then(r => r.Items).catch(() => [])]);
   wrap.querySelector('.spinner').remove();
   const groups = [['mv', t('movies'), mv, 'poster'], ['sh', t('shows'), sh, 'poster'], ['ep', t('srEps'), ep, 'thumb'], ['box', t('collection'), box, 'poster'], ['ppl', t('srPeople'), ppl, 'person'], ['mu', t('srMusic'), music, 'poster']].filter(g => g[2].length);
@@ -378,6 +379,7 @@ async function itemView(page, id) {
   const logo = imgUrl(it, 'Logo', 700);
   const isSeries = it.Type === 'Series', isBox = it.Type === 'BoxSet';
   const prog = pct(it);
+  const wlBtn = h('button', { class: 'btn round' + (isWatch(it) ? ' on' : ''), 'aria-label': t('watchlist'), title: isWatch(it) ? t('wlRemove') : t('wlAdd'), onclick: async () => { const on = await toggleWatch(it); wlBtn.classList.toggle('on', on); wlBtn.replaceChildren(ic(on ? 'check' : 'plus')); wlBtn.title = on ? t('wlRemove') : t('wlAdd'); } }, ic(isWatch(it) ? 'check' : 'plus'));
   const favBtn = h('button', { class: 'btn round' + (ud(it).IsFavorite ? ' on' : ''), 'aria-label': t('mylist'), onclick: async () => { const on = !ud(it).IsFavorite; await ApiClient.updateFavoriteStatus(uid(), it.Id, on); it.UserData.IsFavorite = on; favBtn.classList.toggle('on', on); favBtn.replaceChildren(ic(on ? 'heartOn' : 'heart')); favBtn.title = on ? t('favRemove') : t('favAdd'); } }, ic(ud(it).IsFavorite ? 'heartOn' : 'heart'));
   favBtn.title = ud(it).IsFavorite ? t('favRemove') : t('favAdd');
   const seenBtn = !isSeries && !isBox ? h('button', { class: 'btn round' + (ud(it).Played ? ' on' : ''), 'aria-label': t('watched'), onclick: async () => { const on = !ud(it).Played; on ? await ApiClient.markPlayed(uid(), it.Id, new Date()) : await ApiClient.markUnplayed(uid(), it.Id); it.UserData.Played = on; seenBtn.classList.toggle('on', on); seenBtn.title = on ? t('markUnwatched') : t('markWatched'); } }, ic('eye')) : null;
@@ -392,7 +394,7 @@ async function itemView(page, id) {
     (it.Taglines || [])[0] ? h('p', { class: 'nf-tagline' }, it.Taglines[0]) : null,
     h('p', { class: 'ov', onclick: e => e.currentTarget.classList.toggle('open') }, it.Overview || ''),
     h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: () => playVideo(it) }, ic('play'), prog ? t('resume') : t('play')), dlButton(it),
-      trailer ? h('a', { class: 'btn grey', href: trailer.Url, target: '_blank', rel: 'noopener' }, ic('film'), t('trailer')) : null, favBtn, seenBtn, moreBtn),
+      trailer ? h('a', { class: 'btn grey', href: trailer.Url, target: '_blank', rel: 'noopener' }, ic('film'), t('trailer')) : null, wlBtn, favBtn, seenBtn, moreBtn),
     prog ? h('div', { class: 'nf-resume-bar' }, h('i', { style: 'width:' + prog + '%' })) : null,
     h('dl', { class: 'nf-facts' }, (it.Genres || []).length ? [h('dt', {}, t('genres')), h('dd', {}, it.Genres.join(', '))] : null, dir ? [h('dt', {}, t('director')), h('dd', {}, dir)] : null, (it.Studios || []).length ? [h('dt', {}, t('studio')), h('dd', {}, it.Studios.map(s => s.Name).join(', '))] : null));
   const poster = imgUrl(it, 'Primary', 500);

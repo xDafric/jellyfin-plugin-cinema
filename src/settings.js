@@ -20,7 +20,7 @@ const SEC = {
   followPicks: { label: () => t('gFavNew') + ' (' + t('rcDiscoverTag') + ')', follow: true },
   tonight: { label: () => t('tnTitle'), tonight: true },
   recentEps: { label: () => t('recentEps'), run: () => api('Users/' + uid() + '/Items/Latest', { IncludeItemTypes: 'Episode', Limit: 24, Fields: F_BASE, GroupItems: false, EnableImageTypes: 'Primary,Backdrop,Thumb', ImageTypeLimit: 1 }), kind: 'thumb' },
-  collections: { label: () => t('collections'), run: () => items({ IncludeItemTypes: 'BoxSet', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 30 }), kind: 'poster', min: 2 },
+  collections: { label: () => t('collections'), run: () => items({ IncludeItemTypes: 'BoxSet', SortBy: 'DateCreated', SortOrder: 'Descending', Limit: 40 }).then(async r => { r.Items = await hxBoxes(r.Items); return r; }), kind: 'poster', min: 2 },
   unwatched: { label: () => t('unwatched'), run: () => items({ IncludeItemTypes: 'Movie', Filters: 'IsUnplayed', SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 20, MinCommunityRating: 7 }), kind: 'thumb' },
   decade: { label: p => p.title || t('decade'), custom: true, run: p => { const a = +p.param; return items({ IncludeItemTypes: 'Movie', Years: Array.from({ length: 10 }, (_, i) => a + i).join(','), SortBy: 'CommunityRating', SortOrder: 'Descending', Limit: 24 }); }, kind: 'poster' },
   genres: { label: () => t('genresRandom'), multi: true },

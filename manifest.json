@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.66.0",
+                             "changelog":  "Movies: watchlist button with state everywhere (library and Seerr), richer media info, one actor page with roles and popularity, collections with only hidden titles are hidden, cast hover and Top 10 scroll fixes. Music: artist songs on top, downloads page with covers and filters.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.66.0.zip",
+                             "checksum":  "c82add4c91e7264d5facbc3a964f9c8e",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.65.0",
                              "changelog":  "Fix: the server settings page of Cinema did not open (a typo in the Cinema Connect description).",
                              "targetAbi":  "12.4.0.0",

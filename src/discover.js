@@ -29,6 +29,7 @@ function dMark(s) {
   return s.k === 'own' ? h('span', { class: 'dmark own' }, ic('check', 'ic-s'), t('inLib')) : s.k === 'req' ? h('span', { class: 'dmark req' }, ic('star', 'ic-s'), t('requested')) : h('span', { class: 'dmark' }, ic('plus', 'ic-s'), t('notOwned'));
 }
 function dCard(x, lm, rm) {
+  swLoad();
   x.mediaType = x.mediaType === 'tv' ? 'tv' : 'movie';
   const title = x.title || x.name; const s = dStatus(x, lm, rm);
   const src = TM(x.posterPath, 'w500');
@@ -39,7 +40,7 @@ function dCard(x, lm, rm) {
   const open = () => { if (s.k === 'own' && s.item) go(itemHash(s.item)); else openSeerrInfo(x); };
   const el = h('div', { class: 'nf-card poster seerr ' + (s.k === 'none' ? 'notown' : s.k), onclick: open }, im, h('div', { class: 'title ell' }, title), x._why ? h('div', { class: 'why ell' }, x._why) : null);
   attachPeek(el, im, () => ({ poster: true, img: src || TM(x.backdropPath, 'w780'), title, open, overview: x.overview,
-    actions: [{ icon: s.k === 'own' ? 'play' : s.k === 'req' ? 'check' : 'plus', label: s.k === 'own' ? t('play') : t('request'), primary: true, fn: () => { hidePeek(); if (s.k === 'own' && s.item) playVideo(s.item); else if (s.k === 'none') openSeerrRequest(x); else openSeerrInfo(x); } }, s.k === 'own' ? null : { icon: 'star', label: t('wlAdd'), fn: async e => { const b = e.currentTarget; if (await seerrWatch(x) && b) { b.replaceChildren(ic('check')); b.classList.add('on'); b.title = t('wlAdded'); } } }, '-', { icon: 'info', label: t('info'), fn: () => { hidePeek(); openSeerrInfo(x); } }],
+    actions: [{ icon: s.k === 'own' ? 'play' : s.k === 'req' ? 'check' : 'plus', label: s.k === 'own' ? t('play') : t('request'), primary: true, fn: () => { hidePeek(); if (s.k === 'own' && s.item) playVideo(s.item); else if (s.k === 'none') openSeerrRequest(x); else openSeerrInfo(x); } }, s.k === 'own' ? null : { icon: () => swHas(x.mediaType, x.id) ? 'check' : 'plus', label: t('watchlist'), fn: async e => { const b = e.currentTarget; const on = await swToggle(x.mediaType, x.id, title); if (b) { b.replaceChildren(ic(on ? 'check' : 'plus')); b.classList.toggle('on', on); b.title = on ? t('wlRemove') : t('wlAdd'); } } }, '-', { icon: 'info', label: t('info'), fn: () => { hidePeek(); openSeerrInfo(x); } }],
     meta: [x.voteAverage ? { t: Math.round(x.voteAverage * 10) + '%', cls: 'g' } : null, year, x.mediaType === 'tv' ? t('shows') : t('movies'), s.k === 'own' ? { t: t('inLib'), cls: 'g' } : s.k === 'req' ? t('requested') : t('notOwned')] }));
   return el;
 }

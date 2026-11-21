@@ -65,31 +65,53 @@ async function watchlistView(page) {
   setTimeout(() => { if (!g.grid.children.length && !reqBox.children.length) g.grid.after(h('div', { class: 'nf-empty' }, t('empty'))); }, 3000);
 }
 
+Object.assign(TX.en, { pfKnown: 'Known for', pfBorn: 'Born', pfDied: 'Died', pfAge: 'years', pfAka: 'Also known as', pfLinks: 'More', pfPop: 'Most popular', pfNew: 'Newest', pfRated: 'Best rated', pfAs: 'as', pfLib: 'In your library', pfNot: 'Not in your library', pfAll: 'All', pfMore: 'Show more', pfNoBio: 'No biography available.', pfAct: 'Acting', pfDir: 'Directing', pfWrite: 'Writing', pfProd: 'Production', pfCrew: 'Crew' });
+Object.assign(TX.de, { pfKnown: 'Bekannt für', pfBorn: 'Geboren', pfDied: 'Gestorben', pfAge: 'Jahre', pfAka: 'Auch bekannt als', pfLinks: 'Mehr', pfPop: 'Beliebteste', pfNew: 'Neueste', pfRated: 'Bestbewertet', pfAs: 'als', pfLib: 'In deiner Bibliothek', pfNot: 'Nicht in deiner Bibliothek', pfAll: 'Alle', pfMore: 'Mehr anzeigen', pfNoBio: 'Keine Biografie vorhanden.', pfAct: 'Schauspiel', pfDir: 'Regie', pfWrite: 'Drehbuch', pfProd: 'Produktion', pfCrew: 'Team' });
+/* the page of a person: a library person (id) or one only known from the film database (id = t + TMDB number) */
 async function personView(page, id) {
-  const p = await getItem(id);
-  const body = h('div', { class: 'nf-page-pad' }); page.append(body);
-  const img = imgUrl(p, 'Primary', 500);
-  body.append(h('div', { class: 'nf-dhead', style: 'align-items:flex-start;margin-bottom:34px' },
-    h('div', Object.assign({ class: 'nf-dposter', style: 'border-radius:50%;aspect-ratio:1;width:clamp(150px,16vw,240px)' }, bg(img))),
-    h('div', { class: 'nf-dinfo' }, h('h1', {}, p.Name),
-      h('div', { class: 'nf-meta' }, p.PremiereDate ? h('span', {}, new Date(p.PremiereDate).toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })) : null, (p.ProductionLocations || [])[0] ? h('span', {}, p.ProductionLocations[0]) : null),
-      h('p', { class: 'ov clamp3', style: 'cursor:pointer', onclick: e => e.currentTarget.classList.toggle('clamp3') }, (p.Overview || '').replace(/<[^>]+>/g, '')), (() => { try { return gPersonFollow(p); } catch (e) { return null; } })())));
-  const [mv, sh] = await Promise.all([items({ PersonIds: id, IncludeItemTypes: 'Movie', SortBy: 'PremiereDate', SortOrder: 'Descending', Limit: 200 }), items({ PersonIds: id, IncludeItemTypes: 'Series', SortBy: 'PremiereDate', SortOrder: 'Descending', Limit: 100 })]);
-  [[t('movies'), mv.Items], [t('shows'), sh.Items]].forEach(([title, list]) => { if (list.length) body.append(h('section', { class: 'nf-sect' }, h('h2', {}, title + ' (' + list.length + ')'), h('div', { class: 'nf-grid' }, list.map(i => card(i, 'poster'))))); });
-  await personNotOwned(body, p);
-  if (!mv.Items.length && !sh.Items.length && !body.querySelector('.nf-sect')) body.append(h('div', { class: 'nf-empty' }, t('empty')));
-}
-
-async function personNotOwned(body, person) {
-  const tm = (person.ProviderIds || {}).Tmdb; if (!tm || !(await waitSeerr())) return;
-  try {
-    const [lm, rm, cr] = await Promise.all([libMap(), reqMap(), seerrGet('/person/' + tm + '/combined_credits')]);
-    const seen = new Set();
-    const list = [].concat(cr.cast || [], cr.crew || []).filter(x => (x.mediaType === 'movie' || x.mediaType === 'tv') && x.posterPath).filter(x => { const k = x.mediaType + x.id; if (seen.has(k)) return false; seen.add(k); return true; })
-      .filter(x => dStatus(x, lm, rm).k !== 'own').sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0)).slice(0, 60);
-    if (!list.length) return;
-    body.append(h('section', { class: 'nf-sect' }, h('h2', {}, t('notInLib') + ' (' + list.length + ')'), h('div', { class: 'nf-grid' }, list.map(x => dCard(x, lm, rm)))));
-  } catch (e) { console.warn('[cinema] person credits', e); }
+  const fromDb = /^t\d+$/.test(id); const p = fromDb ? null : await getItem(id); const tm = fromDb ? +id.slice(1) : +((p.ProviderIds || {}).Tmdb) || 0;
+  const body = h('div', { class: 'nf-page-pad pf-page' }); page.append(body);
+  const seerr = tm && (hasSeerr() || await waitSeerr().catch(() => false));
+  const info = seerr ? await seerrGet('/person/' + tm).catch(() => null) : null;
+  const name = p ? p.Name : (info && info.name) || '?';
+  const dep = info && info.knownForDepartment ? ({ Acting: t('pfAct'), Directing: t('pfDir'), Writing: t('pfWrite'), Production: t('pfProd') }[info.knownForDepartment] || info.knownForDepartment) : '';
+  const bornD = (p && p.PremiereDate) || (info && info.birthday) || ''; const diedD = (p && p.EndDate) || (info && info.deathday) || '';
+  const fmt = d => new Date(d).toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const age = bornD ? Math.floor(((diedD ? new Date(diedD) : new Date()) - new Date(bornD)) / 31557600000) : 0;
+  const place = (p && (p.ProductionLocations || [])[0]) || (info && info.placeOfBirth) || '';
+  const bio = String((p && p.Overview) || (info && info.biography) || '').replace(/<[^>]+>/g, '').trim();
+  const imgSrc = p ? imgUrl(p, 'Primary', 500) : (info && info.profilePath ? TM(info.profilePath, 'w500') : '');
+  const aka = ((info && info.alsoKnownAs) || []).filter(x => /^[\x20-\x7e\u00c0-\u024f]+$/.test(x)).slice(0, 4);
+  const links = h('div', { class: 'pf-links' }, tm ? h('a', { class: 'btn grey', href: 'https://www.themoviedb.org/person/' + tm, target: '_blank', rel: 'noopener' }, 'TMDB') : null, (info && info.imdbId) || (p && (p.ProviderIds || {}).Imdb) ? h('a', { class: 'btn grey', href: 'https://www.imdb.com/name/' + ((info && info.imdbId) || p.ProviderIds.Imdb), target: '_blank', rel: 'noopener' }, 'IMDb') : null);
+  const facts = [dep ? [t('pfKnown'), dep] : null, bornD ? [t('pfBorn'), fmt(bornD) + (age && !diedD ? ' · ' + age + ' ' + t('pfAge') : '')] : null, diedD ? [t('pfDied'), fmt(diedD) + (age ? ' · ' + age + ' ' + t('pfAge') : '')] : null, place ? ['', place] : null, aka.length ? [t('pfAka'), aka.join(', ')] : null].filter(Boolean);
+  const bioEl = h('p', { class: 'ov pf-bio clamp3', onclick: e => e.currentTarget.classList.toggle('clamp3') }, bio || t('pfNoBio'));
+  body.append(h('div', { class: 'pf-head' }, h('div', Object.assign({ class: 'pf-photo' }, bg(imgSrc))),
+    h('div', { class: 'pf-info' }, h('h1', {}, name),
+      facts.length ? h('div', { class: 'pf-facts' }, facts.map(f => h('span', { class: 'pf-fact' }, f[0] ? h('i', {}, f[0]) : null, f[1]))) : null, bioEl,
+      h('div', { class: 'pf-actions' }, (() => { try { return p ? gPersonFollow(p) : null; } catch (e) { return null; } })(), links))));
+  const holder = h('div', { class: 'pf-credits' }, h('div', { class: 'spinner', style: 'margin:40px auto' })); body.append(holder);
+  /* everything the person is credited in (cast), with the role; the library list comes from Jellyfin itself */
+  const [lm, rm, cr, own] = await Promise.all([libMap(), reqMap(), seerr ? seerrGet('/person/' + tm + '/combined_credits').catch(() => null) : Promise.resolve(null),
+    p ? Promise.all([items({ PersonIds: id, IncludeItemTypes: 'Movie', SortBy: 'PremiereDate', SortOrder: 'Descending', Limit: 300, Fields: F_BASE + ',ProviderIds' }), items({ PersonIds: id, IncludeItemTypes: 'Series', SortBy: 'PremiereDate', SortOrder: 'Descending', Limit: 150, Fields: F_BASE + ',ProviderIds' })]).then(r => r[0].Items.concat(r[1].Items)) : Promise.resolve([])]);
+  holder.replaceChildren();
+  const seen = new Set(), rows = [];
+  ((cr && cr.cast) || []).forEach(x => { if ((x.mediaType !== 'movie' && x.mediaType !== 'tv') || !(x.posterPath || x.backdropPath)) return; const k = x.mediaType + ':' + x.id; if (seen.has(k)) return; seen.add(k); if ((x.genreIds || []).some(g => g === 10767 || g === 10763 || g === 10764)) return; rows.push({ k, x, role: String(x.character || '').replace(/\s*\(.*?\)\s*/g, '').trim(), pop: (x.voteCount || 0) + (x.popularity || 0) * 5, date: Date.parse(x.releaseDate || x.firstAirDate || '') || 0, rate: x.voteAverage || 0, mt: x.mediaType === 'tv' ? 'tv' : 'movie' }); });
+  const items_ = rows.map(r => ({ r, it: lm[r.k] || null }));
+  /* library titles Seerr does not list for this person */
+  own.forEach(it => { const tmid = (it.ProviderIds || {}).Tmdb; const k = (it.Type === 'Series' ? 'tv' : 'movie') + ':' + tmid; if (tmid && seen.has(k)) return; if (items_.some(o => o.it && o.it.Id === it.Id)) return; items_.push({ r: { k: it.Id, role: '', pop: (it.CommunityRating || 0) * 10, date: Date.parse(it.PremiereDate || '') || 0, rate: it.CommunityRating || 0, mt: it.Type === 'Series' ? 'tv' : 'movie' }, it }); });
+  if (!items_.length) { holder.append(h('div', { class: 'nf-empty' }, t('empty'))); return; }
+  let type = 'all', sort = 'pop', shownNot = 24; const ctl = h('div', { class: 'pf-ctl' }); const lists = h('div', {});
+  const withRole = (el, role) => { if (role) el.append(h('div', { class: 'pf-role ell', title: role }, t('pfAs') + ' ' + role)); return el; };
+  const order = (a, b) => sort === 'new' ? b.r.date - a.r.date : sort === 'rate' ? b.r.rate - a.r.rate : b.r.pop - a.r.pop;
+  const draw = () => {
+    const f = items_.filter(o => type === 'all' || o.r.mt === type).sort(order); const inLib = f.filter(o => o.it), not = f.filter(o => !o.it);
+    lists.replaceChildren();
+    if (inLib.length) lists.append(h('section', { class: 'nf-sect' }, h('h2', {}, t('pfLib') + ' (' + inLib.length + ')'), h('div', { class: 'nf-grid pf-grid' }, inLib.map(o => withRole(card(o.it, 'poster'), o.r.role)))));
+    if (not.length) { const more = not.length > shownNot; lists.append(h('section', { class: 'nf-sect' }, h('h2', {}, t('pfNot') + ' (' + not.length + ')'), h('div', { class: 'nf-grid pf-grid' }, not.slice(0, shownNot).map(o => withRole(dCard(Object.assign({}, o.r.x, { mediaType: o.r.mt }), lm, rm), o.r.role))), more ? h('button', { class: 'btn grey pf-more', onclick: () => { shownNot += 36; draw(); } }, t('pfMore')) : null)); }
+  };
+  const chips = (val, set, opts) => h('div', { class: 'pf-chips' }, opts.map(([v, l]) => h('button', { class: 'nf-chip' + (v === val ? ' on' : ''), onclick: e => { set(v); [...e.currentTarget.parentElement.children].forEach(c => c.classList.toggle('on', c === e.currentTarget)); shownNot = 24; draw(); } }, l)));
+  ctl.append(chips(type, v => { type = v; }, [['all', t('pfAll')], ['movie', t('movies')], ['tv', t('shows')]]), chips(sort, v => { sort = v; }, [['pop', t('pfPop')], ['new', t('pfNew')], ['rate', t('pfRated')]]));
+  holder.append(ctl, lists); draw();
 }
 
 /* full page for a home row: everything that matches (genre, decade, collection, library ...) */

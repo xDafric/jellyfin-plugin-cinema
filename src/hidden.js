@@ -131,4 +131,11 @@ function hxSeerr(d) {
 }
 
 if (HID.on) { const iv = setInterval(() => { if (window.ApiClient && ApiClient.getCurrentUserId && ApiClient.getCurrentUserId()) { clearInterval(iv); hxLoad().then(() => { try { route(); } catch (e) { } }).catch(() => { }); } }, 500); }
+/* a collection whose films are all hidden is hidden too (checked once per collection, only while some titles are hidden) */
+const HXB = new Map();
+async function hxBoxes(list) {
+  list = list || []; if (HID.on || !HID.loaded || !HID.ids.size) return list;
+  const out = await Promise.all(list.map(async b => { if (b.Type !== 'BoxSet') return b; if (!HXB.has(b.Id)) HXB.set(b.Id, items({ ParentId: b.Id, Limit: 1 }).then(r => (r.Items || []).length > 0).catch(() => true)); return (await HXB.get(b.Id)) ? b : null; }));
+  return out.filter(Boolean);
+}
 const hxIsHiddenItem = it => HID.ids.has(it.Id) || (it.Tags || []).some(hxIsTag);

@@ -516,6 +516,11 @@ async function mArtist(n, id) {
   pageHead(n, { type: t('artist'), title: ar.Name, round: true, img: imgUrl(ar, 'Primary', 500), meta: [all.length + ' ' + t('songsN')] });
   const ctx = { id, number: 'idx' }; n.append(actionsBar(all, ctx));
   window.__artistNode = n; window.__artistItem = ar;
+  /* the songs you have: right at the top */
+  if (all.length) { let shown = 6; const ownBox = h('div', {}), moreBtn = h('button', { class: 'nf-chip sp-allsongs' }, ''); const ownCtx = { id: id + '-own', number: 'idx' };
+    const drawOwn = () => { const byPlays = all.slice().sort((x, y) => ((ud(y).PlayCount || 0) - (ud(x).PlayCount || 0)) || String(x.Name).localeCompare(String(y.Name))); ownBox.replaceChildren(trackList(byPlays.slice(0, shown), ownCtx)); $$('.sp-th', ownBox).forEach(x => x.remove()); moreBtn.style.display = all.length > shown ? '' : 'none'; moreBtn.textContent = t('allSongs') + ' (' + all.length + ')'; };
+    moreBtn.onclick = () => { shown = shown >= 6 && shown < all.length ? all.length : 6; drawOwn(); if (shown === 6) moreBtn.style.display = ''; }; drawOwn();
+    n.append(h('h2', { style: 'margin-top:8px' }, t('inYourLibrary') + ' · ' + all.length + ' ' + t('songsN')), ownBox, h('div', { class: 'sp-morewrap' }, moreBtn)); }
   const popBox = h('div', {}), popMore = h('div', { class: 'sp-morewrap' }); n.append(h('h2', { style: 'margin-top:8px' }, t('popularTracks')), popBox, popMore);
   artistPopular(ar, all, popBox, popMore);
   await artistDisco(n, ar, alb);
@@ -535,6 +540,7 @@ C.updateNPill = function () {
   $('.cv', pill).style.backgroundImage = 'url("' + trackImg(it, 100) + '")'; $('b', pill).textContent = it.Name; $('span', pill).textContent = artistText(it); $('.pp', pill).replaceChildren(ic(P.audio.paused ? 'play' : 'pause'));
 };
 
+Object.assign(TX.en, { inYourLibrary: 'In your library', allSongs: 'Show all songs' }); Object.assign(TX.de, { inYourLibrary: 'In deiner Bibliothek', allSongs: 'Alle Songs anzeigen' });
 /* ---------- lyrics (plain + time-synced, straight from Jellyfin's lyric providers / .lrc files) ---------- */
 Object.assign(TX.en, { addToPl: 'Add to playlist', lyrOther: 'Other version', lyrNone: 'No other versions found', lyrBack: 'Back', lyrSyncTag: 'synced', lyrPlainTag: 'text only', lyrSave: 'Save as official lyrics', lyrSaved: 'Saved to Jellyfin', lyrSaveErr: 'Could not save (needs write access to the music folder)', lyrics: 'Lyrics', noLyrics: 'No lyrics found for this song.', lyrSynced: 'Synced', lyrPlain: 'Not synced' });
 Object.assign(TX.de, { addToPl: 'Zu Playlist hinzufügen', lyrOther: 'Andere Version', lyrNone: 'Keine weiteren Versionen gefunden', lyrBack: 'Zurück', lyrSyncTag: 'synchron', lyrPlainTag: 'nur Text', lyrSave: 'Als offiziellen Songtext speichern', lyrSaved: 'In Jellyfin gespeichert', lyrSaveErr: 'Speichern nicht möglich (Schreibzugriff auf den Musikordner nötig)', lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });

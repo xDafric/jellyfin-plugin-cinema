@@ -48,6 +48,7 @@ async function artistPopular(ar, all, popBox, moreHost) {
     const top = await tracksOf({ ArtistIds: ar.Id, SortBy: 'PlayCount,SortName', SortOrder: 'Descending', Limit: 10 }); list = top.concat(all.filter(x => !top.some(y => y.Id === x.Id)));
   }
   } catch (e) { console.warn('[cinema] popular', e); list = all.slice(); }
+  { const seenId = new Set(); list = list.filter(x => x._ext || !seenId.has(x.Id) && seenId.add(x.Id)); }   /* a song you own can match two chart entries */
   let open = false; const btn = h('button', { class: 'btn grey sp-more', onclick: () => { open = !open; draw(); } });
   const draw = () => { const shown = open ? list : list.slice(0, 5); popBox.replaceChildren(trackList(shown, { id: ar.Id + '-pop' + (open ? 'all' : ''), number: 'idx' })); $$('.sp-th', popBox).forEach(x => x.remove()); btn.textContent = open ? t('showFewer') : t('showMoreSongs') + ' (' + list.length + ')'; btn.hidden = list.length <= 5; };
   moreHost.replaceChildren(btn); draw();

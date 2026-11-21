@@ -74,6 +74,7 @@ async function aurralArtistExtras(n, ar) {
 Object.assign(TX.en, { mdl: 'Downloads', mdlTitle: 'Download queue', mdlEmpty: 'Nothing is downloading right now.', mdlHint: 'Requested music shows up here while it is fetched.', popMissing: 'Popular · not in your library', songRequests: 'Songs you can request', reqSong: 'Request' });
 Object.assign(TX.de, { mdl: 'Downloads', mdlTitle: 'Download-Warteschlange', mdlEmpty: 'Gerade wird nichts heruntergeladen.', mdlHint: 'Angefragte Musik erscheint hier, solange sie geladen wird.', popMissing: 'Beliebt · nicht in deiner Bibliothek', songRequests: 'Songs zum Anfragen', reqSong: 'Anfragen' });
 /* Aurral download queue and recent activity (songs, albums, playlists) */
+Object.assign(TX.en, { yesterday: 'Yesterday' }); Object.assign(TX.de, { yesterday: 'Gestern' });
 Object.assign(TX.en, { mdlActive: 'In the queue', mdlRecent: 'Recently', mdlDone: 'Done', mdlFailed: 'Failed', mdlQueued: 'Waiting', mdlWork: 'Downloading' });
 Object.assign(TX.de, { mdlActive: 'In der Warteschlange', mdlRecent: 'Zuletzt', mdlDone: 'Fertig', mdlFailed: 'Fehlgeschlagen', mdlQueued: 'Wartet', mdlWork: 'Lädt' });
 async function mDownloads(n) {
@@ -81,25 +82,40 @@ async function mDownloads(n) {
   if (!aurralOn()) { n.append(h('div', { class: 'nf-empty' }, t('aurralOff'))); return; }
   const box = h('div', { class: 'dl-wrap' }, skelRows(4)); n.append(box); let first = true;
   const kindOf = x => { const s = String(x.status || x.state || '').toLowerCase(); return /complete|done|imported|success|available/.test(s) ? 'done' : /fail|error|cancel/.test(s) ? 'failed' : /queue|wait|pending|search|request/.test(s) ? 'queued' : 'work'; };
+  let filter = 'all';
   const rowOf = (x, k) => {
     const title = x.trackName || x.title || x.albumName || x.album || x.name || '?'; const artist = x.artistName || x.artist || ''; const album = x.albumName || x.album || '';
     const pct = x.progress != null ? Math.round(x.progress > 1 ? x.progress : x.progress * 100) : x.percent != null ? Math.round(x.percent) : (x.size && x.sizeleft != null ? Math.round((1 - x.sizeleft / x.size) * 100) : null);
     const sub = [artist, album && album !== title ? album : ''].filter(Boolean).join(' · ');
     const when = x.requestedAt ? rxAgo(x.requestedAt) : '';
-    const why = k === 'failed' ? String(x.subtitle || '').replace(/^Soulseek:\s*/i, '').split(';')[0].slice(0, 90) : '';
-    return h('div', { class: 'dl-row k-' + k }, h('div', Object.assign({ class: 'cv' }, bg(extImg(x.image || x.artworkUrl) || caaImg(x.albumMbid || x.releaseGroupMbid)))),
+    const why = k === 'failed' ? String(x.subtitle || '').replace(/^Soulseek:\s*/i, '').split(';')[0].slice(0, 110) : '';
+    const cv = h('div', Object.assign({ class: 'cv' }, bg(extImg(x.image || x.artworkUrl))));
+    const row = h('div', { class: 'dl-row k-' + k }, cv,
       h('div', { class: 'tx' }, h('b', { class: 'ell' }, title), h('span', { class: 'ell' }, sub || why), why && sub ? h('span', { class: 'ell why' }, why) : null, k === 'work' && pct != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.max(2, Math.min(100, pct)) + '%' })) : null),
       h('div', { class: 'st' }, h('em', {}, k === 'done' ? t('mdlDone') : k === 'failed' ? t('mdlFailed') : k === 'queued' ? t('mdlQueued') : t('mdlWork') + (pct != null ? ' ' + pct + ' %' : '')), when ? h('small', {}, when) : null));
+    if (!extImg(x.image || x.artworkUrl)) { try { fillAlbumImg(row, x.albumMbid || x.releaseGroupMbid || '', artist, album || title); } catch (e) { } }
+    return row;
   };
+  const dayKey = x => { const d = new Date(x.requestedAt || 0); const today = new Date(); const y = new Date(Date.now() - 864e5); const same = (a, b) => a.toDateString() === b.toDateString(); return same(d, today) ? t('today') : same(d, y) ? t('yesterday') : d.toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' }); };
+  let data = null;
+  function draw() {
+    if (!data) return; const { active, recent } = data; box.replaceChildren();
+    const nDone = recent.filter(o => o.k === 'done').length, nFail = recent.filter(o => o.k === 'failed').length;
+    box.append(h('div', { class: 'dl-sum' }, [['all', t('browseAll'), active.length + recent.length], ['work', t('mdlActive'), active.length], ['done', t('mdlDone'), nDone], ['failed', t('mdlFailed'), nFail]].map(([k, l, n_]) => h('button', { class: 'dl-chip k-' + k + (filter === k ? ' on' : ''), onclick: () => { filter = k; draw(); } }, h('b', {}, String(n_)), h('span', {}, l)))));
+    const keep = o => filter === 'all' || (filter === 'work' ? (o.k === 'work' || o.k === 'queued') : o.k === filter);
+    const A = active.filter(keep), R = recent.filter(keep);
+    if (!A.length && !R.length) { box.append(h('div', { class: 'nf-empty' }, h('div', {}, t('mdlEmpty')), h('small', { style: 'opacity:.6' }, t('mdlHint')))); return; }
+    if (A.length) box.append(h('h2', { class: 'dl-h' }, t('mdlActive') + ' · ' + A.length), h('div', { class: 'dl-list' }, A.map(o => rowOf(o.x, o.k))));
+    if (R.length) { const groups = new Map(); R.forEach(o => { const k = dayKey(o.x); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); }); groups.forEach((list, day) => box.append(h('h2', { class: 'dl-h' }, day), h('div', { class: 'dl-list' }, list.map(o => rowOf(o.x, o.k))))); }
+  }
   async function load() {
     const [q, act] = await Promise.all([aget('/api/library/downloads').catch(() => []), aget('/api/requests').catch(() => [])]);
     const live = (Array.isArray(q) ? q : (q.items || q.downloads || q.queue || q.records || [])).map(x => ({ x, k: kindOf(x) === 'queued' ? 'queued' : 'work' }));
     const hist = (Array.isArray(act) ? act : (act.items || act.requests || [])).slice().sort((a, b) => Date.parse(b.requestedAt || 0) - Date.parse(a.requestedAt || 0)).map(x => ({ x, k: kindOf(x) }));
-    const active = live.concat(hist.filter(o => o.k === 'work' || o.k === 'queued')); const recent = hist.filter(o => o.k === 'done' || o.k === 'failed').slice(0, 40);
-    if (!box.isConnected && !first) return; first = false; box.replaceChildren();
-    if (!active.length && !recent.length) { box.append(h('div', { class: 'nf-empty' }, h('div', {}, t('mdlEmpty')), h('small', { style: 'opacity:.6' }, t('mdlHint')))); return; }
-    if (active.length) box.append(h('h2', { class: 'dl-h' }, t('mdlActive') + ' · ' + active.length), h('div', { class: 'dl-list' }, active.map(o => rowOf(o.x, o.k))));
-    if (recent.length) box.append(h('h2', { class: 'dl-h' }, t('mdlRecent')), h('div', { class: 'dl-list' }, recent.map(o => rowOf(o.x, o.k))));
+    const active = live.concat(hist.filter(o => o.k === 'work' || o.k === 'queued')); const recent = hist.filter(o => o.k === 'done' || o.k === 'failed').slice(0, 60);
+    if (!box.isConnected && !first) return; first = false; data = { active, recent };
+    if (!active.length && !recent.length) { box.replaceChildren(h('div', { class: 'nf-empty' }, h('div', {}, t('mdlEmpty')), h('small', { style: 'opacity:.6' }, t('mdlHint')))); return; }
+    draw();
   }
   await load();
   const iv = setInterval(() => { if (!box.isConnected) clearInterval(iv); else load(); }, 6000);

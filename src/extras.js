@@ -1,18 +1,36 @@
 /* ---------- detail page extras: media info, ratings, Seerr similar ---------- */
 const fmtSize = b => { b = +b || 0; return b > 1e9 ? (b / 1e9).toFixed(2) + ' GB' : (b / 1e6).toFixed(0) + ' MB'; };
 const fmtRate = b => b ? (b / 1e6).toFixed(1) + ' Mbps' : '';
+Object.assign(LU, { clock: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 7v5l3 3"/>', video: '<path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"/><path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>', msg: '<path d="M8 9h8"/><path d="M8 13h6"/><path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z"/>' });
+Object.assign(LUMAP, { clock: 'clock', video: 'video', msg: 'msg' });
+Object.assign(TX.en, { miActivity: 'Activity', miLast: 'Last watched', miNever: 'Not watched yet', miPlays: 'Times watched', miRating: 'My rating', miResume: 'Resume at', miAdded: 'Added', miRes: 'Resolution', miCodec: 'Codec', miProfile: 'Profile', miHdr: 'Range', miFps: 'Frame rate', miDepth: 'Bit depth', miRuntime: 'Length', miDefault: 'default', miForced: 'forced', miSize: 'Size', miContainer: 'Container', miPath: 'File', miFav: 'Favourite', miWl: 'On your watchlist', miTracks: 'tracks', miNoSubs: 'None', miTrack: 'Track' });
+Object.assign(TX.de, { miActivity: 'Aktivität', miLast: 'Zuletzt gesehen', miNever: 'Noch nicht gesehen', miPlays: 'Mal gesehen', miRating: 'Meine Bewertung', miResume: 'Weiter bei', miAdded: 'Hinzugefügt', miRes: 'Auflösung', miCodec: 'Codec', miProfile: 'Profil', miHdr: 'Bildbereich', miFps: 'Bildrate', miDepth: 'Bittiefe', miRuntime: 'Länge', miDefault: 'Standard', miForced: 'erzwungen', miSize: 'Grösse', miContainer: 'Container', miPath: 'Datei', miFav: 'Favorit', miWl: 'Auf deiner Watchlist', miTracks: 'Spuren', miNoSubs: 'Keine', miTrack: 'Spur' });
+const miLang = c => { if (!c || c === 'und') return ''; try { const n = new Intl.DisplayNames([L === 'de' ? 'de' : 'en'], { type: 'language' }).of(c); if (n && n !== c) return n.charAt(0).toUpperCase() + n.slice(1); } catch (e) { } return String(c).toUpperCase(); };
+const miRes = v => { const w = v.Width || 0, hh = v.Height || 0; const name = w >= 3200 || hh >= 2000 ? '4K' : w >= 2400 || hh >= 1300 ? '1440p' : w >= 1800 || hh >= 1000 ? '1080p' : w >= 1200 || hh >= 700 ? '720p' : hh ? hh + 'p' : ''; return { name, dim: w && hh ? w + ' × ' + hh : '' }; };
+const miDate = d => { const dt = new Date(d); return isNaN(dt) ? '' : dt.toLocaleDateString(L === 'de' ? 'de-DE' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }); };
+const miClock = ticks => { const s = Math.floor((ticks || 0) / 1e7); const hh = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = s % 60; return (hh ? hh + ':' + String(m).padStart(2, '0') : m) + ':' + String(sec).padStart(2, '0'); };
+function miCard(icon, title, rows, extra) {
+  const dl = h('dl', { class: 'mi-dl' }); rows.filter(r => r && r[1] !== '' && r[1] != null).forEach(r => dl.append(h('dt', {}, r[0]), h('dd', { class: r[2] || '', title: r[3] || '' }, r[1])));
+  return h('div', { class: 'mi-card' }, h('h4', {}, ic(icon, 'ic-s'), title), dl, extra || null);
+}
 function mediaInfoSection(it, admin) {
-  const srcs = it.MediaSources || []; if (!srcs.length) return null;
+  const srcs = it.MediaSources || []; const u = ud(it);
   const grid = h('div', { class: 'mi-grid' });
+  /* what you did with it */
+  const last = u.LastPlayedDate ? h('span', { class: 'mi-when' }, miDate(u.LastPlayedDate), h('small', {}, rxAgo(u.LastPlayedDate))) : '';
+  const rating = u.Rating != null && u.Rating > 0 ? h('span', { class: 'mi-stars' }, '★ ' + (Math.round(u.Rating * 10) / 10).toString().replace(/\.0$/, '') + ' / 10') : '';
+  const prog = (u.PlaybackPositionTicks || 0) > 0 && it.RunTimeTicks ? miClock(u.PlaybackPositionTicks) + ' (' + Math.round(u.PlaybackPositionTicks / it.RunTimeTicks * 100) + ' %)' : '';
+  const flags = h('div', { class: 'mi-pills' }, u.IsFavorite ? h('i', { class: 'on' }, t('miFav')) : null, isWatch(it) ? h('i', { class: 'on' }, t('miWl')) : null);
+  grid.append(miCard('clock', t('miActivity'), [[t('miLast'), last || t('miNever'), last ? '' : 'mi-dim'], [t('miPlays'), u.PlayCount ? String(u.PlayCount) : ''], [t('miResume'), prog], [t('miRating'), rating], [t('miAdded'), it.DateCreated ? miDate(it.DateCreated) : '']], flags.children.length ? flags : null));
   srcs.slice(0, 3).forEach((ms, idx) => {
-    const v = (ms.MediaStreams || []).find(s => s.Type === 'Video'); const a = (ms.MediaStreams || []).filter(s => s.Type === 'Audio'); const sub = (ms.MediaStreams || []).filter(s => s.Type === 'Subtitle');
-    const vid = v ? [v.Width && v.Height ? v.Width + '×' + v.Height : '', (v.Codec || '').toUpperCase(), v.Profile, v.VideoRangeType && v.VideoRangeType !== 'SDR' ? v.VideoRangeType : '', v.RealFrameRate ? Math.round(v.RealFrameRate) + ' fps' : '', v.BitDepth ? v.BitDepth + '-bit' : ''].filter(Boolean).join(' · ') : '';
+    const st = ms.MediaStreams || []; const v = st.find(s => s.Type === 'Video'); const a = st.filter(s => s.Type === 'Audio'); const sub = st.filter(s => s.Type === 'Subtitle');
     const sfx = srcs.length > 1 ? ' ' + (idx + 1) : '';
-    grid.append(h('div', { class: 'mi-card' }, h('h4', {}, t('miFile') + sfx), h('div', {}, (ms.Container || '').toUpperCase() + ' · ' + fmtSize(ms.Size)), h('div', {}, h('span', {}, t('miBitrate') + ': '), fmtRate(ms.Bitrate)), admin && ms.Path ? h('div', { class: 'ell', title: ms.Path, style: 'font-size:12px;color:#8d8d95' }, ms.Path) : null));
-    if (vid) grid.append(h('div', { class: 'mi-card' }, h('h4', {}, t('miVideo') + sfx), h('div', {}, vid)));
-    if (a.length) grid.append(h('div', { class: 'mi-card' }, h('h4', {}, t('plAudio') + ' (' + a.length + ')'), h('div', { class: 'mi-pills' }, a.map(x => h('i', {}, [x.Language || '?', (x.Codec || '').toUpperCase(), x.ChannelLayout || (x.Channels ? x.Channels + 'ch' : '')].filter(Boolean).join(' · '))))));
-    if (sub.length) grid.append(h('div', { class: 'mi-card' }, h('h4', {}, t('plSubs') + ' (' + sub.length + ')'), h('div', { class: 'mi-pills' }, [...new Map(sub.map(x => [(x.Language || '?') + (x.IsForced ? ' forced' : '') + (x.IsHearingImpaired ? ' SDH' : ''), x])).keys()].map(k => h('i', {}, k)))));
+    grid.append(miCard('film', t('miFile') + sfx, [[t('miContainer'), (ms.Container || '').toUpperCase()], [t('miSize'), fmtSize(ms.Size)], [t('miBitrate'), fmtRate(ms.Bitrate)], [t('miRuntime'), ms.RunTimeTicks ? fmtMin(ms.RunTimeTicks) : ''], admin && ms.Path ? [t('miPath'), ms.Path.split(/[\\/]/).pop(), 'mi-path', ms.Path] : null]));
+    if (v) { const r = miRes(v); grid.append(miCard('video', t('miVideo') + sfx, [[t('miRes'), (r.name ? r.name + ' · ' : '') + r.dim], [t('miCodec'), (v.Codec || '').toUpperCase()], [t('miProfile'), v.Profile], [t('miHdr'), v.VideoRangeType && v.VideoRangeType !== 'SDR' ? v.VideoRangeType : 'SDR'], [t('miFps'), v.RealFrameRate ? Math.round(v.RealFrameRate * 10) / 10 + ' fps' : ''], [t('miDepth'), v.BitDepth ? v.BitDepth + '-bit' : ''], [t('miBitrate'), fmtRate(v.BitRate)]])); }
+    if (a.length) grid.append(h('div', { class: 'mi-card' }, h('h4', {}, ic('vol', 'ic-s'), t('plAudio') + ' · ' + a.length), h('div', { class: 'mi-list' }, a.map((x, ai) => h('div', { class: 'mi-track' }, h('b', {}, miLang(x.Language) || (t('miTrack') + ' ' + (ai + 1))), h('span', {}, [(x.Codec || '').toUpperCase(), x.ChannelLayout || (x.Channels ? x.Channels + ' ch' : ''), x.BitRate ? fmtRate(x.BitRate) : ''].filter(Boolean).join(' · ')), x.IsDefault ? h('i', {}, t('miDefault')) : null)))));
+    if (sub.length) { const seen = new Map(); sub.forEach(x => { const k = (miLang(x.Language) || x.DisplayTitle || '–') + (x.IsForced ? ' (' + t('miForced') + ')' : '') + (x.IsHearingImpaired ? ' SDH' : ''); if (!seen.has(k)) seen.set(k, x); }); grid.append(h('div', { class: 'mi-card' }, h('h4', {}, ic('msg', 'ic-s'), t('plSubs') + ' · ' + sub.length), h('div', { class: 'mi-pills' }, [...seen.keys()].map(k => h('i', {}, k))))); }
   });
+  if (grid.children.length < 2 && !srcs.length) return null;
   return h('section', { class: 'nf-sect' }, h('h2', {}, t('miTitle')), grid);
 }
 async function ratingsRow(it, container) {
