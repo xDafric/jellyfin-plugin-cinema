@@ -158,7 +158,7 @@ public class JamController : ControllerBase
     public IActionResult Start([FromQuery] string? device, [FromQuery] int minutes = 240, [FromQuery] int guests = 20, [FromQuery] bool approve = false, [FromQuery] string? title = null)
     {
         var u = Uid;
-        if (u is null || SpeakerService.Config?.FeatConnect != true)
+        if (u is null || CastLinks.Config?.FeatConnect != true)
         {
             return BadRequest();
         }

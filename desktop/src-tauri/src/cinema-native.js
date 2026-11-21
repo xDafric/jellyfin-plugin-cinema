@@ -39,7 +39,8 @@
     deepLink: true,
     openExternal: true,
     exit: true,
-    fullscreen: true
+    fullscreen: true,
+    speakers: true
   };
   var bridge = {
     capabilities: function () { return JSON.parse(JSON.stringify(caps)); },
@@ -55,6 +56,9 @@
       } catch (e) { return false; }
     },
     exit: function () { call('exit_app').catch(function () { }); },
+    // Network speakers (UPnP / DLNA) on the home network of this computer: search, and one control call to a speaker found by the search.
+    speakerScan: function () { return call('speaker_scan'); },
+    speakerSoap: function (url, service, action, args) { return call('speaker_soap', { url: String(url), service: String(service), action: String(action), args: String(args || '') }); },
     // Window full screen for the video player. on: true/false, or omitted to toggle. Resolves to the previous state.
     setFullscreen: function (on) {
       return call('set_fullscreen', { on: typeof on === 'boolean' ? on : null }).then(function (was) { return !!was; });

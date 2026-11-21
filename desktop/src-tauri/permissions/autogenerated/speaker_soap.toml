@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-speaker-soap"
+description = "Enables the speaker_soap command without any pre-configured scope."
+commands.allow = ["speaker_soap"]
+
+[[permission]]
+identifier = "deny-speaker-soap"
+description = "Denies the speaker_soap command without any pre-configured scope."
+commands.deny = ["speaker_soap"]

@@ -12,6 +12,8 @@ fn main() {
             "exit_app",
             "toggle_fullscreen",
             "set_fullscreen",
+            "speaker_scan",
+            "speaker_soap",
         ]),
     );
     tauri_build::try_build(attrs).expect("failed to run tauri-build")

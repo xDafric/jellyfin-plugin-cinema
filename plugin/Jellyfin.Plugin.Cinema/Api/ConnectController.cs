@@ -62,9 +62,9 @@ public class ConnectController : ControllerBase
         }
     }
 
-    public ConnectController(ILibraryManager lib) => SpeakerService.Init(lib);
+    public ConnectController(ILibraryManager lib) => CastLinks.Init(lib);
 
-    /// <summary>Wakes the polling clients of one user (a speaker changed).</summary>
+    /// <summary>Wakes the polling clients of one user (something changed).</summary>
     internal static void BumpUser(string uid)
     {
         if (Hubs.TryGetValue(uid, out var h))
@@ -76,14 +76,6 @@ public class ConnectController : ControllerBase
     /// <summary>What the user plays right now on any device (for the guest page of a jam): title and artist only.</summary>
     internal static JsonObject? NowOf(string uid)
     {
-        foreach (var sp in SpeakerService.List())
-        {
-            if (sp.Owner == uid && sp.Playing && sp.Item is not null)
-            {
-                return new JsonObject { ["name"] = sp.Item["name"]?.GetValue<string>(), ["artist"] = sp.Item["artist"]?.GetValue<string>(), ["playing"] = true };
-            }
-        }
-
         if (!Hubs.TryGetValue(uid, out var h))
         {
             return null;
@@ -94,17 +86,9 @@ public class ConnectController : ControllerBase
         return it is null ? null : new JsonObject { ["name"] = it["name"]?.GetValue<string>(), ["artist"] = it["artist"]?.GetValue<string>(), ["playing"] = d!.State!["playing"]?.GetValue<bool>() ?? false };
     }
 
-    /// <summary>Adds songs to the queue of the device that plays for this user (a playing speaker, else the playing device, else the preferred one).</summary>
+    /// <summary>Adds songs to the queue of the device that plays for this user (the playing device, else the preferred one).</summary>
     internal static async Task<bool> PushQueue(string uid, string? preferred, JsonArray ids)
     {
-        foreach (var sp in SpeakerService.List())
-        {
-            if (sp.Owner == uid && sp.Queue.Count > 0)
-            {
-                return await SpeakerService.Command(sp, uid, new JsonObject { ["cmd"] = "queueAdd", ["queue"] = ids.DeepClone() }, string.Empty).ConfigureAwait(false);
-            }
-        }
-
         if (!Hubs.TryGetValue(uid, out var h))
         {
             return false;
@@ -214,23 +198,6 @@ public class ConnectController : ControllerBase
                 ["age"] = (long)(DateTime.UtcNow - (d.StateAt == DateTime.MinValue ? d.Seen : d.StateAt)).TotalMilliseconds,
                 ["state"] = st?.DeepClone(),
             });
-        }
-
-        if (SpeakerService.Enabled)
-        {
-            foreach (var sp in SpeakerService.List())
-            {
-                arr.Add(new JsonObject
-                {
-                    ["id"] = sp.Id,
-                    ["name"] = sp.Name,
-                    ["kind"] = "speaker",
-                    ["self"] = false,
-                    ["at"] = new DateTimeOffset(sp.StateAt, TimeSpan.Zero).ToUnixTimeMilliseconds(),
-                    ["age"] = 0L,
-                    ["state"] = sp.Owner is not null && sp.Owner == uid ? SpeakerService.StateOf(sp) : null,
-                });
-            }
         }
 
         return arr;
@@ -361,13 +328,6 @@ public class ConnectController : ControllerBase
         var h = MyHub(false);
         var to = b?["to"]?.GetValue<string>();
         var cmd = b?["cmd"]?.GetValue<string>();
-        if (b is not null && h is not null && to is not null && cmd is not null && to.StartsWith("spk_", StringComparison.Ordinal) && Commands.Contains(cmd) && SpeakerService.Enabled && SpeakerService.Get(to) is { } sp)
-        {
-            var done = await SpeakerService.Command(sp, Uid!, b, Request.Scheme + "://" + Request.Host).ConfigureAwait(false);
-            h.Bump();
-            return done ? NoContent() : StatusCode(409);
-        }
-
         if (b is null || h is null || to is null || cmd is null || !Commands.Contains(cmd) || !h.Devs.TryGetValue(to, out var d))
         {
             return BadRequest();
@@ -430,11 +390,6 @@ public class ConnectController : ControllerBase
             return StatusCode(404);   // the client says hello again
         }
 
-        if (SpeakerService.Enabled)
-        {
-            _ = SpeakerService.Scan(false);
-        }
-
         var until = DateTime.UtcNow.AddSeconds(25);
         while (!ct.IsCancellationRequested)
         {
@@ -467,28 +422,6 @@ public class ConnectController : ControllerBase
 
         Sweep(h);
         return Out(h, id, cmds);
-    }
-
-    private static DateTime _lastManualScan = DateTime.MinValue;
-
-    /// <summary>Looks for network speakers now (at most every 20 seconds).</summary>
-    [HttpPost("speakers/scan")]
-    public async Task<IActionResult> ScanSpeakers()
-    {
-        if (!SpeakerService.Enabled)
-        {
-            return NotFound();
-        }
-
-        if ((DateTime.UtcNow - _lastManualScan).TotalSeconds < 20)
-        {
-            return StatusCode(429);
-        }
-
-        _lastManualScan = DateTime.UtcNow;
-        await SpeakerService.Scan(true).ConfigureAwait(false);
-        MyHub(true)?.Bump();
-        return Content(new JsonObject { ["count"] = SpeakerService.List().Count() }.ToJsonString(), "application/json");
     }
 
     /// <summary>Client is closing: remove it right away.</summary>

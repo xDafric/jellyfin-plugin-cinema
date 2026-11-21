@@ -1,6 +1,6 @@
 {
   "name": "cinema-desktop",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "description": "Cinema desktop shell (Tauri 2) around the Jellyfin web UI",
   "scripts": {

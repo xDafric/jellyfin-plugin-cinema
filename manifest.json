@@ -13,7 +13,7 @@
                              "changelog":  "Connect: the player bar mirrors the other device with a green Playing-on strip; speakers behind Docker (home network range); Android output switcher.",
                              "targetAbi":  "12.4.0.0",
                              "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.64.0.zip",
-                             "checksum":  "80a7fa091a485e46e77548b907956a00",
+                             "checksum":  "906fdc35de41a26b452bd5a4ba1ced7e",
                              "timestamp":  "2026-11-29T12:00:00Z"
                          },
                          {

@@ -11,8 +11,8 @@ Object.assign(LU, {
   'cx-browser': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/>'
 });
 Object.assign(LUMAP, { users: 'users', 'check-mark': 'check-mark', cast: 'cast', devices: 'cx-devices', dphone: 'cx-phone', ddesktop: 'cx-desktop', dtv: 'cx-tv', dspeaker: 'cx-speaker', dweb: 'cx-browser' });
-Object.assign(TX.en, { cnDevices: 'Devices', cnThis: 'This device', cnListening: 'Listening on', cnPlayHere: 'Play here', cnAvail: 'Available', cnNone: 'Open Cinema on another device to see it here.', cnPlaying: 'Playing', cnPaused: 'Paused', cnNothing: 'Nothing playing', cnMoved: 'Playing on', cnHide: 'Hide', cnTap: 'Tap to start playback on this device', cnRename: 'Name of this device', cnPlayingOn: 'Playing on', cnScan: 'Search for speakers', cnScanning: 'Searching …', cnFound: 'speakers found', cnOut: 'Sound output of this device', cnOutPick: 'Choose speaker or headphones', cnBt: 'Bluetooth and outputs', cnOutDef: 'System default', cnNoSpk: 'In a container set the home network under Plugins, Cinema, Network speakers.', cnSpkOff: 'Network speakers are off', cnSpkOffD: 'Administrator: Dashboard, Plugins, Cinema, Network speakers', jamStart: 'Start a Jam', jamStartD: 'Friends join with a link and add songs to the queue', jamLive: 'Jam is on', jamCopy: 'Copy link', jamCopied: 'Link copied', jamShare: 'Share', jamGuests: 'guests', jamApprove: 'I approve every song', jamEnd: 'End Jam', jamReq: 'Requests', jamNoReq: 'No requests yet', jamKick: 'Remove guest', jamFor: 'valid for', jamErr: 'The Jam could not be started' });
-Object.assign(TX.de, { cnDevices: 'Geräte', cnThis: 'Dieses Gerät', cnListening: 'Du hörst auf', cnPlayHere: 'Hier abspielen', cnAvail: 'Verfügbar', cnNone: 'Öffne Cinema auf einem anderen Gerät, dann erscheint es hier.', cnPlaying: 'Spielt', cnPaused: 'Pausiert', cnNothing: 'Nichts aktiv', cnMoved: 'Spielt jetzt auf', cnHide: 'Ausblenden', cnTap: 'Tippen, um hier abzuspielen', cnRename: 'Name dieses Geräts', cnPlayingOn: 'Wiedergabe über', cnScan: 'Lautsprecher suchen', cnScanning: 'Suche …', cnFound: 'Lautsprecher gefunden', cnOut: 'Tonausgabe dieses Geräts', cnOutPick: 'Lautsprecher oder Kopfhörer wählen', cnBt: 'Bluetooth und Ausgänge', cnOutDef: 'Systemstandard', cnNoSpk: 'Bei Docker das Heimnetz unter Plugins, Cinema, Network speakers eintragen.', cnSpkOff: 'Netzwerk-Lautsprecher sind aus', cnSpkOffD: 'Administrator: Dashboard, Plugins, Cinema, Network speakers', jamStart: 'Jam starten', jamStartD: 'Freunde treten per Link bei und legen Songs in die Warteschlange', jamLive: 'Jam läuft', jamCopy: 'Link kopieren', jamCopied: 'Link kopiert', jamShare: 'Teilen', jamGuests: 'Gäste', jamApprove: 'Ich gebe jeden Song frei', jamEnd: 'Jam beenden', jamReq: 'Wünsche', jamNoReq: 'Noch keine Wünsche', jamKick: 'Gast entfernen', jamFor: 'gültig noch', jamErr: 'Die Jam konnte nicht gestartet werden' });
+Object.assign(TX.en, { cnDevices: 'Devices', cnThis: 'This device', cnListening: 'Listening on', cnPlayHere: 'Play here', cnAvail: 'Available', cnNone: 'Open Cinema on another device to see it here.', cnPlaying: 'Playing', cnPaused: 'Paused', cnNothing: 'Nothing playing', cnMoved: 'Playing on', cnHide: 'Hide', cnTap: 'Tap to start playback on this device', cnRename: 'Name of this device', cnPlayingOn: 'Playing on', cnScan: 'Search for speakers', cnScanning: 'Searching …', cnFound: 'speakers found', cnOut: 'Sound output of this device', cnOutPick: 'Choose speaker or headphones', cnBt: 'Bluetooth and outputs', cnOutDef: 'System default', cnNoSpk: 'None in this Wi-Fi network (the phone or computer has to be in the same network as the speakers).', cnSpkOff: 'Network speakers are off', cnSpkOffD: 'Administrator: Dashboard, Plugins, Cinema, Network speakers', jamStart: 'Start a Jam', jamStartD: 'Friends join with a link and add songs to the queue', jamLive: 'Jam is on', jamCopy: 'Copy link', jamCopied: 'Link copied', jamShare: 'Share', jamGuests: 'guests', jamApprove: 'I approve every song', jamEnd: 'End Jam', jamReq: 'Requests', jamNoReq: 'No requests yet', jamKick: 'Remove guest', jamFor: 'valid for', jamErr: 'The Jam could not be started' });
+Object.assign(TX.de, { cnDevices: 'Geräte', cnThis: 'Dieses Gerät', cnListening: 'Du hörst auf', cnPlayHere: 'Hier abspielen', cnAvail: 'Verfügbar', cnNone: 'Öffne Cinema auf einem anderen Gerät, dann erscheint es hier.', cnPlaying: 'Spielt', cnPaused: 'Pausiert', cnNothing: 'Nichts aktiv', cnMoved: 'Spielt jetzt auf', cnHide: 'Ausblenden', cnTap: 'Tippen, um hier abzuspielen', cnRename: 'Name dieses Geräts', cnPlayingOn: 'Wiedergabe über', cnScan: 'Lautsprecher suchen', cnScanning: 'Suche …', cnFound: 'Lautsprecher gefunden', cnOut: 'Tonausgabe dieses Geräts', cnOutPick: 'Lautsprecher oder Kopfhörer wählen', cnBt: 'Bluetooth und Ausgänge', cnOutDef: 'Systemstandard', cnNoSpk: 'Keine in diesem WLAN (Handy oder Computer müssen im selben Netz wie die Lautsprecher sein).', cnSpkOff: 'Netzwerk-Lautsprecher sind aus', cnSpkOffD: 'Administrator: Dashboard, Plugins, Cinema, Network speakers', jamStart: 'Jam starten', jamStartD: 'Freunde treten per Link bei und legen Songs in die Warteschlange', jamLive: 'Jam läuft', jamCopy: 'Link kopieren', jamCopied: 'Link kopiert', jamShare: 'Teilen', jamGuests: 'Gäste', jamApprove: 'Ich gebe jeden Song frei', jamEnd: 'Jam beenden', jamReq: 'Wünsche', jamNoReq: 'Noch keine Wünsche', jamKick: 'Gast entfernen', jamFor: 'gültig noch', jamErr: 'Die Jam konnte nicht gestartet werden' });
 
 const CN = { skip: '', on: false, id: null, name: '', kind: 'web', devices: [], v: 0, got: 0, hidden: null, started: false, lastSend: 0, run: false };
 const cnSleep = ms => new Promise(r => setTimeout(r, ms));
@@ -36,8 +36,9 @@ function cnState() {
     item: it ? { id: it._ext ? '' : it.Id, name: it.Name || '', artist: artistText(it), album: it.Album || '', albumId: it.AlbumId || '', tag: '' } : null };
 }
 function cnReport(push) {
-  if (!CN.on || !CN.registered || P.remote) return; const n = Date.now(); if (!push && n - CN.lastSend < 3500) return; CN.lastSend = n;
-  cnPost('state', { id: CN.id, push: !!push, state: cnState() }).catch(() => { });
+  if (!CN.on || !CN.registered) return; const n = Date.now(); if (!push && n - CN.lastSend < 3500) return;
+  const st = P.remote ? (String(P.remote).indexOf('spk_') === 0 && typeof spStateById === 'function' ? spStateById(P.remote) : null) : cnState(); if (!st) return; CN.lastSend = n;
+  cnPost('state', { id: CN.id, push: !!push, state: st }).catch(() => { });
 }
 
 /* commands from the other devices */
@@ -47,7 +48,7 @@ async function cnTracks(ids) {
 }
 function cnPlayNow() { return P.audio.play().catch(() => { toast(t('cnTap')); const once = () => { P.audio.play().catch(() => { }); window.removeEventListener('pointerdown', once, true); }; window.addEventListener('pointerdown', once, true); }); }
 async function cnRun(c) {
-  if (P.remote && c.cmd !== 'transfer') return;   /* while this player mirrors another device, commands from the others are not for the local sound */
+  if (P.remote && c.cmd !== 'transfer') { if (String(P.remote).indexOf('spk_') === 0) spCommand(P.remote, c.cmd, c); return; }   /* while this player mirrors another device, commands go to that device (a speaker here) or are ignored */
   try {
     switch (c.cmd) {
       case 'play': if (cur()) cnPlayNow(); break;
@@ -86,7 +87,7 @@ async function cnLoop() {
   }
   CN.run = false;
 }
-function cnApply(r) { if (!r) return; CN.v = r.v; CN.got = Date.now(); CN.devices = r.devices || []; cnDraw(); }
+function cnApply(r) { if (!r) return; CN.v = r.v; CN.got = Date.now(); CN.devices = (r.devices || []).filter(d => d.kind !== 'speaker').concat(typeof spDevices === 'function' ? spDevices() : []); cnDraw(); }
 function cnStart() {
   if (CN.started || cnOff() || !feat('connect') || typeof ApiClient === 'undefined' || !ApiClient.accessToken || !ApiClient.accessToken()) return;
   CN.started = true; CN.on = true; cnIdentity(); cnLoop(); cnApplySink(); setTimeout(jamLoad, 1500);
@@ -101,12 +102,12 @@ setTimeout(function wait() { if (typeof ApiClient !== 'undefined' && ApiClient.a
 
 /* ---------- what the others play ---------- */
 const cnOthers = () => CN.devices.filter(d => !d.self);
-function cnPos(d) { const s = d.state || {}; return s.playing ? (s.pos || 0) + ((d.age || 0) + (Date.now() - CN.got)) / 1000 : (s.pos || 0); }
+function cnPos(d) { const s = d.state || {}; if (d.local) return s.pos || 0; return s.playing ? (s.pos || 0) + ((d.age || 0) + (Date.now() - CN.got)) / 1000 : (s.pos || 0); }
 function cnActive() {
   const c = cnOthers().filter(d => d.state && d.state.item && d.state.item.id).sort((a, b) => (b.state.playing - a.state.playing) || (b.at - a.at));
   const a = c[0]; if (!a) return null; if (!a.state.playing && Date.now() - a.at > 10 * 60 * 1000) return null; return a;
 }
-const cnSend = (to, cmd, extra) => cnPost('command', Object.assign({ to, cmd, from: CN.id }, extra || {})).catch(() => { });
+const cnSend = (to, cmd, extra) => String(to).indexOf('spk_') === 0 ? spCommand(to, cmd, extra || {}) : cnPost('command', Object.assign({ to, cmd, from: CN.id }, extra || {})).catch(() => { });
 const dIcon = d => ic({ phone: 'dphone', tablet: 'dphone', desktop: 'ddesktop', tv: 'dtv', speaker: 'dspeaker' }[d.kind] || 'dweb', 'ic-s');
 const dImg = d => { const s = d.state; return s && s.item && s.item.id ? ApiClient.getUrl('Items/' + s.item.id + '/Images/Primary', { maxWidth: 120, quality: 80 }) : ''; };
 
@@ -198,8 +199,7 @@ function cnActions() {
   const out = []; const nat = window.CinemaNative;
   if (cnCanSink() && !(nat && nat.audioOutput)) { let nm = ''; try { nm = localStorage.getItem('cx-dev-sinkname') || ''; } catch (e) { } out.push(h('button', { class: 'cn-act', onclick: cnPickSink }, ic('dspeaker', 'ic-s'), h('span', {}, h('b', {}, t('cnOutPick')), h('i', {}, t('cnOut') + ' · ' + (nm || t('cnOutDef')))))); }
   if (nat && nat.audioOutput) out.push(h('button', { class: 'cn-act', onclick: () => { try { nat.audioOutput(); } catch (e) { } } }, ic('dspeaker', 'ic-s'), h('span', {}, h('b', {}, t('cnBt')), h('i', {}, t('cnOut')))));
-  if (C.status && C.status.features && C.status.features.speakers === true) out.push(h('button', { class: 'cn-act', onclick: async e => { const b = e.currentTarget; const sp = b.querySelector('b'); const old = sp.textContent; sp.textContent = t('cnScanning'); b.disabled = true; try { const r = await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema/connect/speakers/scan'), dataType: 'json' }); toast((r && r.count != null ? r.count : 0) + ' ' + t('cnFound') + ((r && r.count) ? '' : ' · ' + t('cnNoSpk'))); } catch (er) { } sp.textContent = old; b.disabled = false; } }, ic('cast', 'ic-s'), h('span', {}, h('b', {}, t('cnScan')), h('i', {}, 'UPnP · DLNA · Sonos'))));
-  else if (C.status && C.status.features && C.status.features.speakers !== true) out.push(h('div', { class: 'cn-act', style: 'cursor:default;opacity:.8' }, ic('cast', 'ic-s'), h('span', {}, h('b', {}, t('cnSpkOff')), h('i', {}, t('cnSpkOffD')))));
+  if (typeof spNative === 'function' && spNative()) out.push(h('button', { class: 'cn-act', onclick: async e => { const b = e.currentTarget; const sp = b.querySelector('b'); const old = sp.textContent; sp.textContent = t('cnScanning'); b.disabled = true; await spScan(false); sp.textContent = old; b.disabled = false; } }, ic('cast', 'ic-s'), h('span', {}, h('b', {}, t('cnScan')), h('i', {}, 'UPnP · DLNA · Sonos'))));
   return out.length ? h('div', { class: 'cn-acts' }, out) : '';
 }
 

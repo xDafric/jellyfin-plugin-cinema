@@ -213,6 +213,166 @@ fn set_fullscreen(app: AppHandle, window: WebviewWindow, on: Option<bool>) -> Re
     Ok(was)
 }
 
+
+// ---------- network speakers (UPnP / DLNA) on the home network of this computer ----------
+// The computer finds and controls the speakers itself; the Jellyfin server can be anywhere. Only private network addresses are contacted.
+
+#[derive(Serialize, Clone)]
+struct Spk {
+    id: String,
+    name: String,
+    av: String,
+    rc: String,
+}
+
+fn is_private(ip: std::net::IpAddr) -> bool {
+    match ip {
+        std::net::IpAddr::V4(v) => v.is_private() || v.is_loopback() || v.is_link_local(),
+        std::net::IpAddr::V6(v) => v.is_loopback() || (v.segments()[0] & 0xfe00) == 0xfc00 || (v.segments()[0] & 0xffc0) == 0xfe80,
+    }
+}
+
+async fn private_url(url: &str) -> bool {
+    let Ok(u) = Url::parse(url) else { return false };
+    if u.scheme() != "http" && u.scheme() != "https" {
+        return false;
+    }
+    let Some(host) = u.host_str().map(|h| h.to_string()) else { return false };
+    let port = u.port_or_known_default().unwrap_or(80);
+    let looked = tokio::net::lookup_host(format!("{host}:{port}")).await;
+    match looked {
+        Ok(addrs) => {
+            let v: Vec<_> = addrs.collect();
+            !v.is_empty() && v.iter().all(|a| is_private(a.ip()))
+        }
+        Err(_) => false,
+    }
+}
+
+fn ssdp_search() -> Vec<String> {
+    use std::net::UdpSocket;
+    use std::time::Instant;
+    let msg = b"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: urn:schemas-upnp-org:device:MediaRenderer:1\r\n\r\n";
+    let mut socks = Vec::new();
+    for iface in if_addrs::get_if_addrs().unwrap_or_default() {
+        if iface.is_loopback() {
+            continue;
+        }
+        if let if_addrs::IfAddr::V4(v4) = iface.addr {
+            if let Ok(s) = UdpSocket::bind((v4.ip, 0)) {
+                let _ = s.set_read_timeout(Some(Duration::from_millis(250)));
+                let _ = s.set_multicast_ttl_v4(2);
+                let _ = s.send_to(msg, "239.255.255.250:1900");
+                let _ = s.send_to(msg, "239.255.255.250:1900");
+                socks.push(s);
+            }
+        }
+    }
+    let until = Instant::now() + Duration::from_millis(3500);
+    let mut found: Vec<String> = Vec::new();
+    let mut buf = [0u8; 2048];
+    while Instant::now() < until {
+        for s in &socks {
+            if let Ok((n, from)) = s.recv_from(&mut buf) {
+                let txt = String::from_utf8_lossy(&buf[..n]).to_string();
+                for line in txt.lines() {
+                    if line.len() > 9 && line[..9].eq_ignore_ascii_case("LOCATION:") {
+                        let loc = line[9..].trim().to_string();
+                        if let Ok(u) = Url::parse(&loc) {
+                            if u.host_str() == Some(from.ip().to_string().as_str()) && !found.contains(&loc) {
+                                found.push(loc);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    found
+}
+
+fn fnv(s: &str) -> u64 {
+    let mut h: u64 = 0xcbf29ce484222325;
+    for b in s.bytes() {
+        h ^= b as u64;
+        h = h.wrapping_mul(0x100000001b3);
+    }
+    h
+}
+
+async fn describe_speaker(client: &reqwest::Client, location: &str) -> Option<Spk> {
+    if !private_url(location).await {
+        return None;
+    }
+    let xml = client.get(location).send().await.ok()?.text().await.ok()?;
+    let doc = roxmltree::Document::parse(&xml).ok()?;
+    let child_text = |n: roxmltree::Node, tag: &str| -> Option<String> { n.children().find(|c| c.tag_name().name() == tag).and_then(|c| c.text()).map(|t| t.trim().to_string()) };
+    let dev = doc.descendants().find(|n| n.tag_name().name() == "device" && child_text(*n, "deviceType").map(|t| t.contains("MediaRenderer")).unwrap_or(false))?;
+    let base = doc.descendants().find(|n| n.tag_name().name() == "URLBase").and_then(|n| n.text()).and_then(|t| Url::parse(t.trim()).ok()).or_else(|| Url::parse(location).ok())?;
+    let (mut av, mut rc) = (String::new(), String::new());
+    for s in dev.descendants().filter(|n| n.tag_name().name() == "service") {
+        let (Some(t), Some(c)) = (child_text(s, "serviceType"), child_text(s, "controlURL")) else { continue };
+        let Ok(abs) = base.join(&c) else { continue };
+        if t.contains("AVTransport") {
+            av = abs.to_string();
+        } else if t.contains("RenderingControl") {
+            rc = abs.to_string();
+        }
+    }
+    if av.is_empty() || !private_url(&av).await {
+        return None;
+    }
+    let mut name = child_text(dev, "friendlyName").unwrap_or_else(|| "Speaker".into()).replace(" Media Renderer", "");
+    if let Some(i) = name.find("RINCON_") {
+        name = name[..i].trim().trim_end_matches('-').trim().to_string();
+    }
+    if name.chars().count() > 48 {
+        name = name.chars().take(48).collect();
+    }
+    let udn = child_text(dev, "UDN").unwrap_or_else(|| location.to_string());
+    Some(Spk { id: format!("spk_{:016x}", fnv(&udn)), name, av, rc })
+}
+
+/// Looks for speakers on the home network for about four seconds.
+#[tauri::command]
+async fn speaker_scan(app: AppHandle, window: WebviewWindow) -> Result<Vec<Spk>, String> {
+    caller_is_server(&app, &window).ok_or("not allowed")?;
+    let locs = tauri::async_runtime::spawn_blocking(ssdp_search).await.map_err(|e| e.to_string())?;
+    let client = reqwest::Client::builder().timeout(Duration::from_secs(3)).build().map_err(|e| e.to_string())?;
+    let mut out: Vec<Spk> = Vec::new();
+    for l in locs {
+        if let Some(s) = describe_speaker(&client, &l).await {
+            if !out.iter().any(|x| x.id == s.id) {
+                out.push(s);
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// One UPnP control call to a speaker found by the search. Returns the answer, or nothing when the speaker refused or did not answer.
+#[tauri::command]
+async fn speaker_soap(app: AppHandle, window: WebviewWindow, url: String, service: String, action: String, args: String) -> Result<Option<String>, String> {
+    caller_is_server(&app, &window).ok_or("not allowed")?;
+    let ok_name = |s: &str| !s.is_empty() && s.len() <= 40 && s.chars().all(|c| c.is_ascii_alphabetic());
+    if !ok_name(&service) || !ok_name(&action) || args.len() > 20_000 || !private_url(&url).await {
+        return Ok(None);
+    }
+    let body = format!("<?xml version=\"1.0\" encoding=\"utf-8\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body><u:{action} xmlns:u=\"urn:schemas-upnp-org:service:{service}:1\">{args}</u:{action}></s:Body></s:Envelope>");
+    let client = reqwest::Client::builder().timeout(Duration::from_secs(6)).build().map_err(|e| e.to_string())?;
+    let resp = client
+        .post(&url)
+        .header("Content-Type", "text/xml; charset=\"utf-8\"")
+        .header("SOAPACTION", format!("\"urn:schemas-upnp-org:service:{service}:1#{action}\""))
+        .body(body)
+        .send()
+        .await;
+    match resp {
+        Ok(r) if r.status().is_success() => Ok(r.text().await.ok()),
+        _ => Ok(None),
+    }
+}
+
 fn open_url_external(app: &AppHandle, url: &str) -> Result<(), String> {
     let u = Url::parse(url).map_err(|_| "invalid url".to_string())?;
     if u.scheme() != "http" && u.scheme() != "https" {
@@ -244,7 +404,7 @@ fn build_window(app: &AppHandle, cfg: &Config) -> tauri::Result<WebviewWindow> {
                     "identifier": "server-origin",
                     "windows": ["main"],
                     "remote": { "urls": [format!("{origin}/*")] },
-                    "permissions": ["allow-store-credentials", "allow-clear-credentials", "allow-open-external", "allow-exit-app", "allow-toggle-fullscreen", "allow-set-fullscreen"]
+                    "permissions": ["allow-store-credentials", "allow-clear-credentials", "allow-open-external", "allow-exit-app", "allow-toggle-fullscreen", "allow-set-fullscreen", "allow-speaker-scan", "allow-speaker-soap"]
                 });
                 let _ = app.add_capability(cap.to_string());
             }
@@ -431,7 +591,9 @@ pub fn run() {
             open_external,
             exit_app,
             toggle_fullscreen,
-            set_fullscreen
+            set_fullscreen,
+            speaker_scan,
+            speaker_soap
         ])
         .setup(|app| {
             let handle = app.handle().clone();

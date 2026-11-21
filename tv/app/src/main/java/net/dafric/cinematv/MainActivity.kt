@@ -54,8 +54,11 @@ class MainActivity : Activity() {
 
         /* ---- shared native contract (PLATFORM.md) ---- */
         @JavascriptInterface fun capabilities(): String = JSONObject().put("platform", "android").put("mode", if (tv) "tv" else "phone").put("apiLevel", 1).put("version", Updater.installed(this@MainActivity))
-            .put("downloads", !tv).put("pip", !tv).put("media", !tv).put("audioOutput", !tv).toString()
+            .put("downloads", !tv).put("pip", !tv).put("media", !tv).put("audioOutput", !tv).put("speakers", !tv).toString()
         @JavascriptInterface fun openExternal(url: String) { if (url.startsWith("https://") || url.startsWith("http://")) runOnUiThread { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } } }
+        /* network speakers on the home network of this phone (the server can be anywhere): search and control, answers arrive as callbacks */
+        @JavascriptInterface fun speakersScan() { if (tv) return; Thread { val r = runCatching { Speakers.scan(applicationContext).toString() }.getOrDefault("[]"); main.post { if (::web.isInitialized) web.evaluateJavascript("window.cxSpkScan&&window.cxSpkScan(" + JSONObject.quote(r) + ")", null) } }.start() }
+        @JavascriptInterface fun speakerSoap(reqId: String, url: String, service: String, action: String, args: String) { if (tv || !Regex("^[A-Za-z0-9_-]{1,40}$").matches(reqId)) return; Thread { val r = Speakers.soap(url, service, action, args); main.post { if (::web.isInitialized) web.evaluateJavascript("window.cxSpkSoap&&window.cxSpkSoap(" + JSONObject.quote(reqId) + "," + (if (r != null) "true" else "false") + "," + JSONObject.quote(r ?: "") + ")", null) } }.start() }
         /* choose the speaker or Bluetooth device for the sound: the system's own output panel */
         @JavascriptInterface fun audioOutput() { if (tv) return; runOnUiThread { val shown = Build.VERSION.SDK_INT >= 34 && runCatching { android.media.MediaRouter2.getInstance(this@MainActivity).showSystemOutputSwitcher() }.getOrDefault(false); if (!shown) runCatching { startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)) } } }
         @JavascriptInterface fun checkUpdate() { runOnUiThread { Updater.checkAndAsk(this@MainActivity, force = true) } }
