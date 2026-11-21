@@ -211,6 +211,7 @@ public class ConnectController : ControllerBase
                 ["kind"] = d.Kind,
                 ["self"] = d.Id == self,
                 ["at"] = new DateTimeOffset(d.StateAt == DateTime.MinValue ? d.Seen : d.StateAt, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+                ["age"] = (long)(DateTime.UtcNow - (d.StateAt == DateTime.MinValue ? d.Seen : d.StateAt)).TotalMilliseconds,
                 ["state"] = st?.DeepClone(),
             });
         }
@@ -226,6 +227,7 @@ public class ConnectController : ControllerBase
                     ["kind"] = "speaker",
                     ["self"] = false,
                     ["at"] = new DateTimeOffset(sp.StateAt, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+                    ["age"] = 0L,
                     ["state"] = sp.Owner is not null && sp.Owner == uid ? SpeakerService.StateOf(sp) : null,
                 });
             }

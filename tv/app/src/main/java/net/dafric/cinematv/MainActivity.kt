@@ -57,7 +57,7 @@ class MainActivity : Activity() {
             .put("downloads", !tv).put("pip", !tv).put("media", !tv).put("audioOutput", !tv).toString()
         @JavascriptInterface fun openExternal(url: String) { if (url.startsWith("https://") || url.startsWith("http://")) runOnUiThread { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } } }
         /* choose the speaker or Bluetooth device for the sound: the system's own output panel */
-        @JavascriptInterface fun audioOutput() { if (tv) return; runOnUiThread { runCatching { startActivity(Intent("android.settings.panel.action.VOLUME")) }.onFailure { runCatching { startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)) } } } }
+        @JavascriptInterface fun audioOutput() { if (tv) return; runOnUiThread { val shown = Build.VERSION.SDK_INT >= 34 && runCatching { android.media.MediaRouter2.getInstance(this@MainActivity).showSystemOutputSwitcher() }.getOrDefault(false); if (!shown) runCatching { startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)) } } }
         @JavascriptInterface fun checkUpdate() { runOnUiThread { Updater.checkAndAsk(this@MainActivity, force = true) } }
 
         /* ---- downloads (phone/tablet) ---- */

@@ -111,3 +111,17 @@ html * { scrollbar-width: thin; }
 .jam-dec { display: flex; } .jam-dec .pl-btn { width: 34px; height: 34px; display: grid; place-items: center; }
 .jam-st { font-style: normal; font-weight: 800; } .jam-st.queued { color: #1ed760; } .jam-st.rejected { color: #ff6a6a; }
 .jam-end { color: #ff7a7a; }
+
+/* ---------- "Playing on <device>": the normal player shows the other device, with a green strip ---------- */
+.sp-player { position: relative; }
+.cn-strip { display: flex; align-items: center; justify-content: flex-end; gap: 8px; border: 0; background: #1ed760; color: #000; font: 700 13px/1 inherit; cursor: pointer; padding: 0 16px; height: 26px; }
+.cn-strip svg { width: 16px; height: 16px; }
+.sp-player.remote { padding-bottom: 30px; box-sizing: border-box; }
+.sp-player .cn-strip { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0 0 10px 10px; }
+#cx-sp:has(.sp-player.remote) { grid-template-rows: minmax(0, 1fr) 118px; }
+@media (max-width: 800px) {
+  #cx .sp-mini.remote { height: 82px !important; padding-bottom: 24px; box-sizing: border-box; }
+  .sp-mini .cn-strip { position: absolute; left: 0; right: 0; bottom: 0; height: 24px; justify-content: center; font-size: 12px; border-radius: 0 0 16px 16px; }
+  #cx .sp-mini.remote .mbar { bottom: 24px; }
+  .sp-full .cn-strip { align-self: center; border-radius: 999px; height: 30px; margin: 6px 0 4px; }
+}

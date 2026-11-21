@@ -152,6 +152,9 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Address speakers use to reach this server on the home network, e.g. http://192.168.1.10:8096. Empty = the address the request came in on.</summary>
     public string SpeakerBaseUrl { get; set; } = string.Empty;
 
+    /// <summary>Home network ranges to probe for Sonos speakers (port 1400), e.g. 192.168.1.0/24. For servers in a container, where the normal search cannot see the home network. Private ranges only.</summary>
+    public string SpeakerSubnet { get; set; } = string.Empty;
+
     /// <summary>Speakers that cannot be found automatically: one device description address per line, e.g. http://192.168.1.50:49152/description.xml.</summary>
     public string SpeakerManual { get; set; } = string.Empty;
 

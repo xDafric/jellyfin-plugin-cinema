@@ -25,8 +25,9 @@ function streamUrl(it) {
     TranscodingContainer: 'mp3', TranscodingProtocol: 'http', AudioCodec: 'mp3', ApiKey: ApiClient.accessToken(), PlaySessionId: P.psid, EnableRedirection: true, EnableRemoteMedia: false
   });
 }
-const rep = (kind, extra) => { try { const it = cur(); if (!it || it._ext) return; const o = Object.assign({ ItemId: it.Id, PlaySessionId: P.psid, PositionTicks: Math.floor(P.audio.currentTime * 1e7), IsPaused: P.audio.paused, CanSeek: true, MediaSourceId: it.Id, PlayMethod: 'DirectStream', QueueableMediaTypes: ['Audio'] }, extra); ApiClient['reportPlayback' + kind](o); } catch (e) { } };
+const rep = (kind, extra) => { try { if (P.remote) return; const it = cur(); if (!it || it._ext) return; const o = Object.assign({ ItemId: it.Id, PlaySessionId: P.psid, PositionTicks: Math.floor(P.audio.currentTime * 1e7), IsPaused: P.audio.paused, CanSeek: true, MediaSourceId: it.Id, PlayMethod: 'DirectStream', QueueableMediaTypes: ['Audio'] }, extra); ApiClient['reportPlayback' + kind](o); } catch (e) { } };
 function loadCurrent(autoplay) {
+  if (P.remote && typeof rmExit === 'function') rmExit();
   const it = cur(); if (!it) return;
   if (!playable(it)) return;
   if (P.reportedStart) rep('Stopped');
@@ -47,21 +48,23 @@ function playList(tracks, idx, opts) {
   loadCurrent();
 }
 function next(auto) {
+  if (P.remote) return cnSend(P.remote, 'next');
   if (!P.q.length) return;
   if (auto && P.repeat === 2) { P.audio.currentTime = 0; P.audio.play(); return; }
   let nx = -1; for (let k = P.i + 1; k < P.q.length; k++) if (playable(P.q[k])) { nx = k; break; }
   if (nx < 0 && P.repeat === 1) nx = P.q.findIndex(playable);
   if (nx >= 0) { P.i = nx; loadCurrent(); } else { P.audio.pause(); P.audio.currentTime = 0; if (P.reportedStart) { rep('Stopped'); P.reportedStart = false; } emit(); }
 }
-function prev() { let pv = -1; for (let k = P.i - 1; k >= 0; k--) if (playable(P.q[k])) { pv = k; break; } if (P.audio.currentTime > 3 || pv < 0) { P.audio.currentTime = 0; return; } P.i = pv; loadCurrent(); }
+function prev() { if (P.remote) return cnSend(P.remote, 'prev'); let pv = -1; for (let k = P.i - 1; k >= 0; k--) if (playable(P.q[k])) { pv = k; break; } if (P.audio.currentTime > 3 || pv < 0) { P.audio.currentTime = 0; return; } P.i = pv; loadCurrent(); }
 function toggle() { if (!cur()) return; P.audio.paused ? P.audio.play().catch(() => { }) : P.audio.pause(); }
 function toggleShuffle() {
+  if (P.remote) { const d = CN.devices.find(x => x.id === P.remote); cnSend(P.remote, 'shuffle', { on: !(d && d.state && d.state.shuffle) }); return; }
   P.shuffle = !P.shuffle; const c = cur();
   if (c) { if (P.shuffle) { const rest = shuffleArr(P.q.filter((_, k) => k !== P.i)); P.q = [c].concat(rest); P.i = 0; } else { const k = P.orig.findIndex(x => x.Id === c.Id); P.q = P.orig.slice(); P.i = k < 0 ? 0 : k; } }
   emit();
 }
-const cycleRepeat = () => { P.repeat = (P.repeat + 1) % 3; emit(); };
-const addQueue = (tracks, atNext) => { if (!P.q.length) return playList(tracks, 0); if (atNext) P.q.splice(P.i + 1, 0, ...tracks); else P.q.push(...tracks); P.orig.push(...tracks); emit(); toast(t('queued')); };
+const cycleRepeat = () => { if (P.remote) { const d = CN.devices.find(x => x.id === P.remote); const m = (d && d.state && d.state.repeat) || 'off'; cnSend(P.remote, 'repeat', { mode: { off: 'all', all: 'one', one: 'off' }[m] }); return; } P.repeat = (P.repeat + 1) % 3; emit(); };
+const addQueue = (tracks, atNext) => { if (P.remote) { cnSend(P.remote, 'queueAdd', { queue: tracks.filter(x => x && !x._ext && x.Id).map(x => x.Id) }); toast(t('queued')); return; } if (!P.q.length) return playList(tracks, 0); if (atNext) P.q.splice(P.i + 1, 0, ...tracks); else P.q.push(...tracks); P.orig.push(...tracks); emit(); toast(t('queued')); };
 P.audio.addEventListener('ended', () => next(true));
 P.audio.addEventListener('play', () => { if (!P.reportedStart) { P.reportedStart = true; rep('Start'); } else rep('Progress', { EventName: 'unpause' }); emit(); });
 P.audio.addEventListener('pause', () => { if (!P.audio.ended) rep('Progress', { EventName: 'pause' }); emit(); });
@@ -80,7 +83,7 @@ function setMedia() {
 /* the system media overlay (Windows, Android, lock screen) shows play state and a live position bar, and can seek */
 let msPos = 0;
 function msState() {
-  if (!('mediaSession' in navigator)) return;
+  if (!('mediaSession' in navigator) || P.remote) return;
   try {
     navigator.mediaSession.playbackState = cur() ? (P.audio.paused ? 'paused' : 'playing') : 'none';
     const d = P.audio.duration; if (cur() && isFinite(d) && d > 0 && navigator.mediaSession.setPositionState) navigator.mediaSession.setPositionState({ duration: d, playbackRate: P.audio.playbackRate || 1, position: Math.min(d, P.audio.currentTime) });

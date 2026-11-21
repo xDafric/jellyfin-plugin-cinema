@@ -135,6 +135,14 @@ internal static class SpeakerService
                 locs.Add(l);
             }
 
+            if (!TestNoSsdp)
+            {
+                foreach (var l in await Probe().ConfigureAwait(false))
+                {
+                    locs.Add(l);
+                }
+            }
+
             foreach (var l in locs.Take(40))
             {
                 await Describe(l).ConfigureAwait(false);
@@ -144,6 +152,58 @@ internal static class SpeakerService
         {
             Interlocked.Exchange(ref _scanning, 0);
         }
+    }
+
+    /// <summary>Asks every address of the configured private ranges for a Sonos device description (port 1400). Works from containers that cannot use multicast.</summary>
+    private static async Task<List<string>> Probe()
+    {
+        var found = new List<string>();
+        var hosts = new List<IPAddress>();
+        foreach (var cidr in (Config!.SpeakerSubnet ?? string.Empty).Split(new[] { ' ', ',', ';', '\n' }, StringSplitOptions.RemoveEmptyEntries).Take(4))
+        {
+            var parts = cidr.Split('/');
+            if (parts.Length != 2 || !IPAddress.TryParse(parts[0], out var ip) || ip.AddressFamily != AddressFamily.InterNetwork || !int.TryParse(parts[1], out var bits) || bits < 22 || bits > 30 || !IsPrivate(ip))
+            {
+                continue;
+            }
+
+            var b = ip.GetAddressBytes();
+            var n = ((uint)b[0] << 24) | ((uint)b[1] << 16) | ((uint)b[2] << 8) | b[3];
+            var mask = uint.MaxValue << (32 - bits);
+            var first = n & mask;
+            for (uint a = first + 1; a < (first | ~mask); a++)
+            {
+                hosts.Add(new IPAddress(new[] { (byte)(a >> 24), (byte)(a >> 16), (byte)(a >> 8), (byte)a }));
+            }
+        }
+
+        using var gate = new SemaphoreSlim(64);
+        using var quick = new HttpClient { Timeout = TimeSpan.FromMilliseconds(900) };
+        await Task.WhenAll(hosts.Select(async h =>
+        {
+            await gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var url = "http://" + h + ":1400/xml/device_description.xml";
+                using var resp = await quick.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                if (resp.IsSuccessStatusCode)
+                {
+                    lock (found)
+                    {
+                        found.Add(url);
+                    }
+                }
+            }
+            catch
+            {
+                // nothing answers on this address
+            }
+            finally
+            {
+                gate.Release();
+            }
+        })).ConfigureAwait(false);
+        return found;
     }
 
     private static async Task<List<string>> Ssdp()
