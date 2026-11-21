@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.60.0",
+                             "changelog":  "Lyrics: songs without lyrics from Jellyfin are now looked up on LRCLIB (synced when available). Desktop lyrics panel no longer shows a second set of player controls.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.60.0.zip",
+                             "checksum":  "4e4487a95f6bf57bfcc35a013704ceaa",
+                             "timestamp":  "2026-11-29T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.59.0",
                              "changelog":  "Player alignment fixed (seek bar, volume, icons and times on one centre line each), new glass header with round buttons and a bold title.",
                              "targetAbi":  "12.4.0.0",

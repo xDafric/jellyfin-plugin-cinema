@@ -166,7 +166,7 @@ function buildPlayer() {
   }
   async function updFLyr() {
     const it = cur(); if (!it) return;
-    if (it.Id !== fLyrId) { fLyrId = it.Id; fLyrData = null; fLyr.classList.add('hide'); try { const r = await api('Audio/' + it.Id + '/Lyrics'); if (fLyrId !== it.Id) return; fLyrData = (r.Lyrics || []).map(l => ({ t: l.Start != null ? l.Start / 1e7 : null, s: l.Text })).filter(l => l.s); } catch (e) { fLyrData = []; } }
+    if (it.Id !== fLyrId) { fLyrId = it.Id; fLyrData = null; fLyr.classList.add('hide'); try { const r = await fetchLyrics(it); if (fLyrId !== it.Id) return; fLyrData = r.filter(l => l.s); } catch (e) { fLyrData = []; } }
     paintFLyr();
   }
   P.audio.addEventListener('timeupdate', () => { if (full.classList.contains('open')) paintFLyr(); });
@@ -513,6 +513,21 @@ C.updateNPill = function () {
 /* ---------- lyrics (plain + time-synced, straight from Jellyfin's lyric providers / .lrc files) ---------- */
 Object.assign(TX.en, { lyrics: 'Lyrics', noLyrics: 'No lyrics found for this song.', lyrSynced: 'Synced', lyrPlain: 'Not synced' });
 Object.assign(TX.de, { lyrics: 'Songtext', noLyrics: 'Für diesen Titel wurde kein Songtext gefunden.', lyrSynced: 'Synchronisiert', lyrPlain: 'Nicht synchronisiert' });
+/* Jellyfin's own lyric providers first; when they find nothing, look the song up on LRCLIB (through the plugin, so only title/artist/length leave the server) */
+const lyrMem = new Map();
+async function fetchLyrics(it) {
+  if (lyrMem.has(it.Id)) return lyrMem.get(it.Id);
+  let lines = [];
+  try { const r = await api('Audio/' + it.Id + '/Lyrics'); lines = (r.Lyrics || []).map(l => ({ t: l.Start != null ? l.Start / 1e7 : null, s: l.Text })); } catch (e) { }
+  if (!lines.some(l => l.s)) {
+    try {
+      const r = await cget('/music/lyrics', { track: it.Name, artist: (it.Artists && it.Artists[0]) || it.AlbumArtist || '', duration: Math.round((it.RunTimeTicks || 0) / 1e7) });
+      if (r && r.synced) lines = r.synced.split(/\r?\n/).map(x => { const m = x.match(/^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/); return m ? { t: +m[1] * 60 + +m[2], s: m[3] } : null; }).filter(Boolean);
+      else if (r && r.plain) lines = r.plain.split(/\r?\n/).map(s => ({ t: null, s: s.trim() }));
+    } catch (e) { }
+  }
+  if (lyrMem.size > 40) lyrMem.delete(lyrMem.keys().next().value); lyrMem.set(it.Id, lines); return lines;
+}
 let lyrEl = null, lyrLines = null, lyrId = null, lyrAt = -1, lyrSynced = false;
 function toggleLyrics() {
   if (lyrEl) { lyrEl.remove(); lyrEl = null; panelClosed(); return; }
@@ -521,7 +536,7 @@ function toggleLyrics() {
 }
 async function loadLyrics(it) {
   lyrId = it.Id; lyrLines = null; lyrAt = -1; drawLyrics(true);
-  try { const r = await api('Audio/' + it.Id + '/Lyrics'); if (lyrId !== it.Id) return; lyrLines = (r.Lyrics || []).map(l => ({ t: l.Start != null ? l.Start / 1e7 : null, s: l.Text })); lyrSynced = lyrLines.length > 0 && lyrLines.filter(l => l.t != null).length > lyrLines.length / 2; }
+  try { const r = await fetchLyrics(it); if (lyrId !== it.Id) return; lyrLines = r; lyrSynced = lyrLines.length > 0 && lyrLines.filter(l => l.t != null).length > lyrLines.length / 2; }
   catch (e) { if (lyrId !== it.Id) return; lyrLines = []; lyrSynced = false; }
   drawLyrics();
 }

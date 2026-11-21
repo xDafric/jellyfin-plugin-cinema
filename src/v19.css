@@ -136,6 +136,8 @@
 .lyr-song { padding: 4px 0 12px; }
 .sp-lyrics > .nf-empty { flex: 1; display: grid; place-items: center; padding: 0 !important; }
 .lyr-foot { margin-top: auto; }
+/* on desktop the bottom player bar is always there, so the panel needs no second set of controls */
+@media (min-width: 801px) { .sp-lyrics .lyr-foot { display: none; } }
 @media (max-width: 800px) { #cx > .sp-lyrics .lyr-body { flex: 1 1 0; } }
 .sp-tile .cv { margin: 0 0 14px; }
 

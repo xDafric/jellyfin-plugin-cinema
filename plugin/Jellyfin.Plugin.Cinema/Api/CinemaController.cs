@@ -782,6 +782,105 @@ public class CinemaController : ControllerBase
         }
     }
 
+    // ---------------------------------------------------------------- lyrics fallback (LRCLIB public API, no key)
+
+    /// <summary>Looks up lyrics when Jellyfin's own providers found none. Only title, artist and length leave the server.</summary>
+    [HttpGet("music/lyrics")]
+    [Authorize]
+    public async Task<IActionResult> MusicLyrics([FromQuery] string track, [FromQuery] string artist, [FromQuery] double duration, CancellationToken ct)
+    {
+        track = (track ?? string.Empty).Trim();
+        artist = (artist ?? string.Empty).Trim();
+        if (!Cfg.ExternalSongSearch || track.Length == 0 || track.Length > 160 || artist.Length > 160)
+        {
+            return Content("{}", "application/json");
+        }
+
+        var ck = "lrc|" + track.ToLowerInvariant() + "|" + artist.ToLowerInvariant() + "|" + (int)duration;
+        if (SongCache.TryGetValue(ck, out var hit) && DateTime.UtcNow - hit.At < TimeSpan.FromHours(12))
+        {
+            return Content(hit.Json, "application/json");
+        }
+
+        try
+        {
+            JsonNode? best = null;
+            var bestScore = double.MinValue;
+            foreach (var url in new[]
+            {
+                "https://lrclib.net/api/search?track_name=" + Uri.EscapeDataString(track) + "&artist_name=" + Uri.EscapeDataString(artist),
+                "https://lrclib.net/api/search?q=" + Uri.EscapeDataString((artist + " " + track).Trim()),
+            })
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                req.Headers.TryAddWithoutValidation("User-Agent", "JellyfinCinema/1.0");
+                using var resp = await Client().SendAsync(req, ct).ConfigureAwait(false);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    continue;
+                }
+
+                if (JsonNode.Parse(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false)) is not JsonArray arr)
+                {
+                    continue;
+                }
+
+                foreach (var n in arr)
+                {
+                    if (n is null || n["instrumental"]?.GetValue<bool>() == true)
+                    {
+                        continue;
+                    }
+
+                    var synced = n["syncedLyrics"]?.GetValue<string>();
+                    var plain = n["plainLyrics"]?.GetValue<string>();
+                    if (string.IsNullOrWhiteSpace(synced) && string.IsNullOrWhiteSpace(plain))
+                    {
+                        continue;
+                    }
+
+                    var dur = n["duration"]?.GetValue<double>() ?? 0;
+                    var diff = duration > 0 && dur > 0 ? Math.Abs(dur - duration) : 0;
+                    if (duration > 0 && diff > 8)
+                    {
+                        continue;
+                    }
+
+                    var an = (n["artistName"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant();
+                    var tn = (n["trackName"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant();
+                    var score = (string.IsNullOrWhiteSpace(synced) ? 0 : 10) - diff
+                        + (artist.Length > 0 && (an.Contains(artist.ToLowerInvariant()) || artist.ToLowerInvariant().Contains(an)) ? 20 : 0)
+                        + (tn == track.ToLowerInvariant() ? 10 : 0);
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        best = n;
+                    }
+                }
+
+                if (best != null)
+                {
+                    break;
+                }
+            }
+
+            var o = new JsonObject();
+            if (best != null)
+            {
+                o["synced"] = best["syncedLyrics"]?.GetValue<string>();
+                o["plain"] = best["plainLyrics"]?.GetValue<string>();
+            }
+
+            var json = o.ToJsonString();
+            SongCache[ck] = (DateTime.UtcNow, json);
+            return Content(json, "application/json");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, new { error = ex.Message });
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private HttpClient Client()
