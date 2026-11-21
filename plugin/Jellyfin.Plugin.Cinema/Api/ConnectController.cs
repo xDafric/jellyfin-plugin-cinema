@@ -73,6 +73,56 @@ public class ConnectController : ControllerBase
         }
     }
 
+    /// <summary>What the user plays right now on any device (for the guest page of a jam): title and artist only.</summary>
+    internal static JsonObject? NowOf(string uid)
+    {
+        foreach (var sp in SpeakerService.List())
+        {
+            if (sp.Owner == uid && sp.Playing && sp.Item is not null)
+            {
+                return new JsonObject { ["name"] = sp.Item["name"]?.GetValue<string>(), ["artist"] = sp.Item["artist"]?.GetValue<string>(), ["playing"] = true };
+            }
+        }
+
+        if (!Hubs.TryGetValue(uid, out var h))
+        {
+            return null;
+        }
+
+        var d = h.Devs.Values.Where(x => x.State?["item"] is JsonObject).OrderByDescending(x => x.State!["playing"]?.GetValue<bool>() ?? false).ThenByDescending(x => x.StateAt).FirstOrDefault();
+        var it = d?.State?["item"];
+        return it is null ? null : new JsonObject { ["name"] = it["name"]?.GetValue<string>(), ["artist"] = it["artist"]?.GetValue<string>(), ["playing"] = d!.State!["playing"]?.GetValue<bool>() ?? false };
+    }
+
+    /// <summary>Adds songs to the queue of the device that plays for this user (a playing speaker, else the playing device, else the preferred one).</summary>
+    internal static async Task<bool> PushQueue(string uid, string? preferred, JsonArray ids)
+    {
+        foreach (var sp in SpeakerService.List())
+        {
+            if (sp.Owner == uid && sp.Queue.Count > 0)
+            {
+                return await SpeakerService.Command(sp, uid, new JsonObject { ["cmd"] = "queueAdd", ["queue"] = ids.DeepClone() }, string.Empty).ConfigureAwait(false);
+            }
+        }
+
+        if (!Hubs.TryGetValue(uid, out var h))
+        {
+            return false;
+        }
+
+        var d = h.Devs.Values.Where(x => x.State?["playing"]?.GetValue<bool>() == true).OrderByDescending(x => x.StateAt).FirstOrDefault()
+            ?? (preferred is not null && h.Devs.TryGetValue(preferred, out var pd) ? pd : null)
+            ?? h.Devs.Values.Where(x => x.State?["item"] is JsonObject).OrderByDescending(x => x.StateAt).FirstOrDefault();
+        if (d is null)
+        {
+            return false;
+        }
+
+        d.Cmds.Enqueue(new JsonObject { ["cmd"] = "queueAdd", ["from"] = "jam", ["queue"] = ids.DeepClone(), ["index"] = 0, ["pos"] = 0, ["playing"] = true });
+        h.Bump();
+        return true;
+    }
+
     private string? Uid => User.FindFirst("Jellyfin-UserId")?.Value?.Replace("-", string.Empty, StringComparison.Ordinal).ToLowerInvariant();
 
     private Hub? MyHub(bool create)
@@ -271,6 +321,7 @@ public class ConnectController : ControllerBase
         var wasItem = d.State?["item"]?["id"]?.GetValue<string>();
         d.State = clean;
         d.StateAt = DateTime.UtcNow;
+        _ = JamController.Flush(Uid!);
         d.Seen = DateTime.UtcNow;
         var nowItem = clean["item"]?["id"]?.GetValue<string>();
         if (wasPlaying != (clean["playing"]?.GetValue<bool>() ?? false) || wasItem != nowItem || b["push"]?.GetValue<bool>() == true)

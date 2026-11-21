@@ -10,9 +10,9 @@ Object.assign(LU, {
   'cx-speaker': '<path d="M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"/><path d="M12 14m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M12 7l0 .01"/>',
   'cx-browser': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/>'
 });
-Object.assign(LUMAP, { devices: 'cx-devices', dphone: 'cx-phone', ddesktop: 'cx-desktop', dtv: 'cx-tv', dspeaker: 'cx-speaker', dweb: 'cx-browser' });
-Object.assign(TX.en, { cnDevices: 'Devices', cnThis: 'This device', cnListening: 'Listening on', cnPlayHere: 'Play here', cnAvail: 'Available', cnNone: 'Open Cinema on another device to see it here.', cnPlaying: 'Playing', cnPaused: 'Paused', cnNothing: 'Nothing playing', cnMoved: 'Playing on', cnHide: 'Hide', cnTap: 'Tap to start playback on this device', cnRename: 'Name of this device', cnScan: 'Search for speakers', cnScanning: 'Searching …', cnFound: 'speakers found', cnOut: 'Sound output of this device', cnOutPick: 'Choose speaker or headphones', cnBt: 'Bluetooth and outputs', cnOutDef: 'System default' });
-Object.assign(TX.de, { cnDevices: 'Geräte', cnThis: 'Dieses Gerät', cnListening: 'Du hörst auf', cnPlayHere: 'Hier abspielen', cnAvail: 'Verfügbar', cnNone: 'Öffne Cinema auf einem anderen Gerät, dann erscheint es hier.', cnPlaying: 'Spielt', cnPaused: 'Pausiert', cnNothing: 'Nichts aktiv', cnMoved: 'Spielt jetzt auf', cnHide: 'Ausblenden', cnTap: 'Tippen, um hier abzuspielen', cnRename: 'Name dieses Geräts', cnScan: 'Lautsprecher suchen', cnScanning: 'Suche …', cnFound: 'Lautsprecher gefunden', cnOut: 'Tonausgabe dieses Geräts', cnOutPick: 'Lautsprecher oder Kopfhörer wählen', cnBt: 'Bluetooth und Ausgänge', cnOutDef: 'Systemstandard' });
+Object.assign(LUMAP, { users: 'users', 'check-mark': 'check-mark', cast: 'cast', devices: 'cx-devices', dphone: 'cx-phone', ddesktop: 'cx-desktop', dtv: 'cx-tv', dspeaker: 'cx-speaker', dweb: 'cx-browser' });
+Object.assign(TX.en, { cnDevices: 'Devices', cnThis: 'This device', cnListening: 'Listening on', cnPlayHere: 'Play here', cnAvail: 'Available', cnNone: 'Open Cinema on another device to see it here.', cnPlaying: 'Playing', cnPaused: 'Paused', cnNothing: 'Nothing playing', cnMoved: 'Playing on', cnHide: 'Hide', cnTap: 'Tap to start playback on this device', cnRename: 'Name of this device', cnScan: 'Search for speakers', cnScanning: 'Searching …', cnFound: 'speakers found', cnOut: 'Sound output of this device', cnOutPick: 'Choose speaker or headphones', cnBt: 'Bluetooth and outputs', cnOutDef: 'System default', jamStart: 'Start a Jam', jamStartD: 'Friends join with a link and add songs to the queue', jamLive: 'Jam is on', jamCopy: 'Copy link', jamCopied: 'Link copied', jamShare: 'Share', jamGuests: 'guests', jamApprove: 'I approve every song', jamEnd: 'End Jam', jamReq: 'Requests', jamNoReq: 'No requests yet', jamKick: 'Remove guest', jamFor: 'valid for', jamErr: 'The Jam could not be started' });
+Object.assign(TX.de, { cnDevices: 'Geräte', cnThis: 'Dieses Gerät', cnListening: 'Du hörst auf', cnPlayHere: 'Hier abspielen', cnAvail: 'Verfügbar', cnNone: 'Öffne Cinema auf einem anderen Gerät, dann erscheint es hier.', cnPlaying: 'Spielt', cnPaused: 'Pausiert', cnNothing: 'Nichts aktiv', cnMoved: 'Spielt jetzt auf', cnHide: 'Ausblenden', cnTap: 'Tippen, um hier abzuspielen', cnRename: 'Name dieses Geräts', cnScan: 'Lautsprecher suchen', cnScanning: 'Suche …', cnFound: 'Lautsprecher gefunden', cnOut: 'Tonausgabe dieses Geräts', cnOutPick: 'Lautsprecher oder Kopfhörer wählen', cnBt: 'Bluetooth und Ausgänge', cnOutDef: 'Systemstandard', jamStart: 'Jam starten', jamStartD: 'Freunde treten per Link bei und legen Songs in die Warteschlange', jamLive: 'Jam läuft', jamCopy: 'Link kopieren', jamCopied: 'Link kopiert', jamShare: 'Teilen', jamGuests: 'Gäste', jamApprove: 'Ich gebe jeden Song frei', jamEnd: 'Jam beenden', jamReq: 'Wünsche', jamNoReq: 'Noch keine Wünsche', jamKick: 'Gast entfernen', jamFor: 'gültig noch', jamErr: 'Die Jam konnte nicht gestartet werden' });
 
 const CN = { on: false, id: null, name: '', kind: 'web', devices: [], v: 0, got: 0, hidden: null, started: false, lastSend: 0, run: false };
 const cnSleep = ms => new Promise(r => setTimeout(r, ms));
@@ -88,7 +88,7 @@ async function cnLoop() {
 function cnApply(r) { if (!r) return; CN.v = r.v; CN.got = Date.now(); CN.devices = r.devices || []; cnDraw(); }
 function cnStart() {
   if (CN.started || cnOff() || !feat('connect') || typeof ApiClient === 'undefined' || !ApiClient.accessToken || !ApiClient.accessToken()) return;
-  CN.started = true; CN.on = true; cnIdentity(); cnLoop(); cnApplySink();
+  CN.started = true; CN.on = true; cnIdentity(); cnLoop(); cnApplySink(); setTimeout(jamLoad, 1500);
   P.subs.push(() => cnReport(true));
   P.audio.addEventListener('timeupdate', () => cnReport(false));
   P.audio.addEventListener('volumechange', () => cnReport(false));
@@ -139,9 +139,40 @@ function cnPaintPanel() {
   const others = cnOthers();
   others.forEach(d => { const s = d.state, it = s && s.item && s.item.name ? s.item : null, pl = !!(s && s.playing && it); rows.push(row(dIcon(d), d.name, pl ? it.name + ' · ' + it.artist : it ? t('cnPaused') + ' · ' + it.name : t('cnAvail'), pl, () => { if (pl) cnPullFrom(d); else cnTransferTo(d); })); });
   cnPanel.replaceChildren(h('div', { class: 'cn-head' }, h('b', {}, t('cnDevices')), h('button', { class: 'pl-btn', 'aria-label': t('close'), onclick: cnShut }, ic('close'))), h('div', { class: 'cn-list' }, rows), others.length ? '' : h('div', { class: 'cn-empty' }, t('cnNone')),
+    cnJam(),
     cnActions(),
     h('label', { class: 'cn-name' }, h('span', {}, t('cnRename')), h('input', { type: 'text', value: CN.name, maxlength: 48, onchange: e => { const v = e.target.value.trim().slice(0, 48) || CN.def; CN.name = v; try { localStorage.setItem('cx-dev-name', v === CN.def ? '' : v); } catch (er) { } cnPost('hello', { id: CN.id, name: CN.name, kind: CN.kind }).catch(() => { }); } })));
 }
+
+/* ---------- Jam: guests with a link put songs in the queue ---------- */
+const jamLink = () => (ApiClient.serverAddress() || location.origin).replace(/\/+$/, '') + '/Cinema/jam/' + CN.jam.code;
+async function jamLoad() {
+  if (!CN.on) return; try { const r = await ApiClient.getJSON(ApiClient.getUrl('Cinema/jam/mine')); const was = !!CN.jam; CN.jam = r && r.code ? r : null; if (was !== !!CN.jam || cnPanel) cnDraw(); } catch (e) { }
+}
+async function jamStart() {
+  try { CN.jam = await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema/jam/start', { device: CN.id }), dataType: 'json' }); cnDraw(); } catch (e) { toast(t('jamErr')); }
+}
+const jamPost = (path, q) => ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('Cinema/jam/' + path, q || {}), dataType: 'json' }).then(r => { if (r && r.code) CN.jam = r; return r; }).catch(() => { });
+function cnJam() {
+  if (!feat('connect')) return '';
+  const j = CN.jam;
+  if (!j) return h('div', { class: 'cn-acts' }, h('button', { class: 'cn-act', onclick: jamStart }, ic('users', 'ic-s'), h('span', {}, h('b', {}, t('jamStart')), h('i', {}, t('jamStartD')))));
+  const url = jamLink(), qr = typeof qrSvg === 'function' ? qrSvg(url, 168) : null, left = Math.max(0, Math.round((j.expires - Date.now()) / 60000));
+  const pend = (j.requests || []).filter(r => r.status === 'pending');
+  const reqs = (j.requests || []).slice(0, 8).map(r => h('div', { class: 'jam-req' }, h('span', { class: 'jam-rt' }, h('b', { class: 'ell' }, r.name), h('i', { class: 'ell' }, r.artist + ' · ' + r.by)),
+    r.status === 'pending' ? h('span', { class: 'jam-dec' }, h('button', { class: 'pl-btn', 'aria-label': 'OK', onclick: () => jamPost('decide', { id: r.id, ok: true }).then(cnDraw) }, ic('check-mark', 'ic-s')), h('button', { class: 'pl-btn', 'aria-label': 'No', onclick: () => jamPost('decide', { id: r.id, ok: false }).then(cnDraw) }, ic('close', 'ic-s'))) : h('em', { class: 'jam-st ' + r.status }, r.status === 'queued' ? '✓' : '×')));
+  return h('div', { class: 'jam' },
+    h('div', { class: 'jam-head' }, h('b', {}, t('jamLive')), h('span', {}, (j.guests || []).length + ' ' + t('jamGuests') + ' · ' + t('jamFor') + ' ' + (left >= 60 ? Math.floor(left / 60) + ' h ' + (left % 60) + ' min' : left + ' min'))),
+    qr ? h('div', { class: 'jam-qr' }, qr) : '',
+    h('div', { class: 'jam-link' }, h('input', { type: 'text', readonly: true, value: url, onfocus: e => e.target.select() }),
+      h('button', { class: 'cn-here', onclick: async e => { try { await navigator.clipboard.writeText(url); } catch (er) { const i = e.currentTarget.parentNode.querySelector('input'); i.select(); document.execCommand('copy'); } toast(t('jamCopied')); } }, t('jamCopy')),
+      navigator.share ? h('button', { class: 'cn-here', onclick: () => navigator.share({ title: 'Jam', url }).catch(() => { }) }, t('jamShare')) : ''),
+    h('label', { class: 'jam-sw' }, h('input', { type: 'checkbox', checked: !!j.approve, onchange: e => jamPost('settings', { approve: e.target.checked }).then(cnDraw) }), h('span', {}, t('jamApprove'))),
+    (j.guests || []).length ? h('div', { class: 'jam-guests' }, (j.guests || []).map(g => h('span', { class: 'jam-g', title: t('jamKick'), onclick: () => { if (confirm(t('jamKick') + ': ' + g.name + '?')) jamPost('kick', { id: g.id }).then(jamLoad); } }, g.name))) : '',
+    h('div', { class: 'jam-reqs' }, h('b', {}, t('jamReq') + (pend.length ? ' (' + pend.length + ')' : '')), reqs.length ? reqs : h('div', { class: 'cn-empty' }, t('jamNoReq'))),
+    h('button', { class: 'cn-act jam-end', onclick: () => { if (confirm(t('jamEnd') + '?')) jamPost('stop').then(() => { CN.jam = null; cnDraw(); }); } }, h('span', {}, h('b', {}, t('jamEnd')))));
+}
+setInterval(() => { if (CN.on && (CN.jam || cnPanel)) jamLoad(); }, 5000);
 
 /* this device's own sound output (desktop and browsers) and the system output panel (Android app) */
 const cnCanSink = () => typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
@@ -173,7 +204,7 @@ function connectButton(cls) {
 let cnBar = null, cnTick = null;
 function cnDraw() {
   const a = cnActive(), local = !!cur() && !P.audio.paused;
-  (CN.btns || []).forEach(b => b.classList.toggle('live', !!a && a.state.playing && !local));
+  (CN.btns || []).forEach(b => { b.classList.toggle('live', !!a && a.state.playing && !local); b.classList.toggle('jamon', !!CN.jam); });
   if (cnPanel) cnPaintPanel();
   const show = a && !local && CN.hidden !== a.id + ':' + (a.state.item.id) && cnOthers().length;
   if (!show) { if (cnBar) { cnBar.remove(); cnBar = null; clearInterval(cnTick); } return; }

@@ -67,7 +67,7 @@ internal static class SpeakerService
     /// <summary>Test only: skip the network search so a test never talks to real devices.</summary>
     internal static bool TestNoSsdp;
 
-    private static PluginConfiguration? Config => TestConfig ?? Plugin.Instance?.Configuration;
+    internal static PluginConfiguration? Config => TestConfig ?? Plugin.Instance?.Configuration;
 
     public static bool Enabled => Config?.FeatSpeakers == true;
 
