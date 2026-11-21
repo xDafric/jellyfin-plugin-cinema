@@ -105,3 +105,29 @@ body .osdHeader .pageTitle { font-size: 20px; font-weight: 800; letter-spacing: 
 .actionSheet .actionsheetMenuItemIcon { width: 22px; margin: 0 6px 0 4px !important; }
 .actionSheet .material-icons.check { font-size: 0 !important; width: 20px; height: 20px; display: inline-block; background-color: currentColor; -webkit-mask: var(--cxm) center / contain no-repeat; mask: var(--cxm) center / contain no-repeat; }
 .actionSheet .actionsheetMenuItemIcon.material-icons { flex: none !important; display: block !important; width: 20px !important; min-width: 20px; height: 20px !important; margin: 0 8px 0 4px !important; }
+
+/* alignment: every part of a bar shares one centre line */
+#videoOsdPage .osdControls .sliderContainer .mdl-slider-background-flex-container { top: 50% !important; bottom: auto !important; margin-top: -3px !important; height: 6px !important; }
+#videoOsdPage .osdControls .sliderContainer:hover .mdl-slider-background-flex-container { margin-top: -4px !important; height: 8px !important; }
+#videoOsdPage .osdControls .sliderContainer .osdPositionSlider { height: 22px; }
+#videoOsdPage .osdControls .sliderContainer .mdl-slider-background-flex, #videoOsdPage .osdControls .sliderContainer .mdl-slider-background-flex-inner, #videoOsdPage .osdControls .sliderContainer .mdl-slider-background-upper, #videoOsdPage .osdControls .sliderContainer .mdl-slider-background-lower { top: 0 !important; margin: 0 !important; }
+#videoOsdPage .osdVolumeSliderContainer, #videoOsdPage .osdControls .osdVolumeSliderContainer { height: 44px !important; margin: 0 8px 0 0 !important; }
+#videoOsdPage .osdControls .osdVolumeSliderContainer .osdVolumeSlider { height: 44px; }
+#videoOsdPage .osdControls .osdVolumeSliderContainer .mdl-slider-background-flex-container { top: 50% !important; bottom: auto !important; margin-top: -2px !important; height: 4px !important; }
+#videoOsdPage .osdControls .osdVolumeSliderContainer .mdl-slider-background-flex, #videoOsdPage .osdControls .osdVolumeSliderContainer .mdl-slider-background-flex-inner, #videoOsdPage .osdControls .osdVolumeSliderContainer .mdl-slider-background-upper, #videoOsdPage .osdControls .osdVolumeSliderContainer .mdl-slider-background-lower { top: 0 !important; margin: 0 !important; }
+#videoOsdPage .volumeButtons { gap: 0; }
+#videoOsdPage .osdTextContainer.startTimeText, #videoOsdPage .osdTextContainer.endTimeText, #videoOsdPage .osdTimeText { line-height: 44px; align-self: center; }
+/* header: glass back button, title with the year in a calm grey */
+body .osdHeader .headerBackButton { width: 48px; height: 48px; border: 1px solid rgba(255,255,255,.12); }
+body .osdHeader .pageTitle { font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin-left: 14px; }
+body .osdHeader .pageTitle .cx-yr { font-size: .78em; font-weight: 500; letter-spacing: 0; color: #a2a2ab; margin-left: 10px; }
+
+/* header of the player (Jellyfin 12 builds it with MUI): glass round buttons, a bold title with the year in grey */
+body .osdHeader.MuiBox-root { background: linear-gradient(to bottom, rgba(0,0,0,.72), rgba(0,0,0,0)) !important; padding: 10px 14px 60px !important; box-shadow: none; }
+body .osdHeader .videoOsd-appBar { min-height: 64px !important; padding: 8px 14px !important; gap: 14px; }
+body .osdHeader .videoOsd-appBar .MuiIconButton-root { width: 46px !important; height: 46px !important; padding: 0 !important; border-radius: 50% !important; color: #fff !important; background: rgba(255,255,255,.14) !important; border: 1px solid rgba(255,255,255,.1); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: background .2s, transform .15s; margin: 0 !important; }
+body .osdHeader .videoOsd-appBar .MuiIconButton-root:hover { background: rgba(255,255,255,.26) !important; transform: scale(1.06); }
+body .osdHeader .videoOsd-appBar .MuiIconButton-root svg { width: 22px; height: 22px; }
+body .osdHeader .videoOsd-appBar > p { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 0 4px !important; color: #fff; }
+body .osdHeader .videoOsd-appBar > p .cx-yr { font-size: .78em; font-weight: 500; letter-spacing: 0; color: #a2a2ab; margin-left: 10px; }
+body .osdHeader .videoOsd-appBar > div { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 1; }
