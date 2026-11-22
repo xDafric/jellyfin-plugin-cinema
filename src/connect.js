@@ -294,19 +294,33 @@ async function rmUpdate(d) {
   emit(); rmTick();
   if (cur() && cur()._stub && !RM.busy) { RM.busy = true; try { if (P.remote === d.id && await rmLoadQueue(d)) { emit(); rmTick(); } } catch (e) { } RM.busy = false; }
 }
+/* Two parts, so they cannot call each other in a loop:
+   cnDraw   = decide (follow the other device, step out, own stream), then show it
+   cnDecor  = only show (buttons, strip, device panel); safe to call from the player's own updates */
+let cnBusy = false, cnPT = 0, cnStripKey = '';
 function cnDraw() {
+  if (cnBusy) return; cnBusy = true;
+  try {
+    const a = cnActive();
+    /* follow what the other device does, or step out when it is gone */
+    if (P.remote) {
+      const d = CN.devices.find(x => x.id === P.remote);
+      if (!d || !d.state || !d.state.item || !d.state.item.id || (!d.state.playing && Date.now() - d.at > 10 * 60 * 1000)) rmExit(); else rmUpdate(d);
+    } else if (a && a.state.playing && dpPaused() && !CN.detach && CN.skip !== a.id + ':' + a.state.item.id) rmEnter(a);
+    /* own stream ends when the other device stops: the next time something plays elsewhere we follow again */
+    if (CN.detach && !(a && a.state.playing)) CN.detach = false;
+  } finally { cnBusy = false; }
+  cnDecor();
+}
+function cnDecor() {
   const a = cnActive(), localPlaying = !P.remote && !!cur() && !dpPaused();
   (CN.btns || []).forEach(b => { b.classList.toggle('live', !!P.remote || (!!a && a.state.playing && !localPlaying)); b.classList.toggle('jamon', !!CN.jam); });
-  if (cnPanel) cnPaintPanel();
-  /* follow what the other device does, or step out when it is gone */
-  if (P.remote) {
-    const d = CN.devices.find(x => x.id === P.remote);
-    if (!d || !d.state || !d.state.item || !d.state.item.id || (!d.state.playing && Date.now() - d.at > 10 * 60 * 1000)) rmExit(); else rmUpdate(d);
-  } else if (a && a.state.playing && dpPaused() && !CN.detach && CN.skip !== a.id + ':' + a.state.item.id) rmEnter(a);
-  /* own stream ends when the other device stops: the next time something plays elsewhere we follow again */
-  if (CN.detach && !(a && a.state.playing)) CN.detach = false;
-  /* the strip: green "Playing on …" with "Listen separately", or (own stream while another device plays) "Also playing on …" with "Control" */
+  /* the device panel is painted at most every 80 ms, and not while a slider or text field in it is in use */
+  if (cnPanel && !cnPT) cnPT = setTimeout(() => { cnPT = 0; const f = document.activeElement; if (cnPanel && !(f && cnPanel.contains(f) && f.matches('input, select'))) cnPaintPanel(); }, 80);
+  /* the strip: green "Playing on …" with "Own stream", or (own stream while another device plays) "Also playing on …" with "Remote control" */
   const rd = P.remote && CN.devices.find(x => x.id === P.remote), alt = !rd && CN.detach && a && a.state.playing ? a : null;
+  const key = (rd ? 'r' + rd.name : alt ? 'a' + alt.name : '') + '|' + document.querySelectorAll('.sp-player, .sp-mini, .sp-full').length + '|' + document.querySelectorAll('.cn-strip').length;
+  if (key === cnStripKey) return; cnStripKey = key;
   document.querySelectorAll('.sp-player, .sp-mini, .sp-full').forEach(el => {
     el.classList.toggle('remote', !!(rd || alt)); let st = el.querySelector(':scope > .cn-strip');
     if (rd || alt) {
@@ -316,6 +330,7 @@ function cnDraw() {
         h('span', { class: 'cn-stb', role: 'button', onclick: e => { e.stopPropagation(); rd ? cnDetach() : cnFollow(alt); } }, rd ? t('cnModeOwn') : t('cnModeRemote')));
     } else if (st) st.remove();
   });
+  cnStripKey = (rd ? 'r' + rd.name : alt ? 'a' + alt.name : '') + '|' + document.querySelectorAll('.sp-player, .sp-mini, .sp-full').length + '|' + document.querySelectorAll('.cn-strip').length;
 }
 /* "Own stream": this device keeps the song and position but plays by itself; the other device carries on */
 function cnDetach() {
@@ -327,5 +342,7 @@ function cnDetach() {
 }
 /* back to remote control of the device that plays */
 function cnFollow(d) { CN.detach = false; if (!dpPaused()) P.audio.pause(); CN.skip = ''; rmEnter(d); cnShut(); }
-P.subs.push(() => { cnDraw(); });
-P.audio.addEventListener('play', cnDraw); P.audio.addEventListener('pause', cnDraw);
+P.subs.push(() => { cnDecor(); });   /* not cnDraw: that one may emit itself (rmUpdate), which would loop */
+P.audio.addEventListener('play', () => cnDraw()); P.audio.addEventListener('pause', () => cnDraw());
+/* a player bar that appears later (page change) gets its strip */
+setInterval(() => { if (CN.on && !document.hidden) cnDecor(); }, 1500);
