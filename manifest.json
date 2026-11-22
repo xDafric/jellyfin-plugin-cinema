@@ -9,6 +9,14 @@
         "imageUrl":  "https://raw.githubusercontent.com/xDafric/jellyfin-plugin-cinema/main/branding/png/icon-512.png",
         "versions":  [
                          {
+                             "version":  "1.1.70.0",
+                             "changelog":  "Watch Party: watch films and episodes together with friends via a link, in sync, with chat and reactions.",
+                             "targetAbi":  "12.4.0.0",
+                             "sourceUrl":  "https://github.com/xDafric/jellyfin-plugin-cinema/raw/main/releases/Cinema_1.1.70.0.zip",
+                             "checksum":  "3fe1d0f005251f73139a23c0531b5e97",
+                             "timestamp":  "2026-11-22T12:00:00Z"
+                         },
+                         {
                              "version":  "1.1.69.0",
                              "changelog":  "Fixes freezing and lag when opening the device menu or switching between remote control and own stream.",
                              "targetAbi":  "12.4.0.0",

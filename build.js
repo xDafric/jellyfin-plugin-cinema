@@ -39,6 +39,7 @@ ${r('music2.js')}
 ${r('music.js')}
 ${r('qr.js')}
 ${r('connect.js')}
+${r('party.js')}
 ${r('speakers.js')}
 ${r('appnative.js')}
 ${r('tv.js')}

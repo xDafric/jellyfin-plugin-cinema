@@ -68,6 +68,7 @@ async function openPlayer(it, startTicks) {
   history.pushState({ cxplayer: 1 }, '');
   window.addEventListener('popstate', onPop); document.addEventListener('keydown', onKey, true);
   P.audio && !P.audio.paused && P.audio.pause();
+  if (typeof wpOnOpen === 'function') wpOnOpen();
   let full = it; try { full = await getItem(it.Id); } catch (e) { }
   PL.item = full; setTitle(full); loadNext(full); loadSegments(full); updMediaSession();
   await startStream(startTicks != null ? startTicks : (ud(full).PlaybackPositionTicks || 0));
@@ -347,6 +348,7 @@ function buildPlayerUI(it) {
       h('div', { class: 'pl-btn-wrap pl-btn-audio hide' }, tip(t('plAudio'), h('button', { onclick: () => toggleMenu('.pl-menu-audio') }, pic('audio'))), h('div', { class: 'pl-menu pl-menu-audio' })),
       h('div', { class: 'pl-btn-wrap pl-btn-subs hide' }, tip(t('plSubs'), h('button', { onclick: () => toggleMenu('.pl-menu-subs') }, pic('cc'))), h('div', { class: 'pl-menu pl-menu-subs' })),
       h('div', { class: 'pl-btn-wrap' }, tip(t('plSettings'), h('button', { onclick: () => openSettings() }, pic('gear')))),
+      (b => b ? tip(t('wpTitle'), b) : null)(typeof wpButton === 'function' ? wpButton() : null),
       document.pictureInPictureEnabled ? tip('Picture in picture', h('button', { onclick: () => { document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture().catch(() => { }); } }, pic('pip'))) : null,
       tip(t('plFs'), h('button', { class: 'pl-fs', onclick: () => toggleFs() }, pic('fs'))))),
     h('div', { class: 'pl-settings' }));

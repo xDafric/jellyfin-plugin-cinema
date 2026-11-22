@@ -146,6 +146,9 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Cinema Connect: a user's devices see and control each other.</summary>
     public bool FeatConnect { get; set; } = true;
 
+    /// <summary>Watch Party: friends with a link watch the same film in sync.</summary>
+    public bool FeatWatchParty { get; set; } = true;
+
     /// <summary>Show films watched on Letterboxd as watched here (read only, never written back).</summary>
     public bool FeatLetterboxd { get; set; }
 

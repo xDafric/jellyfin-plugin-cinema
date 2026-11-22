@@ -128,10 +128,10 @@ async function playVideo(it, opts) {
     }
   } catch (e) { }
   /* native player of the shell; a shell without one (desktop 0.x) returns false and the Cinema player below takes over */
-  const shell = window.CinemaTV || window.CinemaNative;
+  const shell = opts.party ? null : (window.CinemaTV || window.CinemaNative);   /* a Watch Party needs the Cinema player: it is the one that can follow and lead the others */
   if (shell && typeof shell.play === 'function') { try { const full = await getItem(id); COVER.hide(); if (shell.play(id, opts.startTicks != null ? opts.startTicks : (ud(full).PlaybackPositionTicks || 0)) !== false) return; COVER.show(); } catch (e) { COVER.hide(); toast((e.message || 'error')); return; } }
-  if (playerMode() === 'native') { playNative(id); return; }
-  try { const full = await getItem(id); COVER.hide(); await openPlayer(full, opts.startTicks); } catch (e) { console.warn('[cinema] player', e); COVER.hide(); playNative(id); }
+  if (playerMode() === 'native' && !opts.party) { playNative(id); return; }
+  try { const full = await getItem(id); COVER.hide(); await openPlayer(full, opts.startTicks); if (opts.party && typeof wpStart === 'function') { await wpStart(); cnStart(); cnOpen(null, 'party'); } } catch (e) { console.warn('[cinema] player', e); COVER.hide(); playNative(id); }
 }
 
 /* ---------- Netflix shell ---------- */
@@ -394,6 +394,7 @@ async function itemView(page, id) {
     (it.Taglines || [])[0] ? h('p', { class: 'nf-tagline' }, it.Taglines[0]) : null,
     h('p', { class: 'ov', onclick: e => e.currentTarget.classList.toggle('open') }, it.Overview || ''),
     h('div', { class: 'nf-btns' }, h('button', { class: 'btn white', onclick: () => playVideo(it) }, ic('play'), prog ? t('resume') : t('play')), dlButton(it),
+      feat('watchParty') && ['Movie', 'Episode', 'Series'].includes(it.Type) ? h('button', { class: 'btn grey round-lbl', title: t('wpTitle'), onclick: () => playVideo(it, { party: true }) }, ic('popcorn'), t('wpTitle')) : null,
       trailer ? h('a', { class: 'btn grey', href: trailer.Url, target: '_blank', rel: 'noopener' }, ic('film'), t('trailer')) : null, wlBtn, favBtn, seenBtn, moreBtn),
     prog ? h('div', { class: 'nf-resume-bar' }, h('i', { style: 'width:' + prog + '%' })) : null,
     h('dl', { class: 'nf-facts' }, (it.Genres || []).length ? [h('dt', {}, t('genres')), h('dd', {}, it.Genres.join(', '))] : null, dir ? [h('dt', {}, t('director')), h('dd', {}, dir)] : null, (it.Studios || []).length ? [h('dt', {}, t('studio')), h('dd', {}, it.Studios.map(s => s.Name).join(', '))] : null));

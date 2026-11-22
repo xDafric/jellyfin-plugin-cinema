@@ -139,7 +139,7 @@ const cnEsc = e => { if (e.key === 'Escape' && cnPanel) { e.stopPropagation(); i
 function cnOpen(btn, view) {
   if (cnPanel && !view) return cnShut();
   if (!cnPanel) {
-    cnBtnEl = btn || cnBtnEl; cnPanel = h('div', { class: 'cn-panel', role: 'dialog', 'aria-label': t('cnConnectTo'), onclick: e => e.stopPropagation() }); (typeof getUI === 'function' ? getUI() : document.body).append(cnPanel); cnPanel.style.zIndex = 9650;
+    cnBtnEl = btn || cnBtnEl; cnPanel = h('div', { class: 'cn-panel', role: 'dialog', 'aria-label': t('cnConnectTo'), onclick: e => e.stopPropagation() }); (typeof getUI === 'function' ? getUI() : document.body).append(cnPanel); cnPanel.style.zIndex = (typeof PL !== 'undefined' && PL.open) ? 9900 : 9650;
     document.addEventListener('keydown', cnEsc, true);
     setTimeout(() => { const off = e => { if (cnPanel && !cnPanel.contains(e.target) && !(cnBtnEl && cnBtnEl.contains(e.target))) { cnShut(); document.removeEventListener('pointerdown', off, true); } }; document.addEventListener('pointerdown', off, true); }, 0);
   }
@@ -148,7 +148,7 @@ function cnOpen(btn, view) {
 const cnKindName = k => t({ phone: 'cnKindPhone', tablet: 'cnKindTablet', desktop: 'cnKindDesktop', tv: 'cnKindTv', speaker: 'cnKindSpeaker' }[k] || 'cnKindWeb');
 const cnIcon = k => ic({ phone: 'dphone', tablet: 'dphone', desktop: 'ddesktop', tv: 'dtv', speaker: 'dspeaker' }[k] || 'dweb');
 const cnEq = () => h('span', { class: 'cn-eq' }, h('i'), h('i'), h('i'), h('i'));
-function cnPaintPanel() { if (!cnPanel) return; const y = cnPanel.querySelector('.cn-scroll'); const top = y ? y.scrollTop : 0; cnPanel.replaceChildren(...(cnView === 'jam' ? cnJamView() : cnDevicesView())); const y2 = cnPanel.querySelector('.cn-scroll'); if (y2) y2.scrollTop = top; }
+function cnPaintPanel() { if (!cnPanel) return; const y = cnPanel.querySelector('.cn-scroll'); const top = y ? y.scrollTop : 0; cnPanel.replaceChildren(...(cnView === 'jam' ? cnJamView() : cnView === 'party' ? wpView() : cnDevicesView())); const y2 = cnPanel.querySelector('.cn-scroll'); if (y2) y2.scrollTop = top; }
 function cnHead(title, back) { return h('div', { class: 'cn-head' }, back ? h('button', { class: 'cn-hb', 'aria-label': t('cnBack'), onclick: () => { cnView = 'devices'; cnPaintPanel(); } }, ic('left')) : null, h('b', {}, title), h('button', { class: 'cn-hb', 'aria-label': t('close'), onclick: cnShut }, ic('close'))); }
 
 function cnDevicesView() {
@@ -167,6 +167,7 @@ function cnDevicesView() {
   /* jam entry, like Spotify's */
   const j = CN.jam;
   const jamRow = feat('connect') ? h('button', { class: 'cn-jamcard' + (j ? ' live' : ''), onclick: () => { cnView = 'jam'; cnPaintPanel(); } }, h('span', { class: 'cn-jic' }, ic('users')), h('span', { class: 'cn-tx' }, h('b', {}, j ? t('jamLive') : t('jamStart')), h('span', { class: 'ell' }, j ? (j.guests || []).length + ' ' + t('jamGuests') : t('jamStartD'))), j ? h('i', { class: 'cn-dot' }) : ic('right')) : null;
+  const wpRow = feat('watchParty') ? h('button', { class: 'cn-jamcard wp' + (WP.on ? ' live' : ''), onclick: () => { cnView = 'party'; cnPaintPanel(); } }, h('span', { class: 'cn-jic' }, ic('popcorn')), h('span', { class: 'cn-tx' }, h('b', {}, WP.on ? t('wpOn') : t('wpStart')), h('span', { class: 'ell' }, WP.on ? Math.max(0, WP.members.length - 1) + ' ' + t('jamGuests') : t('wpStartD'))), WP.on ? h('i', { class: 'cn-dot' }) : ic('right')) : null;
   const outRow = (cnCanSink() && !(nat && nat.audioOutput)) ? h('button', { class: 'cn-act', onclick: cnPickSink }, h('span', { class: 'cn-ic s' }, ic('dspeaker')), h('span', {}, h('b', {}, t('cnOutPick')), h('i', {}, (() => { try { return localStorage.getItem('cx-dev-sinkname') || t('cnOutDef'); } catch (e) { return t('cnOutDef'); } })()))) : (nat && nat.audioOutput ? h('button', { class: 'cn-act', onclick: () => { try { nat.audioOutput(); } catch (e) { } } }, h('span', { class: 'cn-ic s' }, ic('dspeaker')), h('span', {}, h('b', {}, t('cnBt')), h('i', {}, t('cnOut')))) : null);
   /* remote control or an own stream, side by side */
   const act = cnActive(), seg = (remDev || (CN.detach && act && act.state.playing)) ? (() => { const tgt = remDev || act; return h('div', { class: 'cn-seg', role: 'tablist' },
@@ -174,7 +175,7 @@ function cnDevicesView() {
     h('button', { role: 'tab', 'aria-selected': !remDev, class: remDev ? '' : 'on', onclick: () => { if (remDev) { cnDetach(); cnPaintPanel(); } } }, ic(CN.kind === 'desktop' ? 'ddesktop' : 'dphone', 'ic-s'), h('span', {}, h('b', {}, t('cnModeOwn')), h('i', { class: 'ell' }, CN.name)))); })() : null;
   return [cnHead(t('cnConnectTo')), h('div', { class: 'cn-scroll' }, card, seg,
     list.length ? h('div', { class: 'cn-sect' }, t('cnOthers')) : null, list.length ? h('div', { class: 'cn-list' }, list) : (canSpk ? null : h('div', { class: 'cn-empty' }, t('cnNone'))),
-    jamRow, outRow, cnHelp(canSpk))];
+    jamRow, wpRow, outRow, cnHelp(canSpk))];
 }
 /* "Cannot see your device?": what to check, what the search did, and typing an address by hand */
 function cnHelp(canSpk) {
@@ -316,7 +317,7 @@ function cnDecor() {
   const a = cnActive(), localPlaying = !P.remote && !!cur() && !dpPaused();
   (CN.btns || []).forEach(b => { b.classList.toggle('live', !!P.remote || (!!a && a.state.playing && !localPlaying)); b.classList.toggle('jamon', !!CN.jam); });
   /* the device panel is painted at most every 80 ms, and not while a slider or text field in it is in use */
-  if (cnPanel && !cnPT) cnPT = setTimeout(() => { cnPT = 0; const f = document.activeElement; if (cnPanel && !(f && cnPanel.contains(f) && f.matches('input, select'))) cnPaintPanel(); }, 80);
+  if (cnPanel && cnView !== 'party' && !cnPT) cnPT = setTimeout(() => { cnPT = 0; const f = document.activeElement; if (cnPanel && !(f && cnPanel.contains(f) && f.matches('input, select'))) cnPaintPanel(); }, 80);
   /* the strip: green "Playing on …" with "Own stream", or (own stream while another device plays) "Also playing on …" with "Remote control" */
   const rd = P.remote && CN.devices.find(x => x.id === P.remote), alt = !rd && CN.detach && a && a.state.playing ? a : null;
   const key = (rd ? 'r' + rd.name : alt ? 'a' + alt.name : '') + '|' + document.querySelectorAll('.sp-player, .sp-mini, .sp-full').length + '|' + document.querySelectorAll('.cn-strip').length;
