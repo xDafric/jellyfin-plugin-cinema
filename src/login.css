@@ -1,41 +1,65 @@
-/* ---------- login / server select: calm, minimal ---------- */
-html.cx-ready.cx-login:not(.transparentDocument), html.cx-ready.cx-login:not(.transparentDocument) body { background: #0a0a0c !important; }
+/* ---------- login / server select: one calm glass card on a soft colour glow ---------- */
+html.cx-ready.cx-login:not(.transparentDocument), html.cx-ready.cx-login:not(.transparentDocument) body { background: #0b0b0d !important; }
 html.cx-ready.cx-login:not(.transparentDocument) .backgroundContainer, html.cx-ready.cx-login:not(.transparentDocument) .skinBody, html.cx-ready.cx-login:not(.transparentDocument) .mainAnimatedPages { background: transparent !important; }
-html.cx-login .skinHeader, html.cx-login .MuiAppBar-root, html.cx-login .mainDrawerHandle { display: none !important; }
-/* one soft light from above, nothing moving */
-html.cx-login body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(60% 45% at 50% -8%, rgba(255,255,255,.075), transparent 70%), radial-gradient(40% 40% at 12% 108%, color-mix(in srgb, var(--accent-nf, #e50914) 14%, transparent), transparent 70%); }
-html.cx-login body::after { content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%); }
-html.cx-login #loginPage, html.cx-login #selectServerPage, html.cx-login #forgotPasswordPage, html.cx-login #forgotPasswordPinPage, html.cx-login #quickConnectPage { position: relative; z-index: 1; display: flex !important; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 20px !important; background: transparent !important; }
-html.cx-login #loginPage > div, html.cx-login #selectServerPage > div, html.cx-login #forgotPasswordPage > div { width: 100%; max-width: 400px; margin: 0 auto !important; padding: 0 !important; background: none; border: 0; box-shadow: none; animation: cxLoginIn .5s cubic-bezier(.2, .8, .2, 1) both; }
-@keyframes cxLoginIn { from { opacity: 0; transform: translateY(10px); } }
-html.cx-login #loginPage > div::before, html.cx-login #selectServerPage > div::before, html.cx-login #forgotPasswordPage > div::before { content: var(--cx-brand, 'JELLYFIN'); display: block; text-align: center; font-weight: 900; font-size: 30px; letter-spacing: .22em; text-indent: .22em; color: #fff; margin: 0 0 8px; }
-html.cx-login #loginPage > div::after, html.cx-login #selectServerPage > div::after, html.cx-login #forgotPasswordPage > div::after { content: ''; order: -1; }
-html.cx-login .manualLoginForm { max-width: none !important; width: 100% !important; margin: 0 !important; position: relative; padding-top: 22px; }
-html.cx-login .manualLoginForm::before { content: ''; position: absolute; top: 0; left: 50%; width: 28px; height: 3px; margin-left: -14px; border-radius: 3px; background: var(--accent-nf, #e50914); }
-html.cx-login .sectionTitle, html.cx-login .visualLoginForm h1, html.cx-login #loginPage h1 { font-size: 15px !important; font-weight: 500 !important; letter-spacing: .02em; color: #8f8f99; text-align: center; margin: 18px 0 26px !important; }
+html.cx-login .skinHeader, html.cx-login .MuiAppBar-root, html.cx-login .mainDrawerHandle, html.cx-login .backdropContainer { display: none !important; }
+/* the glow: the brand colour at the top left, a cool violet at the bottom right, drifting very slowly */
+html.cx-login body::before { content: ''; position: fixed; inset: -20%; z-index: 0; pointer-events: none; background:
+  radial-gradient(38% 42% at 18% 12%, color-mix(in srgb, var(--accent-nf, #e50914) 34%, transparent), transparent 70%),
+  radial-gradient(34% 40% at 86% 92%, rgba(99, 76, 255, .26), transparent 70%),
+  radial-gradient(30% 30% at 70% 8%, rgba(255, 255, 255, .05), transparent 70%); animation: cxLoginDrift 26s ease-in-out infinite alternate; }
+@keyframes cxLoginDrift { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(2.5%, 3%, 0) scale(1.08); } }
+html.cx-login body::after { content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, .6) 100%); }
+html.cx-login #loginPage, html.cx-login #selectServerPage, html.cx-login #forgotPasswordPage, html.cx-login #forgotPasswordPinPage, html.cx-login #quickConnectPage { position: relative; z-index: 1; display: flex !important; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 18px !important; background: transparent !important; }
+/* the card */
+html.cx-login #loginPage > div, html.cx-login #selectServerPage > div, html.cx-login #forgotPasswordPage > div, html.cx-login #forgotPasswordPinPage > div, html.cx-login #quickConnectPage > div { width: 100%; max-width: 432px; margin: 0 auto !important; padding: 38px 36px 30px !important; box-sizing: border-box; background: rgba(22, 22, 26, .72); border: 1px solid rgba(255, 255, 255, .09); border-radius: 28px; box-shadow: 0 30px 80px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06); -webkit-backdrop-filter: blur(28px) saturate(1.3); backdrop-filter: blur(28px) saturate(1.3); animation: cxLoginIn .55s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes cxLoginIn { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+html.cx-login #loginPage > div::before, html.cx-login #selectServerPage > div::before, html.cx-login #forgotPasswordPage > div::before, html.cx-login #forgotPasswordPinPage > div::before, html.cx-login #quickConnectPage > div::before { content: var(--cx-brand, 'JELLYFIN'); display: block; text-align: center; font-weight: 900; font-size: 24px; letter-spacing: .26em; text-indent: .26em; color: #fff; margin: 0 0 26px; }
+html.cx-login #loginPage > div::after, html.cx-login #selectServerPage > div::after { content: none; }
+html.cx-login .manualLoginForm { max-width: none !important; width: 100% !important; margin: 0 !important; position: relative; padding: 0 !important; }
+/* heading: "Welcome back" + a short line, written by CSS from the language of the browser */
+html.cx-login .sectionTitle, html.cx-login .visualLoginForm h1, html.cx-login #loginPage h1 { font-size: 0 !important; line-height: 0; margin: 0 0 22px !important; padding: 0 !important; text-align: left; display: block; width: 100%; }
+html.cx-login .manualLoginForm .sectionTitle::before { content: var(--cx-lg-h, 'Welcome back'); display: block; font-size: 28px; line-height: 1.15; font-weight: 800; letter-spacing: -.02em; color: #fff; }
+html.cx-login .manualLoginForm .sectionTitle::after { content: var(--cx-lg-s, ''); display: block; font-size: 14.5px; line-height: 1.45; font-weight: 400; color: #9b9ba6; margin-top: 8px; letter-spacing: 0; }
+html.cx-login .manualLoginForm > .padded-left { padding: 0 !important; display: block !important; }
 html.cx-login .padded-left.padded-right.flex { padding: 0 !important; }
 html.cx-login .inputContainer { margin: 0 0 16px !important; position: relative; }
-html.cx-login .inputLabel { position: static !important; transform: none !important; display: block; font-size: 11.5px !important; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #7f7f89 !important; margin: 0 0 8px 2px; }
-html.cx-login .emby-input, html.cx-login input.emby-input { height: 54px !important; padding: 0 18px !important; font-size: 16px !important; border-radius: 12px !important; background: rgba(255,255,255,.045) !important; border: 1px solid rgba(255,255,255,.1) !important; color: #fff !important; transition: border-color .2s, background .2s; width: 100%; box-sizing: border-box; }
-html.cx-login .emby-input:hover { border-color: rgba(255,255,255,.18) !important; }
-html.cx-login .emby-input:focus { background: rgba(255,255,255,.07) !important; border-color: rgba(255,255,255,.6) !important; box-shadow: none; outline: 0; }
-html.cx-login .emby-input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px #17171b inset !important; -webkit-text-fill-color: #fff !important; }
-html.cx-login .checkboxContainer { margin: 2px 0 24px 2px !important; color: #a8a8b2; font-size: 14px; }
+html.cx-login .inputLabel { position: static !important; transform: none !important; display: block; font-size: 11.5px !important; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8d8d98 !important; margin: 0 0 7px 2px; }
+html.cx-login .emby-input, html.cx-login input.emby-input { height: 52px !important; padding: 0 16px !important; font-size: 16px !important; border-radius: 14px !important; background: rgba(255, 255, 255, .06) !important; border: 1px solid rgba(255, 255, 255, .1) !important; color: #fff !important; transition: background .18s, border-color .18s, box-shadow .18s; }
+html.cx-login .emby-input:hover { border-color: rgba(255, 255, 255, .2) !important; }
+html.cx-login .emby-input:focus { background: rgba(255, 255, 255, .09) !important; border-color: rgba(255, 255, 255, .75) !important; box-shadow: 0 0 0 4px rgba(255, 255, 255, .08); outline: 0; }
+html.cx-login .emby-input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px #1c1c21 inset !important; -webkit-text-fill-color: #fff !important; }
+/* show / hide the password (button put there by early.js) */
+html.cx-login .cx-eye { position: absolute; right: 8px; bottom: 8px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: #9b9ba6; display: grid; place-items: center; cursor: pointer; transition: background .15s, color .15s; }
+html.cx-login .cx-eye:hover { background: rgba(255, 255, 255, .1); color: #fff; } html.cx-login .cx-eye svg { width: 20px; height: 20px; }
+html.cx-login #txtManualPassword { padding-right: 52px !important; }
+html.cx-login .checkboxContainer { margin: 4px 0 22px 2px !important; color: #b6b6c0; font-size: 14px; }
 html.cx-login .emby-checkbox:checked + span + .checkboxOutline { background: #fff !important; border-color: #fff !important; }
 html.cx-login .emby-checkbox:checked + span + .checkboxOutline .checkboxIcon { color: #000 !important; }
-html.cx-login .emby-checkbox:focus + span + .checkboxOutline { box-shadow: 0 0 0 4px rgba(255,255,255,.18) !important; }
-html.cx-login .button-submit.raised, html.cx-login button[type=submit].raised { height: 54px; font-size: 16px !important; font-weight: 700 !important; border-radius: 999px !important; background: #fff !important; color: #000 !important; box-shadow: none !important; transition: transform .15s, background .2s; }
-html.cx-login .button-submit.raised:hover { background: #e9e9ee !important; }
-html.cx-login .button-submit.raised:active { transform: scale(.985); }
-/* secondary actions: quiet text links */
-html.cx-login .raised.cancel, html.cx-login .btnSelectServer, html.cx-login .btnManual, html.cx-login .btnQuick, html.cx-login .btnForgotPassword { height: 40px; margin: 6px 0 0 !important; border-radius: 999px !important; background: transparent !important; color: #9a9aa4 !important; font-weight: 600 !important; font-size: 14px !important; border: 0 !important; box-shadow: none !important; transition: color .2s, background .2s; }
-html.cx-login .raised.cancel:hover, html.cx-login .btnSelectServer:hover { color: #fff !important; background: rgba(255,255,255,.06) !important; }
-html.cx-login .readOnlyContent { margin: 12px 0 0 !important; max-width: none !important; display: flex; flex-direction: column; align-items: center; }
-html.cx-login .readOnlyContent .raised { width: auto !important; padding: 0 18px; }
-html.cx-login .loginDisclaimer { color: #6f6f79; font-size: 12.5px; text-align: center; margin-top: 18px; }
+html.cx-login .emby-checkbox:focus + span + .checkboxOutline { box-shadow: 0 0 0 4px rgba(255, 255, 255, .18) !important; }
+/* the main button: the brand colour */
+html.cx-login .button-submit.raised, html.cx-login button[type=submit].raised { height: 52px; font-size: 16px !important; font-weight: 700 !important; letter-spacing: .01em; border-radius: 999px !important; background: var(--accent-nf, #e50914) !important; color: #fff !important; box-shadow: 0 10px 28px color-mix(in srgb, var(--accent-nf, #e50914) 38%, transparent); transition: transform .15s, filter .15s, box-shadow .2s; }
+html.cx-login .button-submit.raised:hover { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 14px 34px color-mix(in srgb, var(--accent-nf, #e50914) 48%, transparent); }
+html.cx-login .button-submit.raised:active { transform: scale(.985); filter: brightness(.95); }
+html.cx-login .button-submit.raised:disabled { opacity: .6; transform: none; }
+/* secondary actions */
+html.cx-login .readOnlyContent { margin: 22px 0 0 !important; max-width: none !important; display: flex; flex-direction: column; align-items: stretch; gap: 10px; position: relative; padding-top: 24px; }
+html.cx-login .readOnlyContent::before { content: var(--cx-lg-or, 'or'); position: absolute; top: 0; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6f6f7a; line-height: 1; }
+html.cx-login .readOnlyContent::after { content: ''; position: absolute; top: 6px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,.1) 0 38%, transparent 38% 62%, rgba(255,255,255,.1) 62% 100%); }
+html.cx-login .btnQuick.raised, html.cx-login .btnManual.raised, html.cx-login .btnSelectServer.raised { height: 48px !important; margin: 0 !important; border-radius: 999px !important; background: rgba(255, 255, 255, .05) !important; border: 1px solid rgba(255, 255, 255, .16) !important; color: #f0f0f4 !important; font-size: 14.5px !important; font-weight: 600 !important; width: 100% !important; transition: background .15s, border-color .15s; }
+html.cx-login .btnQuick.raised:hover, html.cx-login .btnManual.raised:hover, html.cx-login .btnSelectServer.raised:hover { background: rgba(255, 255, 255, .1) !important; border-color: rgba(255, 255, 255, .32) !important; }
+html.cx-login .btnForgotPassword.raised, html.cx-login .raised.cancel.btnCancel { height: 40px !important; margin: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; color: #8d8d98 !important; font-size: 13.5px !important; font-weight: 600 !important; width: 100% !important; }
+html.cx-login .btnForgotPassword.raised:hover, html.cx-login .raised.cancel.btnCancel:hover { color: #fff !important; }
+html.cx-login .loginDisclaimer { color: #6f6f79; font-size: 12.5px; text-align: center; margin-top: 10px; }
+/* users with a picture (when the server shows them) */
 html.cx-login .visualLoginForm #divUsers { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; margin: 8px 0; }
 html.cx-login .visualLoginForm .card, html.cx-login .visualLoginForm .cardBox { background: transparent !important; border: 0 !important; }
 html.cx-login .visualLoginForm .cardImageContainer { border-radius: 50% !important; box-shadow: 0 8px 26px rgba(0, 0, 0, .5); transition: transform .2s, box-shadow .2s; }
 html.cx-login .visualLoginForm .card:hover .cardImageContainer { transform: scale(1.05); box-shadow: 0 0 0 3px #fff, 0 12px 30px rgba(0, 0, 0, .55); }
 html.cx-login .visualLoginForm .cardText { text-align: center; color: #e8e8ec; font-weight: 600; }
-@media (max-width: 520px) { html.cx-login #loginPage > div, html.cx-login #selectServerPage > div, html.cx-login #forgotPasswordPage > div { max-width: 100%; } }
+/* phones: no card, the page itself is the form */
+@media (max-width: 560px) {
+  html.cx-login #loginPage, html.cx-login #selectServerPage, html.cx-login #forgotPasswordPage, html.cx-login #forgotPasswordPinPage, html.cx-login #quickConnectPage { align-items: flex-start; padding: max(44px, env(safe-area-inset-top)) 22px 28px !important; }
+  html.cx-login #loginPage > div, html.cx-login #selectServerPage > div, html.cx-login #forgotPasswordPage > div, html.cx-login #forgotPasswordPinPage > div, html.cx-login #quickConnectPage > div { padding: 8px 0 0 !important; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-reduced-motion: reduce) { html.cx-login body::before, html.cx-login #loginPage > div { animation: none; } }
+html.cx-login .loginDisclaimerContainer, html.cx-login .loginDisclaimer:empty { display: none; }
