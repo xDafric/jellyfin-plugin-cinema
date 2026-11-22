@@ -28,6 +28,7 @@ function streamUrl(it) {
 const rep = (kind, extra) => { try { if (P.remote) return; const it = cur(); if (!it || it._ext) return; const o = Object.assign({ ItemId: it.Id, PlaySessionId: P.psid, PositionTicks: Math.floor(P.audio.currentTime * 1e7), IsPaused: P.audio.paused, CanSeek: true, MediaSourceId: it.Id, PlayMethod: 'DirectStream', QueueableMediaTypes: ['Audio'] }, extra); ApiClient['reportPlayback' + kind](o); } catch (e) { } };
 function loadCurrent(autoplay) {
   if (P.remote && typeof rmExit === 'function') rmExit();
+  if (typeof CN !== 'undefined') CN.detach = true;   /* playing here by choice: no automatic switch to another device */
   const it = cur(); if (!it) return;
   if (!playable(it)) return;
   if (P.reportedStart) rep('Stopped');

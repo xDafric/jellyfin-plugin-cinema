@@ -168,9 +168,17 @@ html * { scrollbar-width: thin; }
 .jam-go { border: 0; border-radius: 999px; background: #1ed760; color: #000; font-family:inherit;font-weight:800;font-size:15px; padding: 13px 34px; cursor: pointer; transition: transform .12s, background .15s; display: block; margin: 0 auto; } .jam-go:hover { transform: scale(1.04); background: #3be477; }
 .jam-live { display: flex; align-items: center; gap: 8px; padding: 6px 12px 10px; font-size: 13px; color: #b3b3b3; } .jam-live b { color: #1ed760; text-transform: uppercase; letter-spacing: .06em; font-size: 12px; } .jam-live span { flex: 1; }
 .jam-plus { border: 1px solid rgba(255,255,255,.25); background: none; color: #fff; border-radius: 999px; font-family:inherit;font-weight:700;font-size:12px; padding: 4px 10px; cursor: pointer; } .jam-plus:hover { background: rgba(255,255,255,.1); }
-.jam-card { display: flex; gap: 16px; align-items: center; margin: 0 4px 10px; padding: 14px; border-radius: 12px; background: rgba(255,255,255,.07); }
-.jam-qr { flex: none; padding: 8px; background: #fff; border-radius: 10px; line-height: 0; } .jam-qr svg { width: 132px; height: 132px; }
-.jam-qt { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .jam-qt b { font-size: 16px; } .jam-qt > span { font-size: 12.5px; color: #b3b3b3; }
+.jam-card { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; margin: 0 4px 10px; padding: 18px 14px 16px; border-radius: 14px; background: rgba(255,255,255,.07); }
+.jam-qr { flex: none; padding: 12px; background: #fff; border-radius: 14px; line-height: 0; } .cn-panel .jam-qr svg { width: min(260px, 64vw) !important; height: min(260px, 64vw) !important; display: block; }
+.jam-qt { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; } .jam-btns { flex-direction: row !important; }
+.cn-strip .cn-stt { flex: 1; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-strip .cn-stb { flex: none; padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.16); font-size: 12px; } .cn-strip .cn-stb:hover { background: rgba(0,0,0,.3); }
+.cn-strip.alt { background: #2a2a2e; color: #fff; } .cn-strip.alt .cn-stb { background: #1ed760; color: #000; }
+.cn-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 10px 4px 0; padding: 4px; border-radius: 12px; background: rgba(255,255,255,.07); }
+.cn-seg button { display: flex; align-items: center; gap: 8px; min-width: 0; border: 0; border-radius: 9px; background: none; color: #b3b3b3; font-family: inherit; padding: 9px 10px; cursor: pointer; text-align: left; transition: background .15s, color .15s; }
+.cn-seg button span { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; } .cn-seg b { font-size: 13px; } .cn-seg i { font-style: normal; font-size: 11.5px; opacity: .75; }
+.cn-seg button:hover { background: rgba(255,255,255,.07); color: #fff; } .cn-seg button.on { background: #1ed760; color: #000; } .cn-seg button svg { flex: none; }
+.jam-qt-x { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .jam-qt b { font-size: 16px; } .jam-qt > span { font-size: 12.5px; color: #b3b3b3; }
 .jam-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .jam-b { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #fff; color: #000; font-family:inherit;font-weight:700;font-size:13px; padding: 8px 14px; cursor: pointer; width: fit-content; } .jam-b:hover { transform: scale(1.03); } .jam-b svg { width: 15px; height: 15px; }
 .jam-url { display: block; width: calc(100% - 8px); margin: 0 4px; background: #3e3e3e; border: 0; border-radius: 6px; color: #d0d0d0; padding: 9px 11px; font-family: inherit; font-size: 12.5px; box-sizing: border-box; }
