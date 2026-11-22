@@ -217,6 +217,13 @@ fn set_fullscreen(app: AppHandle, window: WebviewWindow, on: Option<bool>) -> Re
 // ---------- network speakers (UPnP / DLNA) on the home network of this computer ----------
 // The computer finds and controls the speakers itself; the Jellyfin server can be anywhere. Only private network addresses are contacted.
 
+#[derive(Serialize)]
+struct ScanOut {
+    speakers: Vec<Spk>,
+    replies: usize,
+    probed: usize,
+}
+
 #[derive(Serialize, Clone)]
 struct Spk {
     id: String,
@@ -333,11 +340,84 @@ async fn describe_speaker(client: &reqwest::Client, location: &str) -> Option<Sp
     Some(Spk { id: format!("spk_{:016x}", fnv(&udn)), name, av, rc })
 }
 
-/// Looks for speakers on the home network for about four seconds.
+/// Asks the own /24 networks (with `deep`) and the typed-in hosts for a Sonos device description (port 1400). Works when multicast is blocked.
+async fn probe_sonos(hosts: &[String], whole_net: bool) -> (Vec<String>, usize) {
+    let mut urls: Vec<String> = Vec::new();
+    for h in hosts.iter().take(12) {
+        let x = h.trim();
+        if x.is_empty() || x.len() > 80 || !x.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == ':') {
+            continue;
+        }
+        let u = format!("http://{}{}/xml/device_description.xml", x, if x.contains(':') { "" } else { ":1400" });
+        if !urls.contains(&u) {
+            urls.push(u);
+        }
+    }
+    if whole_net {
+        for iface in if_addrs::get_if_addrs().unwrap_or_default() {
+            if iface.is_loopback() {
+                continue;
+            }
+            if let if_addrs::IfAddr::V4(v4) = iface.addr {
+                if !is_private(std::net::IpAddr::V4(v4.ip)) {
+                    continue;
+                }
+                let o = v4.ip.octets();
+                for i in 1..=254u8 {
+                    if i != o[3] {
+                        let u = format!("http://{}.{}.{}.{}:1400/xml/device_description.xml", o[0], o[1], o[2], i);
+                        if !urls.contains(&u) {
+                            urls.push(u);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    urls.truncate(1100);
+    let n = urls.len();
+    let client = match reqwest::Client::builder().timeout(Duration::from_millis(900)).connect_timeout(Duration::from_millis(700)).build() {
+        Ok(c) => c,
+        Err(_) => return (Vec::new(), n),
+    };
+    let sem = std::sync::Arc::new(tokio::sync::Semaphore::new(64));
+    let mut set = tokio::task::JoinSet::new();
+    for u in urls {
+        let (c, s) = (client.clone(), sem.clone());
+        set.spawn(async move {
+            let _p = s.acquire().await.ok();
+            match c.get(&u).send().await {
+                Ok(r) if r.status().is_success() => Some(u),
+                _ => None,
+            }
+        });
+    }
+    let mut found = Vec::new();
+    while let Some(r) = set.join_next().await {
+        if let Ok(Some(u)) = r {
+            found.push(u);
+        }
+    }
+    (found, n)
+}
+
+/// Looks for speakers on the home network for about four seconds (more with `deep`).
 #[tauri::command]
-async fn speaker_scan(app: AppHandle, window: WebviewWindow) -> Result<Vec<Spk>, String> {
+async fn speaker_scan(app: AppHandle, window: WebviewWindow, deep: Option<bool>, hosts: Option<Vec<String>>) -> Result<ScanOut, String> {
     caller_is_server(&app, &window).ok_or("not allowed")?;
-    let locs = tauri::async_runtime::spawn_blocking(ssdp_search).await.map_err(|e| e.to_string())?;
+    let mut locs = tauri::async_runtime::spawn_blocking(ssdp_search).await.map_err(|e| e.to_string())?;
+    let replies = locs.len();
+    let hosts = hosts.unwrap_or_default();
+    let mut probed = 0;
+    if deep.unwrap_or(false) || !hosts.is_empty() {
+        let (found, n) = probe_sonos(&hosts, deep.unwrap_or(false)).await;
+        probed = n;
+        for u in found {
+            if !locs.contains(&u) {
+                locs.push(u);
+            }
+        }
+    }
     let client = reqwest::Client::builder().timeout(Duration::from_secs(3)).build().map_err(|e| e.to_string())?;
     let mut out: Vec<Spk> = Vec::new();
     for l in locs {
@@ -347,7 +427,7 @@ async fn speaker_scan(app: AppHandle, window: WebviewWindow) -> Result<Vec<Spk>,
             }
         }
     }
-    Ok(out)
+    Ok(ScanOut { speakers: out, replies, probed })
 }
 
 /// One UPnP control call to a speaker found by the search. Returns the answer, or nothing when the speaker refused or did not answer.

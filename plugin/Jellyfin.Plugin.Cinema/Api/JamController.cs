@@ -318,6 +318,8 @@ public class JamController : ControllerBase
         return code.Length is >= 16 and <= 40 && ByCode.TryGetValue(code, out var j) ? j : null;
     }
 
+    private static string HostName(Jam j) => Guid.TryParse(j.Host, out var g) && _users?.GetUserById(g) is { } u ? Clean(u.Username, 30) : string.Empty;
+
     private Guest? Who(Jam j)
     {
         var s = Request.Headers["X-Jam-Guest"].ToString();
@@ -355,7 +357,7 @@ public class JamController : ControllerBase
         var secret = Token(16);
         var nm = Clean(name, 24);
         j.Guests[secret] = new Guest { Id = Token(5), Name = nm.Length > 0 ? nm : "Guest" };
-        return Secure(Content(new JsonObject { ["guest"] = secret, ["name"] = j.Guests[secret].Name, ["title"] = j.Title }.ToJsonString(), "application/json"));
+        return Secure(Content(new JsonObject { ["guest"] = secret, ["name"] = j.Guests[secret].Name, ["title"] = j.Title, ["host"] = HostName(j) }.ToJsonString(), "application/json"));
     }
 
     [HttpGet("{code}/state")]
@@ -386,7 +388,7 @@ public class JamController : ControllerBase
             q = new JsonArray(j.Reqs.Where(r => r.Status != "rejected" || r.GuestId == g.Id).OrderByDescending(r => r.At).Take(30).Select(r => (JsonNode)new JsonObject { ["name"] = r.Name, ["artist"] = r.Artist, ["by"] = r.GuestName, ["status"] = r.Status, ["mine"] = r.GuestId == g.Id }).ToArray());
         }
 
-        return Secure(Content(new JsonObject { ["title"] = j.Title, ["now"] = now, ["queue"] = q, ["approve"] = j.Approve, ["guests"] = j.Guests.Values.Count(x => !x.Kicked) }.ToJsonString(), "application/json"));
+        return Secure(Content(new JsonObject { ["title"] = j.Title, ["host"] = HostName(j), ["now"] = now, ["queue"] = q, ["approve"] = j.Approve, ["guests"] = j.Guests.Values.Count(x => !x.Kicked) }.ToJsonString(), "application/json"));
     }
 
     [HttpGet("{code}/search")]

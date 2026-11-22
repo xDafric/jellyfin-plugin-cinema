@@ -32,8 +32,9 @@ object Speakers {
         try { c.connectTimeout = 2500; c.readTimeout = 3000; if (c.responseCode in 200..299) c.inputStream.bufferedReader().use { it.readText() } else null } finally { c.disconnect() }
     }.getOrNull()
 
-    /** Looks for renderers for about four seconds; returns [{id,name,av,rc}]. Blocking. */
-    fun scan(ctx: Context): JSONArray {
+    /** Looks for renderers: multicast search (about four seconds), and with [deep] every address of the own Wi-Fi network on the Sonos port, plus the addresses typed in by hand. Blocking.
+     *  Returns {speakers:[{id,name,av,rc}], replies, probed}. */
+    fun scan(ctx: Context, deep: Boolean = false, hosts: List<String> = emptyList()): JSONObject {
         val wifi = ctx.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
         val lock = wifi?.createMulticastLock("cinema-ssdp")?.also { it.setReferenceCounted(false); runCatching { it.acquire() } }
         val locations = LinkedHashSet<String>()
@@ -56,15 +57,38 @@ object Speakers {
                 }
             }
         } finally { sockets.forEach { runCatching { it.close() } }; runCatching { lock?.release() } }
+        val replies = locations.size
+        var probed = 0
+        if (deep || hosts.isNotEmpty()) { val extra = probe(hosts, deep); probed = extra.second; locations.addAll(extra.first) }
         val out = JSONArray(); val seen = HashSet<String>()
         for (loc in locations) describe(loc)?.let { if (seen.add(it.getString("id"))) out.put(it) }
-        return out
+        return JSONObject().put("speakers", out).put("replies", replies).put("probed", probed)
+    }
+
+    /** Asks addresses for a Sonos device description (port 1400): the own /24 networks and the typed-in hosts. Works when multicast is blocked. */
+    private fun probe(hosts: List<String>, wholeNet: Boolean): Pair<List<String>, Int> {
+        val urls = LinkedHashSet<String>()
+        for (h in hosts.take(12)) { val x = h.trim(); if (!Regex("^[A-Za-z0-9.-]{1,80}(:\\d{2,5})?$").matches(x)) continue; urls.add("http://" + (if (x.contains(':')) x else "$x:1400") + "/xml/device_description.xml") }
+        if (wholeNet) runCatching {
+            NetworkInterface.getNetworkInterfaces().toList().filter { it.isUp && !it.isLoopback }.flatMap { it.inetAddresses.toList() }.filter { it.address.size == 4 && it.isSiteLocalAddress }.forEach { a ->
+                val b = a.address; for (i in 1..254) if (i != (b[3].toInt() and 0xff)) urls.add("http://${b[0].toInt() and 0xff}.${b[1].toInt() and 0xff}.${b[2].toInt() and 0xff}.$i:1400/xml/device_description.xml")
+            }
+        }
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(48); val found = java.util.Collections.synchronizedList(ArrayList<String>())
+        try {
+            val futures = urls.take(1100).map { u -> pool.submit { runCatching {
+                val c = URL(u).openConnection() as HttpURLConnection
+                try { c.connectTimeout = 700; c.readTimeout = 900; if (c.responseCode in 200..299) found.add(u) } finally { c.disconnect() }
+            } } }
+            futures.forEach { runCatching { it.get() } }
+        } finally { pool.shutdownNow() }
+        return Pair(found.toList(), urls.size)
     }
 
     private fun describe(location: String): JSONObject? = runCatching {
         if (!safe(location)) return null
-        val xml = get(location) ?: return null
-        val f = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true; setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
+        val xml = get(location)?.takeIf { !it.contains("<!DOCTYPE", true) && !it.contains("<!ENTITY", true) } ?: return null
+        val f = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true; runCatching { setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) } }   /* some Android parsers do not know this switch: that must not hide every speaker */
         val doc = f.newDocumentBuilder().parse(xml.byteInputStream())
         val devices = doc.getElementsByTagNameNS("*", "device")
         var dev: Element? = null

@@ -57,7 +57,7 @@
     },
     exit: function () { call('exit_app').catch(function () { }); },
     // Network speakers (UPnP / DLNA) on the home network of this computer: search, and one control call to a speaker found by the search.
-    speakerScan: function () { return call('speaker_scan'); },
+    speakerScan: function (deep, hosts) { return call('speaker_scan', { deep: !!deep, hosts: Array.isArray(hosts) ? hosts.slice(0, 12).map(String) : [] }); },
     speakerSoap: function (url, service, action, args) { return call('speaker_soap', { url: String(url), service: String(service), action: String(action), args: String(args || '') }); },
     // Window full screen for the video player. on: true/false, or omitted to toggle. Resolves to the previous state.
     setFullscreen: function (on) {

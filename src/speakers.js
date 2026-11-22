@@ -9,10 +9,14 @@ const spPick = (d, tag) => { const e = d && d.getElementsByTagNameNS('*', tag)[0
 const spHms = t => { const p = String(t || '').split(':').map(parseFloat); return p.length === 3 && p.every(isFinite) ? p[0] * 3600 + p[1] * 60 + p[2] : 0; };
 const spFmt = s => { s = Math.max(0, Math.round(s)); return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
 
-function spScanNative() {
-  const n = window.CinemaNative;
-  if (spDesktop()) return n.speakerScan().then(l => l || []).catch(() => []);
-  return new Promise(res => { const to = setTimeout(() => res([]), 15000); window.cxSpkScan = j => { clearTimeout(to); try { res(JSON.parse(j)); } catch (e) { res([]); } }; try { n.speakersScan(); } catch (e) { clearTimeout(to); res([]); } });
+const spManual = () => { try { const l = JSON.parse(localStorage.getItem('cx-spk-hosts') || '[]'); return Array.isArray(l) ? l.filter(x => typeof x === 'string').slice(0, 12) : []; } catch (e) { return []; } };
+function spSetManual(l) { try { localStorage.setItem('cx-spk-hosts', JSON.stringify(l.slice(0, 12))); } catch (e) { } }
+const spHostOk = x => /^[A-Za-z0-9.-]{1,80}(:\d{2,5})?$/.test(x);
+const spNorm = r => Array.isArray(r) ? { speakers: r, replies: 0, probed: 0 } : (r && typeof r === 'object' ? r : { speakers: [], replies: 0, probed: 0 });
+function spScanNative(deep) {
+  const n = window.CinemaNative, hosts = spManual();
+  if (spDesktop()) return n.speakerScan(!!deep, hosts).then(spNorm).catch(e => ({ speakers: [], replies: 0, probed: 0, error: String((e && e.message) || e) }));
+  return new Promise(res => { const to = setTimeout(() => res({ speakers: [], replies: 0, probed: 0, error: 'timeout' }), deep ? 30000 : 15000); window.cxSpkScan = j => { clearTimeout(to); try { res(spNorm(JSON.parse(j))); } catch (e) { res({ speakers: [], replies: 0, probed: 0, error: 'answer' }); } }; try { n.speakersScan(!!deep, hosts.join(',')); } catch (e) { clearTimeout(to); res({ speakers: [], replies: 0, probed: 0, error: String(e && e.message || e) }); } });
 }
 const spWait = {};
 window.cxSpkSoap = (id, ok, xml) => { const f = spWait[id]; if (f) { delete spWait[id]; f(ok ? xml : null); } };
@@ -100,9 +104,15 @@ async function spCommand(id, cmd, c) {
 }
 
 /* ---------- search ---------- */
-async function spScan(quiet) {
-  if (!spNative() || SP.scanning) return; SP.scanning = true;
-  try { const l = await spScanNative(); SP.list = (l || []).filter(x => x && /^spk_[0-9a-f]+$/.test(x.id)).slice(0, 40); SP.last = Date.now(); spPublish(); if (!quiet) toast(SP.list.length + ' ' + t('cnFound') + (SP.list.length ? '' : ' · ' + t('cnNoSpk'))); }
-  finally { SP.scanning = false; }
+async function spScan(quiet, deep) {
+  if (!spNative() || SP.scanning) return; SP.scanning = true; SP.busy = true; try { cnPaintPanel(); } catch (e) { }
+  try {
+    const r = await spScanNative(deep); const l = r.speakers || [];
+    SP.list = l.filter(x => x && /^spk_[0-9a-f]+$/.test(x.id)).slice(0, 40); SP.last = Date.now(); SP.diag = { replies: r.replies || 0, probed: r.probed || 0, deep: !!deep, error: r.error || '', at: Date.now() };
+    spPublish(); if (!quiet) toast(SP.list.length ? SP.list.length + ' ' + t('cnFound') : t('cnNoneFound'));
+  } finally { SP.scanning = false; SP.busy = false; try { cnPaintPanel(); } catch (e) { } }
 }
-setTimeout(function wait() { if (typeof ApiClient !== 'undefined' && ApiClient.accessToken && ApiClient.accessToken() && CN.started) spScan(true); else if (spNative()) setTimeout(wait, 3000); }, 6000);
+setTimeout(function wait() { if (typeof ApiClient !== 'undefined' && ApiClient.accessToken && ApiClient.accessToken() && CN.started) spScan(true, false); else if (spNative()) setTimeout(wait, 3000); }, 6000);
+
+/* developer switch: localStorage cx-debug = 1 exposes the connect state in the console as window.__cx */
+try { if (localStorage.getItem('cx-debug') === '1') window.__cx = { CN, SP, P, cnPaintPanel, spPublish, cnDraw }; } catch (e) { }
