@@ -37,7 +37,10 @@ const isMobile = () => matchMedia('(max-width: 820px), (pointer: coarse) and (ma
 const devGet = k => { try { return localStorage.getItem('cx-dev-' + k); } catch (e) { return null; } };
 const devSet = (k, v) => { try { v == null ? localStorage.removeItem('cx-dev-' + k) : localStorage.setItem('cx-dev-' + k, v); } catch (e) { } };
 /* Jellyfin's own player is the base everywhere (it handles every format and transcode); the Cinema player is only used when someone switches it on by hand */
-const playerMode = () => (feat('ownPlayer') && devGet('player') === 'own') ? 'own' : 'native';
+/* three players: the app's own (Android, Windows), the Cinema player, Jellyfin's standard player. Chosen per device; without a choice the app player is used where there is one, else Jellyfin's standard player */
+const shellPlayer = () => { const sh = window.CinemaTV || window.CinemaNative; return !!(sh && typeof sh.play === 'function'); };
+const playerMode = () => { const d = devGet('player'); if (d === 'shell' && shellPlayer()) return 'shell'; if (d === 'own' && feat('ownPlayer')) return 'own'; if (d === 'native') return 'native'; return shellPlayer() ? 'shell' : 'native'; };
+const playerChoices = () => (shellPlayer() ? [['shell', t('plApp')]] : []).concat(feat('ownPlayer') ? [['own', t('plOwn')]] : [], [['native', t('plStd')]]);
 const userSet = k => CFGU[k] !== undefined;
 async function loadCfg() {
   try { const dp = await api('DisplayPreferences/cinema-ui', { userId: uid(), client: 'cinema-ui' }); const raw = (dp.CustomPrefs || {}).cfg; if (raw) CFGU = JSON.parse(raw) || {}; } catch (e) { }
