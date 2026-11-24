@@ -25,6 +25,7 @@ ${r('extras.js')}
 ${r('lbarch.js')}
 ${r('game.js')}
 ${r('actors.js')}
+${r('games2.js')}
 ${r('wrapped.js')}
 ${r('onboard.js')}
 ${r('storage.js')}

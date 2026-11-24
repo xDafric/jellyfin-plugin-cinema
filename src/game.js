@@ -40,14 +40,14 @@ Object.assign(TX.de, {
 
 /* ----- progress, stored per user in Jellyfin (DisplayPreferences "cinema-game"), mirrored in localStorage ----- */
 const GM = { st: null, p: null, saveT: 0, pool: null, poolP: null, poolAt: 0, enr: null, play: null };
-const G_IV = [0, 1, 3, 7, 14, 30, 60, 120]; // days until the next review, by box
+const G_IV = [0, 1, 2, 4, 8, 16, 32, 64]; // days until the next review, by box: closer together than before so faces come back more often
 const gNewN = () => Math.max(1, +cfg('quizNew') || 10); // new faces per day
 const gGoal = () => Math.max(20, +cfg('quizGoal') || 100); // XP per day
 const gBlitzS = () => Math.max(15, +cfg('quizBlitz') || 60);
-const G_MODES = ['blitz', 'memory', 'type', 'cast', 'cards'];
+const G_MODES = ['blitz', 'memory', 'type', 'cast', 'cards', 'odd', 'bridge', 'still', 'plot', 'timeline'];
 const gModeOn = k => { const m = cfg('quizModes'); return !m || m[k] !== false; };
 const gDay = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 864e5);
-const gDef = () => ({ v: 1, ts: 0, xp: 0, a: {}, days: {}, streak: 0, bestStreak: 0, last: 0, badges: {}, n: 0, ok: 0, typed: 0, bestCombo: 0, bestBlitz: 0, bestMemory: 0, films: [], sessions: 0, perfect: 0, newDay: 0, newN: 0, night: 0, fav: {} });
+const gDef = () => ({ v: 1, ts: 0, xp: 0, a: {}, days: {}, streak: 0, bestStreak: 0, last: 0, badges: {}, n: 0, ok: 0, typed: 0, bestCombo: 0, bestBlitz: 0, bestMemory: 0, films: [], sessions: 0, perfect: 0, newDay: 0, newN: 0, night: 0, fav: {}, g: {}, gb: {}, daily: 0, dailyN: 0, td: { d: 0, n: 0, ok: 0, nw: 0 } });
 const gLS = () => { try { return JSON.parse(localStorage.getItem('cx-game-' + uid()) || 'null'); } catch (e) { return null; } };
 function gLoad() {
   if (GM.st) return Promise.resolve(GM.st); if (GM.p) return GM.p;
@@ -95,6 +95,13 @@ const G_BADGES = [
   ['typed25', '⌨️', 'Ohne Spickzettel', 'No cheat sheet', '25 Namen richtig getippt', '25 names typed correctly', st => st.typed >= 25],
   ['typed100', '✍️', 'Abspann-Leser', 'Credits reader', '100 Namen richtig getippt', '100 names typed correctly', st => st.typed >= 100],
   ['fans', '❤️', 'Fanclub', 'Fan club', 'Fünf Schauspielern folgen', 'Follow five actors', st => Object.keys(st.fav || {}).length >= 5],
+  ['odd25', '🧩', 'Spürnase', 'Sharp eye', '25 Außenseiter erkannt', '25 odd ones spotted', st => ((st.g || {}).odd || { ok: 0 }).ok >= 25],
+  ['bridge25', '🔗', 'Kettenglied', 'Link master', '25 Verbindungen gefunden', '25 connections found', st => ((st.g || {}).bridge || { ok: 0 }).ok >= 25],
+  ['still25', '🖼️', 'Szenenkenner', 'Scene spotter', '25 Szenen erkannt', '25 scenes recognised', st => ((st.g || {}).still || { ok: 0 }).ok >= 25],
+  ['plot25', '📖', 'Klappentext-Profi', 'Blurb pro', '25 Handlungen erkannt', '25 plots recognised', st => ((st.g || {}).plot || { ok: 0 }).ok >= 25],
+  ['time10', '⏳', 'Zeitreisender', 'Time traveller', '10 Zeitreisen richtig', '10 timelines right', st => ((st.g || {}).timeline || { ok: 0 }).ok >= 10],
+  ['daily7', '📆', 'Tagesroutine', 'Daily routine', '7 Tagesrätsel gelöst', '7 daily puzzles solved', st => (st.dailyN || 0) >= 7],
+  ['learn50', '🎓', 'Fleißig gelernt', 'Diligent learner', '50 Gesichter gelernt', '50 faces learned', st => Object.values(st.a).filter(s => s[0] >= 1).length >= 50],
   ['casts10', '🎭', 'Ensemble', 'Ensemble', 'Die Besetzung von 10 Filmen geübt', 'Practised the cast of 10 films', st => (st.films || []).length >= 10],
   ['night', '🌙', 'Spätvorstellung', 'Late show', 'Nach Mitternacht gespielt', 'Played after midnight', st => st.night >= 1],
   ['lv5', '🥉', 'Filmfan', 'Film fan', 'Level 5 erreicht', 'Reached level 5', st => gLvl(st.xp) >= 5],
@@ -111,7 +118,7 @@ const gRoleOk = r => !!r && r.length < 48 && !/^(self|himself|herself|themselves
 const GPM = { p: null, at: 0 };
 function gPlayed(force) {
   if (!force && GPM.p && Date.now() - GPM.at < 300000) return GPM.p; GPM.at = Date.now();
-  return GPM.p = items({ IncludeItemTypes: 'Movie', Filters: 'IsPlayed', Fields: 'People,ProviderIds,OriginalTitle,Genres,RunTimeTicks,CommunityRating,ProductionYear', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 4000, EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1 }).catch(() => { GPM.p = null; return { Items: [] }; });
+  return GPM.p = items({ IncludeItemTypes: 'Movie', Filters: 'IsPlayed', Fields: 'People,ProviderIds,OriginalTitle,Genres,RunTimeTicks,CommunityRating,ProductionYear,Overview', SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 4000, EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1 }).catch(() => { GPM.p = null; return { Items: [] }; });
 }
 function gPool(force) {
   if (!force && GM.pool && Date.now() - GM.poolAt < 600000) return Promise.resolve(GM.pool);
@@ -123,15 +130,15 @@ async function gBuild() {
   const films = new Map(), actors = new Map(), tmSeen = new Set(), nameSeen = new Set();
   const addActor = (f, name, img, role, order, pid, tid) => {
     const k = lbNorm(name); if (!k || !img) return;
-    let a = actors.get(k); if (!a) actors.set(k, a = { k, name, img, pid: null, tid: 0, films: [], roles: {}, score: 0, last: 0 });
+    let a = actors.get(k); if (!a) actors.set(k, a = { k, name, img, pid: null, tid: 0, films: [], roles: {}, score: 0, last: 0, best: 99 });
     if (tid && !a.tid) a.tid = tid; if (pid && !a.pid) { a.pid = pid; a.img = img; } // prefer the Jellyfin picture
-    if (a.films.includes(f.id)) return;
+    if (a.films.includes(f.id)) return; a.best = Math.min(a.best, order);
     a.films.push(f.id); a.roles[f.id] = role || ''; a.score += order < 3 ? 1 : order < 6 ? .7 : .45; a.last = Math.max(a.last, f.date || 0); f.cast.push(k);
   };
   const r = await gPlayed();
   for (const it of r.Items || []) {
     const u = ud(it); const tm = +((it.ProviderIds || {}).Tmdb) || 0;
-    const f = { id: 'j' + it.Id, jf: it.Id, tmdb: tm, title: it.Name, year: it.ProductionYear || 0, poster: imgUrl(it, 'Primary', 300), bd: (it.BackdropImageTags || []).length ? imgUrl(it, 'Backdrop', 780) : '', date: u.LastPlayedDate ? Date.parse(u.LastPlayedDate) || 0 : 0, cast: [], src: 'jf' };
+    const f = { id: 'j' + it.Id, jf: it.Id, tmdb: tm, title: it.Name, year: it.ProductionYear || 0, poster: imgUrl(it, 'Primary', 300), bd: (it.BackdropImageTags || []).length ? imgUrl(it, 'Backdrop', 780) : '', ov: (it.Overview || '').replace(/<[^>]+>/g, ''), date: u.LastPlayedDate ? Date.parse(u.LastPlayedDate) || 0 : 0, cast: [], src: 'jf' };
     if (tm) tmSeen.add(tm);
     [it.Name, it.OriginalTitle, tm && LBEN[tm] && LBEN[tm][0], tm && LBEN[tm] && LBEN[tm][2]].filter(Boolean).forEach(n => nameSeen.add(lbNorm(n) + '|' + f.year));
     films.set(f.id, f);
@@ -145,10 +152,13 @@ async function gBuild() {
   for (const f of [...films.values()]) if (!f.cast.length) films.delete(f.id);
   let list = [...actors.values()].sort((a, b) => b.score - a.score || b.films.length - a.films.length);
   const minF = +cfg('quizMin') || 1; if (minF > 1) { const f = list.filter(a => a.films.length >= minF); if (f.length >= 8) list = f; }
-  const recentCut = Date.now() - 45 * 864e5;
-  const fresh = list.slice().sort((a, b) => ((b.last > recentCut ? 3 : 0) + b.score) - ((a.last > recentCut ? 3 : 0) + a.score));
+  /* who is worth learning first: leading roles and actors from several of your films. Small parts from one film only come later. */
+  const rel = a => a.score + .5 * Math.min(4, a.films.length - 1) + (a.best < 3 ? .5 : 0);
+  let core = list.filter(a => a.best <= 3 || a.films.length >= 2); if (core.length < 16 || cfg('quizFocus') === 'all') core = list.slice();
+  const recentCut = Date.now() - 60 * 864e5;
+  const fresh = core.slice().sort((a, b) => (rel(b) + (b.last > recentCut && b.best <= 3 ? .8 : 0)) - (rel(a) + (a.last > recentCut && a.best <= 3 ? .8 : 0)));
   const recent = [...films.values()].filter(f => f.date && f.cast.length >= 3).sort((a, b) => b.date - a.date).slice(0, 10);
-  return { films, actors, list, fresh, top: list.slice(0, Math.max(60, Math.min(400, list.length))), recent, tmSeen, nameSeen };
+  return { films, actors, list, fresh, rel, core, top: list.slice(0, Math.max(60, Math.min(400, list.length))), recent, tmSeen, nameSeen };
 }
 /* Letterboxd-only films: look up the cast once via Seerr and keep it in this browser */
 function gEnrich(onProgress) {
@@ -189,6 +199,16 @@ function gXp(st, n, S) {
   if (st.last !== d) { st.streak = st.last === d - 1 ? st.streak + 1 : 1; st.last = d; st.bestStreak = Math.max(st.bestStreak, st.streak); }
   if (new Date().getHours() < 4) st.night = 1;
   const keep = d - 200; Object.keys(st.days).forEach(k => { if (+k < keep) delete st.days[k]; });
+}
+const gTd = st => { if (!st.td || st.td.d !== gDay()) st.td = { d: gDay(), n: 0, ok: 0, nw: 0 }; return st.td; };
+const gTdAdd = (st, ok) => { const td = gTd(st); td.n++; if (ok) td.ok++; };
+function gCount(st, a, ok) { const d = gDay(); const s = st.a[a.k] || (st.a[a.k] = [0, d, 0, 0, 0, d]); s[2]++; ok ? s[3]++ : s[4]++; s[5] = d; }
+/* a new face has to be answered three times in the same session (learning steps) before it moves to tomorrow's repetition */
+function gLearnGrade(S, st, a, q, ok, strong) {
+  if (!q.learn) { gGrade(st, a, ok, strong); return; }
+  S.rq = S.rq || {};
+  if (ok) { if (q.learn >= 3) gGrade(st, a, true, false); else gCount(st, a, true); return; }
+  gCount(st, a, false); if ((S.rq[a.k] = (S.rq[a.k] || 0) + 1) <= 2) S.q.splice(Math.min(S.q.length, S.i + 4), 0, { a, mode: q.mode === 'face2film' || q.mode === 'film2face' ? 'face2name' : q.mode, learn: q.learn });
 }
 const gStreakNow = st => (st.last === gDay() || st.last === gDay() - 1) ? st.streak : 0;
 
@@ -235,15 +255,21 @@ async function gPlay(kind, opts) {
   const d = gDay(); const S = { kind, st, P, i: 0, ok: 0, n: 0, xp: 0, combo: 0, best: 0, badges: [], lvl0: gLvl(st.xp), t0: Date.now(), q: [], requeued: new Set(), film: null };
   const A = st.a; const seen = P.list.filter(a => A[a.k]);
   if (kind === 'train' || kind === 'cards') {
-    const favFirst = (x, y) => (gIsFav(st, y) ? 1 : 0) - (gIsFav(st, x) ? 1 : 0);
-    const due = P.list.filter(a => A[a.k] && A[a.k][0] > 0 && A[a.k][1] <= d).sort((x, y) => A[x.k][1] - A[y.k][1] || A[x.k][0] - A[y.k][0]).sort(favFirst).slice(0, 15);
-    const newLeft = opts.extraNew ? 5 : Math.max(0, gNewN() - (st.newDay === d ? st.newN : 0));
-    let fresh = P.fresh.filter(a => gIsNew(st, a)).sort(favFirst).slice(0, Math.min(newLeft, Math.max(3, 18 - due.length)));
+    await gWarmFame(P, 3500).catch(() => { });
+    const favFirst = (x, y) => (gIsFav(st, y) ? 1 : 0) - (gIsFav(st, x) ? 1 : 0); const extra = !!opts.extraNew;
+    const due = P.list.filter(a => A[a.k] && A[a.k][0] > 0 && A[a.k][1] <= d).sort((x, y) => A[x.k][1] - A[y.k][1] || A[x.k][0] - A[y.k][0]).sort(favFirst).slice(0, extra ? 8 : 20);
+    const newLeft = extra ? 8 : Math.max(0, gNewN() - (st.newDay === d ? st.newN : 0));
+    let fresh = gPickNew(P, st, Math.min(newLeft, extra ? 8 : Math.min(6, Math.max(3, 20 - due.length)))); /* at most six new faces per round: each needs several repetitions, the rest comes in the next round */
     let base = shuffleArr(due);
     if (opts.fav) { base = shuffleArr(P.list.filter(a => gIsFav(st, a))).slice(0, 15); fresh = base.filter(a => gIsNew(st, a)); base = base.filter(a => !gIsNew(st, a)); }
-    if (!due.length && !fresh.length || opts.practice) base = seen.slice().sort((x, y) => (A[y.k][4] - A[y.k][3] * .3) - (A[x.k][4] - A[x.k][3] * .3) || A[x.k][0] - A[y.k][0]).slice(0, 12);
+    /* nothing due and nothing new, or asked for: the faces that are still shaky first (low box, many mistakes, few repetitions) */
+    if ((!due.length && !fresh.length) || opts.practice) { const weak = a => { const s_ = A[a.k]; return (5 - Math.min(5, s_[0])) * 1.2 + s_[4] * 1.5 - s_[3] * .15 + (gIsFav(st, a) ? 1 : 0) + Math.random() * .6; }; base = seen.filter(a => A[a.k][0] > 0).sort((x, y) => weak(y) - weak(x)).slice(0, 16); if (opts.practice) fresh = base.length ? [] : gPickNew(P, st, 4); }
     S.q = base.map(a => kind === 'cards' ? { a, mode: 'card' } : { a });
-    fresh.forEach((a, j) => { const at = Math.min(S.q.length, j * 2 + 1); S.q.splice(at, 0, { a, mode: 'intro' }); S.q.splice(Math.min(S.q.length, at + 3), 0, kind === 'cards' ? { a, mode: 'card' } : { a, mode: 'face2name' }); });
+    fresh.forEach((a, j) => {
+      const at = Math.min(S.q.length, j * 3 + 1); S.q.splice(at, 0, { a, mode: 'intro' });
+      const third = kind === 'cards' ? 'card' : (a.films.length && P.films.size >= 6 ? 'face2film' : 'face2name');
+      [[3, kind === 'cards' ? 'card' : 'face2name'], [8, kind === 'cards' ? 'card' : 'name2face'], [14, third]].forEach(([off, m], n) => S.q.splice(Math.min(S.q.length, at + off), 0, { a, mode: m, learn: n + 1 }));
+    });
   } else if (kind === 'type') {
     const pool = seen.filter(a => A[a.k][0] >= 1); S.q = shuffleArr(pool.length >= 10 ? pool : seen.concat(P.top.filter(a => !A[a.k]))).slice(0, 10).map(a => ({ a, mode: 'type' }));
   } else if (kind === 'cast') {
@@ -253,6 +279,9 @@ async function gPlay(kind, opts) {
     S.film = f; const cast = f.cast.map(k => P.actors.get(k)).filter(Boolean);
     cast.forEach(a => { if (!A[a.k]) S.q.push({ a, mode: 'intro' }); });
     shuffleArr(cast).forEach(a => S.q.push({ a, mode: gRoleOk(a.roles[f.id]) ? 'role' : 'face2name', film: f }));
+  } else if (G_NEWKINDS.includes(kind)) {
+    if (kind !== 'daily' && !gAvail(kind, P)) { toast(t('gNotEnoughG')); return; }
+    S.q = kind === 'daily' ? gBuildDaily(P, st) : gBuildGame(kind, P);
   } else if (kind === 'blitz') {
     S.pool = seen.length >= 12 ? seen.concat(P.top.slice(0, 20)) : P.top.slice(0, 60); S.end = Date.now() + gBlitzS() * 1000;
   } else if (kind === 'memory') {
@@ -286,10 +315,11 @@ function gNextQ(S) {
   let item;
   if (S.kind === 'blitz') { if (Date.now() >= S.end) return gSummary(S); const a = S.pool[Math.floor(Math.random() * S.pool.length)]; item = { a, mode: 'face2name' }; }
   else { if (S.i >= S.q.length) return gSummary(S); item = S.q[S.i]; }
+  if (item.g) { gHud(S); return gRenderG(S, item.q); }
   const box = gBox(S.st, item.a.k); let mode = item.mode;
   if (!mode) { const ms = gModesFor(S.P, item.a, box); mode = ms[Math.floor(Math.random() * ms.length)]; }
   const q = gQuestion(S.P, item.a, mode); if (item.film && q.mode === mode && (mode === 'role' || mode === 'film2face')) { /* cast round: keep the film of the round */ q.film = item.film; q.role = item.a.roles[item.film.id]; const mates = item.film.cast.filter(k => k !== item.a.k).map(k => S.P.actors.get(k)).filter(Boolean); const wrong = gPick(mates.length >= 3 ? mates : S.P.top.filter(x => !item.film.cast.includes(x.k)), 3, () => false); q.opts = shuffleArr([{ a: item.a, ok: 1 }].concat(wrong.map(x => ({ a: x })))); }
-  gHud(S); gRender(S, q);
+  q.learn = item.learn; gHud(S); gRender(S, q);
 }
 function gRender(S, q) {
   const { a } = q; const P = S.P; const st = S.st;
@@ -299,8 +329,8 @@ function gRender(S, q) {
   const done = (ok, strong, almost) => {
     S.n++; st.n++;
     if (ok) { S.ok++; st.ok++; S.combo++; S.best = Math.max(S.best, S.combo); st.bestCombo = Math.max(st.bestCombo, S.combo); }
-    else { S.combo = 0; if (S.kind !== 'blitz' && !S.requeued.has(a.k)) { S.requeued.add(a.k); S.q.splice(Math.min(S.q.length, S.i + 4), 0, { a, mode: 'face2name' }); } }
-    gGrade(st, a, ok, strong);
+    else { S.combo = 0; if (S.kind !== 'blitz' && !q.learn && !S.requeued.has(a.k)) { S.requeued.add(a.k); S.q.splice(Math.min(S.q.length, S.i + 3), 0, { a, mode: 'face2name', learn: 1 }); S.q.splice(Math.min(S.q.length, S.i + 9), 0, { a, mode: 'name2face', learn: 2 }); } }
+    if (S.kind === 'blitz') gGrade(st, a, ok, strong); else gLearnGrade(S, st, a, q, ok, strong); gTdAdd(st, ok);
     const base = q.mode === 'type' ? (strong ? 20 : 12) : q.mode === 'card' ? 6 : S.kind === 'blitz' ? 5 : 10;
     const xp = ok ? base + Math.min(10, Math.max(0, S.combo - 1)) : 1; gXp(st, xp, S); S.changed = true;
     S.badges.push(...gBadgesCheck(st)); gSave(); gHud(S);
@@ -324,7 +354,7 @@ function gRender(S, q) {
   const faceOpt = o => gFace(o.a, 'opt');
   const filmOpt = o => [h('div', Object.assign({ class: 'gm-poster' }, bg(o.film.poster))), h('span', { class: 'gm-ft' }, o.film.title + (o.film.year ? ' (' + o.film.year + ')' : ''))];
   if (q.mode === 'intro') {
-    const s = st.a[a.k]; if (!s) { if (st.newDay !== gDay()) { st.newDay = gDay(); st.newN = 0; } st.newN++; st.a[a.k] = [0, gDay(), 0, 0, 0, gDay()]; gSave(); }
+    const s = st.a[a.k]; if (!s) { if (st.newDay !== gDay()) { st.newDay = gDay(); st.newN = 0; } st.newN++; gTd(st).nw++; st.a[a.k] = [0, gDay(), 0, 0, 0, gDay()]; gSave(); }
     card.append(h('div', { class: 'gm-tag new' }, t('gNewFace')), gFace(a, 'xl'), h('div', { class: 'gm-nrow' }, h('h2', { class: 'gm-name' }, a.name), gHeart(a)), h('p', { class: 'gm-q' }, t('gRemember')), gKnownFrom(P, a, 4), h('button', { class: 'btn white gm-next', onclick: next }, t('gGotIt'), h('kbd', {}, '⏎')));
     S.onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); } }; requestAnimationFrame(() => { const b = $('.gm-next', card); if (b) b.focus({ preventScroll: true }); });
   } else if (q.mode === 'face2name') {
@@ -350,7 +380,7 @@ function gRender(S, q) {
     const back = h('div', { class: 'gm-back' }, h('h2', { class: 'gm-name' }, a.name), gKnownFrom(P, a, 3));
     const btns = h('div', { class: 'gm-cardb' }, h('button', { class: 'btn white', onclick: () => reveal() }, t('gReveal'), h('kbd', {}, '⏎')));
     let shown = false, answered = false;
-    const rate = ok => { if (answered) return; answered = true; S.n++; st.n++; if (ok) { S.ok++; st.ok++; S.combo++; S.best = Math.max(S.best, S.combo); st.bestCombo = Math.max(st.bestCombo, S.combo); } else { S.combo = 0; if (!S.requeued.has(a.k)) { S.requeued.add(a.k); S.q.splice(Math.min(S.q.length, S.i + 4), 0, { a, mode: 'card' }); } } gGrade(st, a, ok); gXp(st, ok ? 6 : 1, S); S.changed = true; S.badges.push(...gBadgesCheck(st)); gSave(); next(); };
+    const rate = ok => { if (answered) return; answered = true; S.n++; st.n++; if (ok) { S.ok++; st.ok++; S.combo++; S.best = Math.max(S.best, S.combo); st.bestCombo = Math.max(st.bestCombo, S.combo); } else { S.combo = 0; if (!q.learn && !S.requeued.has(a.k)) { S.requeued.add(a.k); S.q.splice(Math.min(S.q.length, S.i + 4), 0, { a, mode: 'card' }); } } gLearnGrade(S, st, a, q, ok); gTdAdd(st, ok); gXp(st, ok ? 6 : 1, S); S.changed = true; S.badges.push(...gBadgesCheck(st)); gSave(); next(); };
     const reveal = () => { if (shown) return; shown = true; card.classList.add('flipped'); btns.replaceChildren(h('button', { class: 'btn grey', onclick: () => rate(false) }, h('kbd', {}, '1'), t('gDidnt')), h('button', { class: 'btn white', onclick: () => rate(true) }, h('kbd', {}, '2'), t('gKnew'))); };
     S.onKey = e => { if (!shown && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); reveal(); } else if (shown && (e.key === '1' || e.key === '2')) { e.preventDefault(); rate(e.key === '2'); } };
     card.append(h('p', { class: 'gm-q' }, t('gWho')), gFace(a, 'xl'), back, btns);
@@ -378,6 +408,8 @@ function gSummary(S) {
   if (!S.summarised) {
     S.summarised = true; st.sessions++;
     if (S.kind === 'blitz') st.bestBlitz = Math.max(st.bestBlitz, S.ok);
+    if (G_NEWKINDS.includes(S.kind) && S.kind !== 'daily') { st.gb = st.gb || {}; st.gb[S.kind] = Math.max(st.gb[S.kind] || 0, S.ok); }
+    if (S.kind === 'daily' && S.n >= Math.min(5, S.q.length) && st.daily !== gDay()) { st.daily = gDay(); st.dailyN = (st.dailyN || 0) + 1; gXp(st, 50, S); S.bonus = 50; }
     if (S.kind === 'train' && S.n >= 10 && S.ok === S.n) st.perfect++;
     if (S.kind === 'cast' && S.film && !st.films.includes(S.film.id)) st.films = st.films.concat(S.film.id).slice(-500);
     S.badges.push(...gBadgesCheck(st)); gFlush();
@@ -396,9 +428,10 @@ function gSummary(S) {
       S.kind === 'memory' ? h('div', {}, h('b', {}, (S.secs || 0) + ' s'), h('span', {}, (S.moves || 0) + ' ' + t('gMoves'))) : h('div', {}, h('b', {}, S.ok + '/' + S.n), h('span', {}, t('gCorrect'))),
       h('div', {}, h('b', {}, S.best), h('span', {}, t('gBestCombo')))),
     h('div', { class: 'gm-lvbar' }, h('span', {}, t('gLevel') + ' ' + lv), h('div', { class: 'gm-xpb' }, h('i', { style: 'width:' + Math.round((st.xp - lo) / (hi - lo) * 100) + '%' })), h('small', {}, (hi - st.xp) + ' XP ' + t('gToNext') + ' ' + (lv + 1))),
+    S.bonus ? h('p', { class: 'gm-goal-ok' }, t('gDpBonus').replace('{n}', S.bonus)) : null,
     goalDone ? h('p', { class: 'gm-goal-ok' }, t('gDailyDone') + ' · ' + gStreakNow(st) + ' ' + (gStreakNow(st) === 1 ? t('gStreak1') : t('gStreak'))) : null,
     uniq.length ? h('div', { class: 'gm-newb' }, h('small', {}, t('gNewBadges')), h('div', {}, uniq.map(b => h('div', { class: 'gm-badge got pop' }, h('span', { class: 'e' }, b[1]), h('b', {}, gBadgeTxt(b)[0]), h('small', {}, gBadgeTxt(b)[1]))))) : null,
-    h('div', { class: 'gm-sumb' }, h('button', { class: 'btn grey', onclick: S.close }, t('gBack')), h('button', { class: 'btn white', onclick: () => { S.close(); setTimeout(() => gPlay(S.kind, S.film ? { film: S.film.id } : {}), 240); } }, ic('refresh'), t('gAgain')))));
+    h('div', { class: 'gm-sumb' }, h('button', { class: 'btn grey', onclick: S.close }, t('gBack')), ...gSumExtra(S), h('button', { class: 'btn white', onclick: () => { S.close(); setTimeout(() => gPlay(S.kind, S.film ? { film: S.film.id } : {}), 240); } }, ic('refresh'), t('gAgain')))));
   S.onKey = e => { if (e.key === 'Enter') { e.preventDefault(); S.close(); } };
 }
 
@@ -449,6 +482,7 @@ function gDash(wrap, st, P) {
     h('div', { class: 'gm-tfaces' }, faces.map(a => gFace(a, 'st'))),
     h('div', { class: 'gm-ttx' }, h('h2', {}, t('gTrain')), h('p', {}, nothing ? t('gNothingDue') : t('gTrainSub')), h('div', { class: 'gm-tchips' }, h('span', { class: 'c due' }, due + ' ' + t('gDue')), h('span', { class: 'c new' }, newLeft + ' ' + t('gNew')))),
     h('button', { class: 'btn white' }, ic('play'), nothing ? t('gPractice') : t('gStart'))));
+  gProgress(wrap, st, P);
   /* recently watched */
   if (P.recent.length) {
     wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gRecent')), h('p', { class: 'gm-secp' }, t('gRecentSub')),
@@ -464,10 +498,13 @@ function gDash(wrap, st, P) {
   }
   gFavSection(wrap, st, P);
   /* games */
-  const mode = (k, e, title, sub, extra) => !gModeOn(k) ? null : h('button', { class: 'gm-mode m-' + k, onclick: () => gPlay(k) }, (e ? h('span', { class: 'e' }, e) : null), h('b', {}, title), h('small', {}, sub), extra ? h('span', { class: 'gm-rec' }, extra) : null);
+  const mode = (k, e, title, sub, extra) => { if (!gModeOn(k)) return null; const na = G_NEWKINDS.includes(k) && k !== 'daily' && !gAvail(k, P); return h('button', { class: 'gm-mode m-' + k + (na ? ' off' : ''), disabled: na, onclick: () => gPlay(k) }, (e ? h('span', { class: 'e' }, e) : null), h('b', {}, title), h('small', {}, na ? t('gNotEnoughG') : sub), extra ? h('span', { class: 'gm-rec' }, extra) : null); };
+  const best = k => (st.gb && st.gb[k] ? st.gb[k] + '/' + (k === 'timeline' ? 6 : 8) : '');
   wrap.append(h('section', { class: 'gm-sec' }, h('h2', {}, t('gModes')), h('div', { class: 'gm-modes' },
-    mode('blitz', '⚡', t('gBlitz'), t('gBlitzSub'), st.bestBlitz ? '🏆 ' + st.bestBlitz : ''), mode('memory', '🧠', t('gMemory'), t('gMemorySub'), st.bestMemory ? '🏆 ' + st.bestMemory + ' s' : ''),
-    mode('type', '⌨️', t('gTypeM'), t('gTypeSub'), st.typed ? '✓ ' + st.typed : ''), mode('cast', '🎭', t('gCastM'), t('gCastSub')), mode('cards', '🃏', t('gCards'), t('gCardsSub')))));
+    mode('daily', null, t('gDailyM'), t('gDailySub'), st.daily === gDay() ? t('gDpDone') : '+50 XP'),
+    mode('blitz', null, t('gBlitz'), t('gBlitzSub'), st.bestBlitz ? String(st.bestBlitz) : ''), mode('memory', null, t('gMemory'), t('gMemorySub'), st.bestMemory ? st.bestMemory + ' s' : ''),
+    mode('type', null, t('gTypeM'), t('gTypeSub'), st.typed ? String(st.typed) : ''), mode('cast', null, t('gCastM'), t('gCastSub')), mode('cards', null, t('gCards'), t('gCardsSub')),
+    mode('odd', null, t('gOddM'), t('gOddSub'), best('odd')), mode('bridge', null, t('gBridgeM'), t('gBridgeSub'), best('bridge')), mode('still', null, t('gStillM'), t('gStillSub'), best('still')), mode('plot', null, t('gPlotM'), t('gPlotSub'), best('plot')), mode('timeline', null, t('gTimeM'), t('gTimeSub'), best('timeline')))));
   /* stats + activity */
   const acc = st.n ? Math.round(st.ok / st.n * 100) : 0;
   const tile = (v, l) => h('div', { class: 'gm-tile2' }, h('b', {}, String(v)), h('small', {}, l));

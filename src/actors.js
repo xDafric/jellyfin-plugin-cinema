@@ -147,3 +147,12 @@ function gPersonFollow(p) {
   const b = h('button', { class: 'btn grey gm-follow' }, t('gFavFollow')); const set = on => { b.classList.toggle('on', on); b.textContent = (on ? '♥ ' + t('gFavFollowing') : t('gFavFollow')); };
   gLoad().then(() => set(gIsFav(GM.st, a))); b.onclick = async () => { await gLoad(); const on = gFollow(a); set(on); toast(on ? '♥ ' + p.Name : p.Name); }; return b;
 }
+
+/* how famous an actor is (from the best known films), looked up once and kept: it decides who is worth learning first */
+GA.fame = {}; try { GA.fame = JSON.parse(localStorage.getItem('cx-game-fame') || '{}') || {}; } catch (e) { }
+async function gWarmFame(P, ms) {
+  if (!hasSeerr() || !GM.st) return; const cands = P.fresh.filter(a => gIsNew(GM.st, a) && !(a.k in GA.fame)).sort((x, y) => P.rel(y) - P.rel(x)).slice(0, 24); if (!cands.length) return; let i = 0; const t0 = Date.now();
+  const worker = async () => { while (i < cands.length && Date.now() - t0 < ms) { const a = cands[i++]; try { const cr = await gCredits(a); GA.fame[a.k] = cr ? Math.log10(1 + gTopFamous(cr, 5).reduce((s, c) => s + c.fame, 0)) : 0; } catch (e) { GA.fame[a.k] = 0; } } };
+  await Promise.race([Promise.all([worker(), worker(), worker(), worker()]), new Promise(r => setTimeout(r, ms + 400))]);
+  try { localStorage.setItem('cx-game-fame', JSON.stringify(GA.fame)); } catch (e) { }
+}

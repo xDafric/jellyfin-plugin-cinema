@@ -92,7 +92,7 @@ const navLabel = k => { const e = NAV_ENTRIES.find(x => x[0] === k); return e ? 
 
 /* ----- the catalogue: one entry per feature ----- */
 function featCatalog(X) {
-  const modeChips = () => h('div', { class: 'ft-chips' }, G_MODES.map(k => { const lbl = { blitz: t('gBlitz'), memory: t('gMemory'), type: t('gTypeM'), cast: t('gCastM'), cards: t('gCards') }[k]; const b = h('button', { class: 'nf-chip' + (gModeOn(k) ? ' on' : ''), onclick: async () => { const m = Object.assign({}, cfg('quizModes') || {}); m[k] = !gModeOn(k); await saveCfg({ quizModes: m }); b.classList.toggle('on', gModeOn(k)); } }, lbl); return b; }));
+  const modeChips = () => h('div', { class: 'ft-chips' }, G_MODES.map(k => { const lbl = { blitz: t('gBlitz'), memory: t('gMemory'), type: t('gTypeM'), cast: t('gCastM'), cards: t('gCards'), odd: t('gOddM'), bridge: t('gBridgeM'), still: t('gStillM'), plot: t('gPlotM'), timeline: t('gTimeM') }[k]; const b = h('button', { class: 'nf-chip' + (gModeOn(k) ? ' on' : ''), onclick: async () => { const m = Object.assign({}, cfg('quizModes') || {}); m[k] = !gModeOn(k); await saveCfg({ quizModes: m }); b.classList.toggle('on', gModeOn(k)); } }, lbl); return b; }));
   const pageChips = () => h('div', { class: 'ft-chips' }, NAV_ENTRIES.filter(([k, , f]) => (!f || feat(f)) && !adminHidden(k)).map(([k]) => {
     const hidden = () => (CFGU.navHide || []).includes(k); const b = h('button', { class: 'nf-chip' + (hidden() ? '' : ' on'), onclick: async () => { const s = new Set(CFGU.navHide || []); hidden() ? s.delete(k) : s.add(k); await saveCfg({ navHide: s.size ? [...s] : null }); b.classList.toggle('on', !hidden()); X.reload(); } }, navLabel(k)); return b; }));
   const lbOn = () => optOn('letterboxd');
@@ -123,6 +123,7 @@ function featCatalog(X) {
     { id: 'quiz', g: 'learn', ic: '🎭', hue: '#1ed760', name: 'ftQuizN', desc: 'ftQuizD', art: 'quiz', key: 'quiz', feat: 'quiz', open: '#/c/quiz', opts: () => [
       X.row(t('qNew'), t('qNewH'), X.seg([[5, '5'], [10, '10'], [20, '20'], [30, '30']], 'quizNew'), 'quizNew'), X.row(t('qGoal'), t('qGoalH'), X.seg([[50, '50'], [100, '100'], [200, '200'], [300, '300']], 'quizGoal'), 'quizGoal'),
       X.row(t('qBlitz'), '', X.seg([[30, '30 s'], [60, '60 s'], [90, '90 s']], 'quizBlitz'), 'quizBlitz'), X.toggle(t('qAuto'), 'quizAuto', t('qAutoH')),
+      X.row(t('qFocus'), t('qFocusH'), X.seg([['core', t('qFocusCore')], ['all', t('qFocusAll')]], 'quizFocus', () => { GM.pool = null; }), 'quizFocus'),
       X.row(t('qMin'), t('qMinH'), X.seg([[1, t('qMinAll')], [2, t('qMin2')], [3, t('qMin3')]], 'quizMin'), 'quizMin'),
       lbOn() ? X.toggle(t('qLb'), 'quizLb', t('qLbH')) : null, X.row(t('qFamous'), t('qFamousH'), X.seg([['both', t('qFamousBoth')], ['seen', t('qFamousSeen')]], 'quizFamous'), 'quizFamous'), X.toggle(t('qScenes'), 'quizScenes', t('qScenesH')), X.row(t('qGames'), t('qGamesH'), modeChips()),
       X.row(t('qReset'), t('qResetH'), h('button', { class: 'btn grey', style: 'height:38px', onclick: async () => { if (!confirm(t('qResetAsk'))) return; await gLoad(); Object.assign(GM.st, gDef(), { ts: Date.now() }); await gFlush(); toast(t('qResetOk')); } }, t('qResetDo')))] },
